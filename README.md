@@ -2,21 +2,24 @@
 mkTools are a collection of GUI apps based on Qt6 that were created out of various frustrations with existing Linux GUI apps. At this point they include a file manager, an anything launcher and a file search tool. They are minimalist and screen space efficient in style and meant to be used with mouse and keyboard. Definitely no touch friendliness here. Think hotkeys, not buttons.
 The apps are multi-platform and tested on Linux with KDE Plasma and Windows 10.
 
-![Windows 10](images/screenshot_mkFolderWidget.webp)
 
 # mkFolderWidget
 
+![Windows 10](images/screenshot_mkFolderWidget.webp)
+
 A minimalist file manager optimized to take up as little space as possible. It can be used with the included KWin script to tile its windows in a narrow column at the right side of the screen.
 
-![Windows 10](images/screenshot_mkLauncher.webp)
 
 # mkLauncher
 
+![Windows 10](images/screenshot_mkLauncher.png)
+
 An apps and files launcher that doesn't use an indexing services.
 
-![Windows 10](images/screenshot_mkFileSearch.webp)
 
 # mkFileSearch
+
+![KDE Plasma Breeze Dark](images/screenshot_mkFileSearch.png)
 
 A file search tool that does not use indexing services. It allows for searching by filename and/or content either with normal search terms or RegEx expressions.
 
