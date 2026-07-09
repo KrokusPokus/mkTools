@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "KrokusPokus",
+                "Website": "https://github.com/KrokusPokus/mkfolderwidget"
+            }
+        ],
+        "Description": "Automatically tiles mkFolderWidget windows into a column at the right screen border",
+        "Icon": "preferences-system-windows-script-test",
+        "Id": "mkfolderwidgettiler",
+        "License": "GPL",
+        "Name": "mkFolderWidget Tiler"
+    },
+    "X-KDE-ConfigModule": "kwin/effects/configs/kcm_kwin4_genericscripted",
+    "X-Plasma-API": "javascript"
+}

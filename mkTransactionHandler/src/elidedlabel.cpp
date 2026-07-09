@@ -1,0 +1,2 @@
+#include "elidedlabel.h"
+

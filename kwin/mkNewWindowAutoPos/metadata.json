@@ -1,0 +1,17 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "umahedonoko@hotmail.com",
+                "Name": "KrokusPokus"
+            }
+        ],
+        "Description": "Automatically places new windows right next to the active one, if there is enough space available",
+        "Icon": "preferences-system-windows-script-test",
+        "Id": "mknewwindowautopos",
+        "License": "GPL",
+        "Name": "Window placement: Next to active"
+    },
+    "X-Plasma-API": "javascript"
+}
