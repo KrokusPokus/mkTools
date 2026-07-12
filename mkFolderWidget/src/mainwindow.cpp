@@ -1,5 +1,8 @@
 #include "mainwindow.h"
+#include "customitemdelegates.h"
+#include "customproxystyle.h"
 #include "filepropertiesdialog.h"
+#include "stylesheets.h"
 
 #include <QActionGroup>
 #include <QApplication>
@@ -99,7 +102,7 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     m_tableView = new CustomTableView(this);
     m_tableView->setModel(m_proxyModel);
     m_tableView->setSortingEnabled(true);   // Unlike with TableWidget, this doesn't need turning on und off for speed optimization.
-    m_proxyModel->sort(eColName, Qt::AscendingOrder);
+    m_proxyModel->sort(CustomTableModel::eColName, Qt::AscendingOrder);
 
     TableItemDelegate *tableItemDelegate = new TableItemDelegate(m_tableView);
     m_tableView->setItemDelegate(tableItemDelegate);
@@ -114,15 +117,15 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     m_tableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_tableView->setAlternatingRowColors(m_settings.alternatingRowColors);
     m_tableView->setShowGrid(m_settings.showGrid);
-    m_tableView->setColumnHidden(eColPath, true);
-    //m_tableView->setColumnHidden(eColCRC, true);
+    m_tableView->setColumnHidden(CustomTableModel::eColPath, true);
+    //m_tableView->setColumnHidden(CustomTableModel::eColCRC, true);
 
     m_tableView->verticalHeader()->setVisible(false);
     m_tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     m_tableView->verticalHeader()->setMinimumSectionSize(0);
     m_tableView->verticalHeader()->setDefaultSectionSize(18);
 
-    m_tableView->horizontalHeader()->setSortIndicator(eColName, Qt::AscendingOrder);
+    m_tableView->horizontalHeader()->setSortIndicator(CustomTableModel::eColName, Qt::AscendingOrder);
     m_tableView->horizontalHeader()->setSectionsMovable(true);
     m_tableView->horizontalHeader()->setHighlightSections(false);
     m_tableView->horizontalHeader()->setFixedHeight(22);
@@ -135,191 +138,16 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
 
 #ifdef Q_OS_WIN
     if (isCurrentProcessElevated()) {
-        m_tableView->setStyleSheet(
-            "QTableView {"
-            "    border: none;"
-            "    background-color: #aa0000;"
-            "    alternate-background-color: #880000;"
-            "    color: white;"
-            "    selection-color: white;"
-            "    outline: none;"
-            "}"
-            "QTableView::item:hover {"
-            "    background-color: #aa0000;"
-            "}"
-            "QTableView::item:alternate:hover {"
-            "    background-color: #880000;"
-            "}"
-            "QTableView::item:selected:active,"
-            "QTableView::item:selected:active:hover {"
-            "    background-color: #6b69d6;"
-            "}"
-            "QTableView::item:selected:!active,"
-            "QTableView::item:selected:!active:hover {"
-            "    background-color: #a0a0a0;"
-            "}"
-            /* Styling für die Ecke unten rechts */
-            "QAbstractScrollArea::corner {"
-            "    background: #1b1b1b;"
-            "    border: none;"
-            "}"
-            "QHeaderView {"
-            "    background-color: #404040;"
-            "    border: none;"
-            "}"
-            "QHeaderView::section {"
-            "    border: none;" // Needed to disable native OS style that otherwise prevents background-color from working
-            "    background-color: #404040;"
-            "    color: #ffffff;"
-            "    font-weight: normal;"
-            "    border-bottom: 1px solid #616161;"
-            "    border-right: 1px solid #616161;"
-            "    padding-left: 6px;"
-            "    padding-right: 6px;"
-            "}"
-            );
+        m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevated.data(), Styles::tableViewElevated.size()));
     } else {
-        m_tableView->setStyleSheet(
-            "QTableView {"
-            "    border: none;"
-            "    background-color: #2e2e2e;"
-            "    alternate-background-color: #282828;"
-            "    color: white;"
-            "    selection-color: white;"
-            "    outline: none;"
-            "}"
-            "QTableView::item:hover {"
-            "    background-color: #2e2e2e;"
-            "}"
-            "QTableView::item:alternate:hover {"
-            "    background-color: #282828;"
-            "}"
-            "QTableView::item:selected:active,"
-            "QTableView::item:selected:active:hover {"
-            "    background-color: #6b69d6;"
-            "}"
-            "QTableView::item:selected:!active,"
-            "QTableView::item:selected:!active:hover {"
-            "    background-color: #505050;"
-            "}"
-            /* Styling für die Ecke unten rechts */
-            "QAbstractScrollArea::corner {"
-            "    background: #1b1b1b;"
-            "    border: none;"
-            "}"
-            "QHeaderView {"
-            "    background-color: #404040;"
-            "    border: none;"
-            "}"
-            "QHeaderView::section {"
-            "    border: none;" // Needed to disable native OS style that otherwise prevents background-color from working
-            "    background-color: #404040;"
-            "    color: #ffffff;"
-            "    font-weight: normal;"
-            "    border-bottom: 1px solid #616161;"
-            "    border-right: 1px solid #616161;"
-            "    padding-left: 6px;"
-            "    padding-right: 6px;"
-            "}"
-            );
+        m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewDark.data(), Styles::tableViewDark.size()));
     }
 
-    m_tableView->verticalScrollBar()->setStyleSheet(
-        "QScrollBar:vertical {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    width: 17px;"
-        "    margin: 5px 0px 5px 0px;"
-        "}"
-
-        "QScrollBar::handle:vertical {"
-        "    background: #3f3f3f;"
-        "    min-height: 20px;"
-        "    margin-left: 5px;"
-        "    margin-right: 5px;"
-        "    border-radius: 3px;"
-        "}"
-
-        "QScrollBar::handle:vertical:hover {"
-        "    background: #6966f7;"
-        "}"
-
-        "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
-        "    background: none;"
-        "}"
-
-        "QScrollBar::sub-line:vertical {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    height: 5px;"
-        "    subcontrol-position: top;"
-        "    subcontrol-origin: margin;"
-        "}"
-
-        "QScrollBar::add-line:vertical {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    height: 5px;"
-        "    subcontrol-position: bottom;"
-        "    subcontrol-origin: margin;"
-        "}"
-        );
-
-    m_tableView->horizontalScrollBar()->setStyleSheet(
-        "QScrollBar:horizontal {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    height: 17px;"
-        "    margin: 0px 5px 0px 5px;"
-        "}"
-
-        "QScrollBar::handle:horizontal {"
-        "    background: #3f3f3f;"
-        "    min-width: 20px;"
-        "    margin-top: 5px;"
-        "    margin-bottom: 5px;"
-        "    border-radius: 3px;"
-        "}"
-
-        "QScrollBar::handle:horizontal:hover {"
-        "    background: #6966f7;"
-        "}"
-
-        "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
-        "    background: none;"
-        "}"
-
-        "QScrollBar::sub-line:horizontal {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    width: 5px;"
-        "    subcontrol-position: left;"
-        "    subcontrol-origin: margin;"
-        "}"
-
-        "QScrollBar::add-line:horizontal {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    width: 5px;"
-        "    subcontrol-position: right;"
-        "    subcontrol-origin: margin;"
-        "}"
-        );
+    m_tableView->verticalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::verticalScrollBarDark.data(), Styles::verticalScrollBarDark.size()));
+    m_tableView->horizontalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::horizontalScrollBarDark.data(), Styles::horizontalScrollBarDark.size()));
 #elif defined(Q_OS_LINUX)
     if (isCurrentProcessElevated()) {
-        m_tableView->setStyleSheet(
-            "QTableView {"
-            "    background-color: #aa0000;"
-            "    alternate-background-color: #880000;"
-            "    color: #ffffff;"
-            "}"
-            "QTableView::item:hover {"
-            "    background-color: #aa0000;"
-            "}"
-            "QTableView::item:alternate:hover {"
-            "    background-color: #880000;"
-            "}"
-            );
+        m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevatedLinux.data(), Styles::tableViewElevatedLinux.size()));
     }
 #endif
 
@@ -358,172 +186,18 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
 
 #ifdef Q_OS_WIN
     if (isCurrentProcessElevated()) {
-        m_listView->setStyleSheet(
-            "QListView {"
-            "    border: none;"
-            "    background-color: #aa0000;"
-            "    alternate-background-color: #880000;"
-            "    color: white;"
-            "    selection-color: white;"
-            "    outline: none;"
-            "}"
-            "QListView::item {"
-            "    padding-top: 0px;"
-            "    padding-bottom: 0px;"
-            "    height: 18px;"
-            "}"
-            "QListView::item:hover {"
-            "    background-color: #aa0000;"
-            "}"
-            "QListView::item:selected:active,"
-            "QListView::item:selected:active:hover {"
-            "    background-color: #6b69d6;"
-            "}"
-            "QListView::item:selected:!active,"
-            "QListView::item:selected:!active:hover {"
-            "    background-color: #a0a0a0;"
-            "}"
-            /* Styling für die Ecke unten rechts */
-            "QAbstractScrollArea::corner {"
-            "    background: #1b1b1b;"
-            "    border: none;"
-            "}"
-            );
+        m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevated.data(), Styles::listViewElevated.size()));
     } else {
-        m_listView->setStyleSheet(
-            "QListView {"
-            "    border: none;"
-            "    background-color: #2e2e2e;"
-            "    color: white;"
-            "    selection-color: white;"
-            "    outline: none;"
-            "}"
-            "QListView::item {"
-            "    padding-top: 0px;"
-            "    padding-bottom: 0px;"
-            "    height: 18px;"
-            "}"
-            "QListView::item:hover {"
-            "    background-color: #2e2e2e;"
-            "}"
-            "QListView::item:selected:active,"
-            "QListView::item:selected:active:hover {"
-            "    background-color: #6b69d6;"
-            "}"
-            "QListView::item:selected:!active,"
-            "QListView::item:selected:!active:hover {"
-            "    background-color: #505050;"
-            "}"
-            /* Styling für die Ecke unten rechts */
-            "QAbstractScrollArea::corner {"
-            "    background: #1b1b1b;"
-            "    border: none;"
-            "}"
-            );
+        m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewDark.data(), Styles::listViewDark.size()));
     }
 
-    m_listView->verticalScrollBar()->setStyleSheet(
-        "QScrollBar:vertical {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    width: 17px;"
-        "    margin: 5px 0px 5px 0px;"
-        "}"
-
-        "QScrollBar::handle:vertical {"
-        "    background: #3f3f3f;"
-        "    min-height: 20px;"
-        "    margin-left: 5px;"
-        "    margin-right: 5px;"
-        "    border-radius: 3px;"
-        "}"
-
-        "QScrollBar::handle:vertical:hover {"
-        "    background: #6966f7;"
-        "}"
-
-        "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
-        "    background: none;"
-        "}"
-
-        "QScrollBar::sub-line:vertical {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    height: 5px;"
-        "    subcontrol-position: top;"
-        "    subcontrol-origin: margin;"
-        "}"
-
-        "QScrollBar::add-line:vertical {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    height: 5px;"
-        "    subcontrol-position: bottom;"
-        "    subcontrol-origin: margin;"
-        "}"
-        );
-
-    m_listView->horizontalScrollBar()->setStyleSheet(
-        "QScrollBar:horizontal {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    height: 17px;"
-        "    margin: 0px 5px 0px 5px;"
-        "}"
-
-        "QScrollBar::handle:horizontal {"
-        "    background: #3f3f3f;"
-        "    min-width: 20px;"
-        "    margin-top: 5px;"
-        "    margin-bottom: 5px;"
-        "    border-radius: 3px;"
-        "}"
-
-        "QScrollBar::handle:horizontal:hover {"
-        "    background: #6966f7;"
-        "}"
-
-        "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
-        "    background: none;"
-        "}"
-
-        "QScrollBar::sub-line:horizontal {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    width: 5px;"
-        "    subcontrol-position: left;"
-        "    subcontrol-origin: margin;"
-        "}"
-
-        "QScrollBar::add-line:horizontal {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    width: 5px;"
-        "    subcontrol-position: right;"
-        "    subcontrol-origin: margin;"
-        "}"
-        );
+    m_listView->verticalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::verticalScrollBarDark.data(), Styles::verticalScrollBarDark.size()));
+    m_listView->horizontalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::horizontalScrollBarDark.data(), Styles::horizontalScrollBarDark.size()));
 #elif defined(Q_OS_LINUX)
     if (isCurrentProcessElevated()) {
-        m_listView->setStyleSheet(
-            "QListView {"
-            "    background-color: #aa0000;"
-            "    color: #ffffff;"
-            "}"
-            "QListView::item {"
-            "    padding-top: 0px;"
-            "    padding-bottom: 0px;"
-            "    height: 18px;"
-            "}"
-            );
+        m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevatedLinux.data(), Styles::listViewElevatedLinux.size()));
     } else {
-        m_listView->setStyleSheet(
-            "QListView::item {"
-            "    padding-top: 0px;"
-            "    padding-bottom: 0px;"
-            "    height: 18px;"
-            "}"
-            );
+        m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewLinux.data(), Styles::listViewLinux.size()));
     }
 #endif
 
@@ -557,148 +231,16 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
 
 #ifdef Q_OS_WIN
     if (isCurrentProcessElevated()) {
-        m_thumbnailView->setStyleSheet(
-            "QListView {"
-            "    border: none;"
-            "    background-color: #aa0000;"
-            "    color: white;"
-            "    selection-color: white;"
-            "    outline: none;"
-            "}"
-            "QListView::item:hover {"
-            "    background-color: #aa0000;"
-            "}"
-            "QListView::item:selected:active,"
-            "QListView::item:selected:active:hover {"
-            "    background-color: #6b69d6;"
-            "}"
-            "QListView::item:selected:!active,"
-            "QListView::item:selected:!active:hover {"
-            "    background-color: #a0a0a0;"
-            "}"
-            /* Styling für die Ecke unten rechts */
-            "QAbstractScrollArea::corner {"
-            "    background: #1b1b1b;"
-            "    border: none;"
-            "}"
-            );
+        m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevated.data(), Styles::thumbnailViewElevated.size()));
     } else {
-        m_thumbnailView->setStyleSheet(
-            "QListView {"
-            "    border: none;"
-            "    background-color: #2e2e2e;"
-            "    color: white;"
-            "    selection-color: white;"
-            "    outline: none;"
-            "}"
-            "QListView::item:hover {"
-            "    background-color: #2e2e2e;"
-            "}"
-            "QListView::item:selected:active,"
-            "QListView::item:selected:active:hover {"
-            "    background-color: #6b69d6;"
-            "}"
-            "QListView::item:selected:!active,"
-            "QListView::item:selected:!active:hover {"
-            "    background-color: #505050;"
-            "}"
-            /* Styling für die Ecke unten rechts */
-            "QAbstractScrollArea::corner {"
-            "    background: #1b1b1b;"
-            "    border: none;"
-            "}"
-            );
+        m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewDark.data(), Styles::thumbnailViewDark.size()));
     }
 
-    m_thumbnailView->verticalScrollBar()->setStyleSheet(
-        "QScrollBar:vertical {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    width: 17px;"
-        "    margin: 5px 0px 5px 0px;"
-        "}"
-
-        "QScrollBar::handle:vertical {"
-        "    background: #3f3f3f;"
-        "    min-height: 20px;"
-        "    margin-left: 5px;"
-        "    margin-right: 5px;"
-        "    border-radius: 3px;"
-        "}"
-
-        "QScrollBar::handle:vertical:hover {"
-        "    background: #6966f7;"
-        "}"
-
-        "QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {"
-        "    background: none;"
-        "}"
-
-        "QScrollBar::sub-line:vertical {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    height: 5px;"
-        "    subcontrol-position: top;"
-        "    subcontrol-origin: margin;"
-        "}"
-
-        "QScrollBar::add-line:vertical {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    height: 5px;"
-        "    subcontrol-position: bottom;"
-        "    subcontrol-origin: margin;"
-        "}"
-        );
-
-    m_thumbnailView->horizontalScrollBar()->setStyleSheet(
-        "QScrollBar:horizontal {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    height: 17px;"
-        "    margin: 0px 5px 0px 5px;"
-        "}"
-
-        "QScrollBar::handle:horizontal {"
-        "    background: #3f3f3f;"
-        "    min-width: 20px;"
-        "    margin-top: 5px;"
-        "    margin-bottom: 5px;"
-        "    border-radius: 3px;"
-        "}"
-
-        "QScrollBar::handle:horizontal:hover {"
-        "    background: #6966f7;"
-        "}"
-
-        "QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {"
-        "    background: none;"
-        "}"
-
-        "QScrollBar::sub-line:horizontal {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    width: 5px;"
-        "    subcontrol-position: left;"
-        "    subcontrol-origin: margin;"
-        "}"
-
-        "QScrollBar::add-line:horizontal {"
-        "    border: none;"
-        "    background: #1b1b1b;"
-        "    width: 5px;"
-        "    subcontrol-position: right;"
-        "    subcontrol-origin: margin;"
-        "}"
-        );
+    m_thumbnailView->verticalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::verticalScrollBarDark.data(), Styles::verticalScrollBarDark.size()));
+    m_thumbnailView->horizontalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::horizontalScrollBarDark.data(), Styles::horizontalScrollBarDark.size()));
 #elif defined(Q_OS_LINUX)
     if (isCurrentProcessElevated()) {
-        m_thumbnailView->setStyleSheet(
-            "QListView {"
-            "    background-color: #aa0000;"
-            "    color: #ffffff;"
-            "}"
-            );
+        m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevatedLinux.data(), Styles::thumbnailViewElevatedLinux.size()));
     }
 #endif
 
@@ -846,7 +388,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     sortOrderGroup->addAction(m_actionSortDescending);
     sortOrderGroup->setExclusive(true);
 
-
     if (m_settings.showIconsInMenu == false) {
         m_actionListViewOpenFiles->setIconVisibleInMenu(false);
         m_actionListViewEditFiles->setIconVisibleInMenu(false);
@@ -977,7 +518,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
             browseFolder(m_currentDirectory);
         }
     });
-
 
     //qDebug() << "Unterstützte Formate:" << QImageReader::supportedImageFormats();
 
@@ -1226,14 +766,14 @@ void MainWindow::updateColumns() {
     if (m_bHeaderVisible) {
         // m_tableView->horizontalHeader()->setVisible(true);
         
-        m_tableView->horizontalHeader()->setSectionResizeMode(eColSize, QHeaderView::ResizeToContents);
-        m_tableView->horizontalHeader()->setSectionResizeMode(eColDate, QHeaderView::ResizeToContents);
-        m_tableView->horizontalHeader()->setSectionResizeMode(eColType, QHeaderView::ResizeToContents);
-        m_tableView->horizontalHeader()->setSectionResizeMode(eColName, QHeaderView::Stretch);
+        m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColSize, QHeaderView::ResizeToContents);
+        m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColDate, QHeaderView::ResizeToContents);
+        m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColType, QHeaderView::ResizeToContents);
+        m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColName, QHeaderView::Stretch);
         m_tableView->horizontalHeader()->doItemsLayout();
-        int eColNameWidth = m_tableView->columnWidth(eColName);
+        int eColNameWidth = m_tableView->columnWidth(CustomTableModel::eColName);
         m_tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
-        m_tableView->setColumnWidth(eColName, eColNameWidth);
+        m_tableView->setColumnWidth(CustomTableModel::eColName, eColNameWidth);
     } else {
         //m_tableView->horizontalHeader()->setVisible(false);
     }
@@ -1419,7 +959,7 @@ QStringList MainWindow::getActiveViewPathList() {
     QStringList pathList;
     QModelIndexList selectedIndexes = m_selectionModel->selectedIndexes();  // we use selectedIndexes() instead of selectedRows() because the latter only list rows in which all columns are selected!
     for (const QModelIndex &proxyIndex : std::as_const(selectedIndexes)) {
-        if (proxyIndex.column() == eColName) {
+        if (proxyIndex.column() == CustomTableModel::eColName) {
             QModelIndex sourceIndex = m_proxyModel->mapToSource(proxyIndex);
             QString path = m_abstractModel->filePath(sourceIndex);
             if (!path.isEmpty()) {
@@ -1439,7 +979,7 @@ QSet<int> MainWindow::getActiveViewRowSet() {
     if (selectedIndexes.isEmpty()) return rowSet;
 
     for (const QModelIndex &proxyIndex : std::as_const(selectedIndexes)) {
-        if (proxyIndex.column() == eColName) {
+        if (proxyIndex.column() == CustomTableModel::eColName) {
             QModelIndex sourceIndex = m_proxyModel->mapToSource(proxyIndex);
             rowSet.insert(sourceIndex.row());
         }
@@ -1586,31 +1126,6 @@ void MainWindow::action_ListViewDeleteFiles(bool bRecycleOnly) {
     } else {
         fileOperation(OperationType::Delete, urlFileList, "", false);
     }
-
-    /*
-    // Wir löschen die Dateien nur noch von der Festplatte.
-    // m_abstractModel bekommt das live mit.
-    for (const QString &path : std::as_const(pathList)) {
-        bool success = false;
-
-        if (bRecycleOnly) {
-            success = QFile::moveToTrash(path);
-        } else {
-            QFileInfo info(path);
-
-            if (info.isDir()) {
-                QDir dir(path);
-                success = dir.removeRecursively();
-            } else {
-                success = QFile::remove(path);
-            }
-        }
-
-        if (!success) {
-            qDebug() << "Could not delete from disk:" << path;
-        }
-    }
-    */
 }
 
 void MainWindow::action_ListViewCutFiles() {
@@ -1710,7 +1225,7 @@ void MainWindow::action_ListViewRenameFiles() {
     QModelIndex proxyIndex = activeView->currentIndex();
     if (!proxyIndex.isValid()) return;
 
-    proxyIndex = proxyIndex.siblingAtColumn(eColName);
+    proxyIndex = proxyIndex.siblingAtColumn(CustomTableModel::eColName);
 
     activeView->setFocus();
     activeView->setCurrentIndex(proxyIndex);
@@ -1924,26 +1439,26 @@ void MainWindow::action_ViewModeThumbs() {
 }
 
 void MainWindow::action_SortByName() {
-    m_proxyModel->sort(eColName, Qt::AscendingOrder);
-    m_tableView->horizontalHeader()->setSortIndicator(eColName, Qt::AscendingOrder);
+    m_proxyModel->sort(CustomTableModel::eColName, Qt::AscendingOrder);
+    m_tableView->horizontalHeader()->setSortIndicator(CustomTableModel::eColName, Qt::AscendingOrder);
     m_timerUpdateIcons->start(20);
 }
 
 void MainWindow::action_SortBySize() {
-    m_proxyModel->sort(eColSize, Qt::DescendingOrder);
-    m_tableView->horizontalHeader()->setSortIndicator(eColSize, Qt::DescendingOrder);
+    m_proxyModel->sort(CustomTableModel::eColSize, Qt::DescendingOrder);
+    m_tableView->horizontalHeader()->setSortIndicator(CustomTableModel::eColSize, Qt::DescendingOrder);
     m_timerUpdateIcons->start(20);
 }
 
 void MainWindow::action_SortByDate() {
-    m_proxyModel->sort(eColDate, Qt::DescendingOrder);
-    m_tableView->horizontalHeader()->setSortIndicator(eColDate, Qt::DescendingOrder);
+    m_proxyModel->sort(CustomTableModel::eColDate, Qt::DescendingOrder);
+    m_tableView->horizontalHeader()->setSortIndicator(CustomTableModel::eColDate, Qt::DescendingOrder);
     m_timerUpdateIcons->start(20);
 }
 
 void MainWindow::action_SortByType() {
-    m_proxyModel->sort(eColType, Qt::AscendingOrder);
-    m_tableView->horizontalHeader()->setSortIndicator(eColType, Qt::AscendingOrder);
+    m_proxyModel->sort(CustomTableModel::eColType, Qt::AscendingOrder);
+    m_tableView->horizontalHeader()->setSortIndicator(CustomTableModel::eColType, Qt::AscendingOrder);
     m_timerUpdateIcons->start(20);
 }
 
@@ -2728,7 +2243,14 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
         else {
             //if (keyEvent->key() == Qt::Key_Enter || keyEvent->key() == Qt::Key_Return) qDebug() << "[KeyPress pos 2c] key:" << keyEvent->key() << "isAutoRepeat:" << keyEvent->isAutoRepeat() << "obj:" << obj << "targetWidget:" << targetWidget << "targetWidget->parent():" << targetWidget->parent();
         }
-
+/*
+        if (keyEvent->key() == Qt::Key_Escape) {
+            if (m_bSearchActive.load()) {
+                m_abstractModel->abort();
+                return true;
+            }
+		}
+*/
         if ((targetWidget == m_tableView || targetWidget->parent() == m_tableView) ||
             (targetWidget == m_listView  || targetWidget->parent() == m_listView)  ||
             (targetWidget == m_thumbnailView || targetWidget->parent() == m_thumbnailView)) {
@@ -2783,7 +2305,8 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                 if (keyEvent->key() == Qt::Key_F2) {
                     action_ListViewRenameFiles();
                     return true;
-                } else if (keyEvent->key() == Qt::Key_F5) {
+                }
+                else if (keyEvent->key() == Qt::Key_F5) {
                     reloadDirectory();
                     return true;
                 }

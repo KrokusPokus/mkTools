@@ -1,7 +1,6 @@
 #ifndef FILESORTPROXYMODEL_H
 #define FILESORTPROXYMODEL_H
 
-#include <QAbstractTableModel>
 #include <QCollator>
 #include <QSortFilterProxyModel>
 

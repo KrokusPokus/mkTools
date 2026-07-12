@@ -43,13 +43,12 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
     connect(m_workerThread, &QThread::started,                this,     &MainWindow::onThreadStarted);
     connect(m_fileOp,       &FileOperation::progress,         this,     &MainWindow::onProgressUpdated);
     connect(m_fileOp,       &FileOperation::conflictDetected, this,     &MainWindow::onConflictDetected, Qt::QueuedConnection);
-    connect(m_fileOp,       &FileOperation::finished,         this,     &MainWindow::onOperationFinished);
+    connect(m_fileOp,       &FileOperation::wasContinued,     this,     &MainWindow::onOperationContinued);
+    connect(m_fileOp,       &FileOperation::wasPaused,        this,     &MainWindow::onOperationPaused);
+    //connect(m_fileOp,     &FileOperation::wasRetried,       this,     &MainWindow::onOperationRetried);
+    connect(m_fileOp,       &FileOperation::wasFinished,      this,     &MainWindow::onOperationFinished);
+    connect(m_fileOp,       &FileOperation::wasCanceled,      this,     &MainWindow::onOperationCanceled);
 
-    // Clean-up wenn der Thread fertig ist
-    connect(m_fileOp,       &FileOperation::finished,       m_workerThread, &QThread::quit);
-    connect(m_fileOp,       &FileOperation::finished,       m_fileOp,       &QObject::deleteLater);
-
-    // Starten!
     m_workerThread->start();
 
     QTimer::singleShot(2000, this, [this]() {
@@ -64,6 +63,9 @@ MainWindow::~MainWindow() {
         m_workerThread->quit();
         m_workerThread->wait();
     }
+
+    delete m_fileOp;
+
 #ifdef Q_OS_WIN
     if (m_taskbarList) {
         m_taskbarList->Release();
@@ -75,17 +77,17 @@ void MainWindow::setupUi() {
     QString windowTitle;
 
     if (m_operationType == OperationType::Copy) {
-        windowTitle =  tr("Copying...");
+        windowTitle =  tr("Copying");
     } else if (m_operationType == OperationType::Move) {
-        windowTitle =  tr("Moving...");
+        windowTitle =  tr("Moving");
     } else if (m_operationType == OperationType::Link) {
-        windowTitle =  tr("Linking...");
+        windowTitle =  tr("Linking");
     } else if (m_operationType == OperationType::Delete) {
-        windowTitle =  tr("Deleting...");
+        windowTitle =  tr("Deleting");
     } else if (m_operationType == OperationType::Recycle) {
-        windowTitle =  tr("Recycling...");
+        windowTitle =  tr("Recycling");
     } else {
-        windowTitle =  tr("Unknown operation type...");
+        windowTitle =  tr("[unknown operation type]");
     }
 
     setWindowTitle(windowTitle);
@@ -141,6 +143,16 @@ void MainWindow::setupUi() {
     mainLayout->addLayout(pathLayout);
     mainLayout->addSpacing(8);
 
+    // ==========================================
+    m_progressBar = new QProgressBar(this);
+    m_progressBar->setRange(0, 100);
+    m_progressBar->setValue(0);
+    m_progressBar->setTextVisible(false);
+    m_progressBar->setFixedHeight(10);
+
+    mainLayout->addWidget(m_progressBar);
+    mainLayout->addSpacing(8);
+
     // 3. BLOCK: Metriken & Performance
     auto *metricsLayout = new QFormLayout();
     metricsLayout->setLabelAlignment(Qt::AlignLeft);
@@ -183,13 +195,20 @@ void MainWindow::setupUi() {
 
     auto *buttonLayout = new QVBoxLayout();
     buttonLayout->addStretch(); // Schiebt den Button nach unten
+
+    m_pauseButton = new QPushButton(tr("Pause"), this);
+    m_pauseButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    buttonLayout->addWidget(m_pauseButton);
+
     m_cancelButton = new QPushButton(tr("Cancel"), this);
     m_cancelButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     buttonLayout->addWidget(m_cancelButton);
+
     bottomLayout->addLayout(buttonLayout);
 
     mainLayout->addLayout(bottomLayout);
 
+    connect(m_pauseButton,  &QPushButton::clicked, this, &MainWindow::onPauseRequested);
     connect(m_cancelButton, &QPushButton::clicked, this, &MainWindow::onCancelRequested);
 
     setCentralWidget(centralWidget);
@@ -201,16 +220,30 @@ void MainWindow::onThreadStarted() {
 
 void MainWindow::onProgressUpdated(const CopyStats &stats) {
     // 1. Summary
-    if (m_operationType == OperationType::Copy) {
-        m_headerLabel->setText(tr("Copying %n item. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
-    } else if (m_operationType == OperationType::Move) {
-        m_headerLabel->setText(tr("Moving %n item. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
-    } else if (m_operationType == OperationType::Link) {
-        m_headerLabel->setText(tr("Linking %n item. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
-    } else if (m_operationType == OperationType::Delete) {
-        m_headerLabel->setText(tr("Deleting %n item. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
-    } else if (m_operationType == OperationType::Recycle) {
-        m_headerLabel->setText(tr("Recycling %n item. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+    switch (m_operationType) {
+        case OperationType::Copy:
+            m_headerLabel->setText(tr("Copying %n file. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            break;
+
+        case OperationType::Move:
+            m_headerLabel->setText(tr("Moving %n file. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            break;
+
+        case OperationType::Link:
+            m_headerLabel->setText(tr("Linking %n file. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            break;
+
+        case OperationType::Delete:
+            m_headerLabel->setText(tr("Deleting %n file. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            break;
+
+        case OperationType::Recycle:
+            m_headerLabel->setText(tr("Recycling %n file. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            break;
+
+        default:
+            m_headerLabel->setText("[unknown action]");
+            break;
     }
 
     // 2. Pfade setzen
@@ -259,27 +292,53 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
         m_driveModeLabel->setText(stats.isSameDevice ? tr("Same Drive") : tr("Different Drives"));
     }
 
-    // 5. Window Title
-    double doneFileRate = double(stats.filesWritten + stats.filesSkipped + stats.filesError) / (stats.totalFiles + 0.01);
-    double doneTransRate = double(stats.bytesWritten) / (stats.totalBytes + 0.01);
-    double aveSize = double(stats.totalBytes) / (stats.totalFiles + 0.01);
-
-    double coef = SizeToCoef(aveSize);
-    double doneRate = (doneFileRate * coef + doneTransRate) / (coef + 1.0);
-
-    int progressPercent = qBound(0, int(doneRate * 100), 100);
-
-    if (m_operationType == OperationType::Copy) {
-        setWindowTitle(tr("Copying... (%1%)").arg(progressPercent));
-    } else if (m_operationType == OperationType::Move) {
-        setWindowTitle(tr("Moving... (%1%)").arg(progressPercent));
-    } else if (m_operationType == OperationType::Link) {
-        setWindowTitle(tr("Linking... (%1%)").arg(progressPercent));
-    } else if (m_operationType == OperationType::Delete) {
-        setWindowTitle(tr("Deleting... (%1%)").arg(progressPercent));
-    } else if (m_operationType == OperationType::Recycle) {
-        setWindowTitle(tr("Recycling... (%1%)").arg(progressPercent));
+    int byteProgressPercent = 0;
+    if (stats.totalBytes > 0) {
+        double doneRate = static_cast<double>(stats.bytesWritten) / stats.totalBytes;
+        byteProgressPercent = qBound(0, int(doneRate * 100), 100);
+    } else {
+        byteProgressPercent = 0;
     }
+
+    // ==========================================
+
+    if (stats.totalBytes > 0) {
+        m_progressBar->setRange(0, 100);    // Zurück zum normalen Modus, falls vorher gescannt wurde
+        m_progressBar->setValue(byteProgressPercent);
+    } else {
+        m_progressBar->setRange(0, 0);      // Während des Einlesens/Scannens (Dauer-Animation wie bei Windows)
+    }
+
+    // ==========================================
+    // 5. Window Title
+
+    switch (m_operationType) {
+        case OperationType::Copy:
+            setWindowTitle(tr("Copying %n file (%1) to '%2' at %3%", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)).arg(stats.currentTargetDir).arg(byteProgressPercent));
+            break;
+
+        case OperationType::Move:
+            setWindowTitle(tr("Moving %n file (%1) to '%2' at %3%", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)).arg(stats.currentTargetDir).arg(byteProgressPercent));
+            break;
+
+        case OperationType::Link:
+            setWindowTitle(tr("Linking %n file (%1) to '%2' at %3%", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)).arg(stats.currentTargetDir).arg(byteProgressPercent));
+            break;
+
+        case OperationType::Delete:
+            setWindowTitle(tr("Deleting %n file (%1) at %2%", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)).arg(byteProgressPercent));
+            break;
+
+        case OperationType::Recycle:
+            setWindowTitle(tr("Recycling %n file (%1) at %2%", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)).arg(byteProgressPercent));
+            break;
+
+        default:
+            setWindowTitle(tr("[unknown operation type]"));
+            break;
+    }
+
+
 #ifdef Q_OS_WIN
     if (m_taskbarList) {
         // Native Windows-ID (HWND) des Fensters holen
@@ -288,7 +347,7 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
         if (stats.totalBytes > 0) {
             // Modus auf "Normal" (Grün) setzen und Werte übergeben
             m_taskbarList->SetProgressState(hwnd, TBPF_NORMAL);
-            m_taskbarList->SetProgressValue(hwnd, stats.bytesWritten, stats.totalBytes);
+            m_taskbarList->SetProgressValue(hwnd, byteProgressPercent, 100);
         } else {
             // Wenn totalBytes noch 0 ist (z.B. beim Scannen), "Dauer-Animation" zeigen
             m_taskbarList->SetProgressState(hwnd, TBPF_INDETERMINATE);
@@ -302,7 +361,6 @@ void MainWindow::onConflictDetected(const Conflict &conflict) {
     // wegen eines Konflikts jetzt gebraucht wird: Sofort einblenden!
     if (!isVisible()) {
         show();
-        QApplication::processEvents();
     }
 
     ConflictDialog dialog(conflict, this);
@@ -313,6 +371,26 @@ void MainWindow::onConflictDetected(const Conflict &conflict) {
     if (m_fileOp) {
         m_fileOp->resolveConflict(res.resolution, res.applyToAll);
     }
+}
+
+void MainWindow::onOperationContinued() {
+    if (!isVisible()) show();
+
+    m_pauseButton->setText(tr("Pause"));
+    disconnect(m_pauseButton, &QPushButton::clicked, this, nullptr);
+    connect(m_pauseButton, &QPushButton::clicked, this, &MainWindow::onPauseRequested);
+    m_pauseButton->setEnabled(true);
+}
+
+void MainWindow::onOperationPaused() {
+    if (!isVisible()) show();
+
+    m_headerLabel->setText(tr("Paused"));
+
+    m_pauseButton->setText(tr("Continue"));
+    disconnect(m_pauseButton, &QPushButton::clicked, this, nullptr);
+    connect(m_pauseButton, &QPushButton::clicked, this, &MainWindow::onContinueRequested);
+    m_pauseButton->setEnabled(true);
 }
 
 void MainWindow::onOperationFinished(int errorCount) {
@@ -331,19 +409,94 @@ void MainWindow::onOperationFinished(int errorCount) {
 #endif
 
     if (errorCount > 0) {
-        if (!isVisible()) {
-            show();
-        }
+        if (!isVisible()) show();
+
         m_headerLabel->setText(tr("Finished with %n error.", nullptr, errorCount));
+
+        m_pauseButton->setText(tr("Retry"));
+        disconnect(m_pauseButton, &QPushButton::clicked, this, nullptr);
+        connect(m_pauseButton, &QPushButton::clicked, this, &MainWindow::onRetryRequested);
+        m_pauseButton->setEnabled(true);
+
         m_cancelButton->setText(tr("Close"));
-        disconnect(m_cancelButton, &QPushButton::clicked, this, &MainWindow::onCancelRequested);
+        disconnect(m_cancelButton, &QPushButton::clicked, this, nullptr);
         connect(m_cancelButton, &QPushButton::clicked, this, &QWidget::close);
+        m_cancelButton->setEnabled(true);
+
     } else {
         if (isVisible()) {
-            close();        // Das Fenster war schon offen (Aktion dauerte länger als 2 Sek) -> normal schließen
+            // Das Fenster war schon offen (Aktion dauerte länger als 2 Sek) -> normal schließen
+            close();
         } else {
-            qApp->quit();   // Das Fenster war noch unsichtbar -> beende gesamte Qt-Applikation
+            // Das Fenster war noch unsichtbar -> beende gesamte Qt-Applikation
+            connect(m_workerThread, &QThread::finished, qApp, &QCoreApplication::quit);
+            m_workerThread->quit();
         }
+    }
+}
+
+void MainWindow::onOperationCanceled(int errorCount) {
+    m_isFinished = true;
+
+#ifdef Q_OS_WIN
+    if (m_taskbarList) {
+        HWND hwnd = reinterpret_cast<HWND>(this->winId());
+        m_taskbarList->SetProgressState(hwnd, TBPF_NOPROGRESS);
+    }
+#endif
+
+    if (errorCount > 0) {
+        if (!isVisible()) show();
+
+        m_headerLabel->setText(tr("Canceled. %n error occurred before.", nullptr, errorCount));
+
+        // Pause-Button deaktivieren/ausblenden, da Abbruch final ist
+        m_pauseButton->setEnabled(false);
+        m_pauseButton->setText(tr("Pause"));
+
+        m_cancelButton->setText(tr("Close"));
+        disconnect(m_cancelButton, &QPushButton::clicked, this, nullptr);
+        connect(m_cancelButton, &QPushButton::clicked, this, &QWidget::close);
+        m_cancelButton->setEnabled(true);
+
+    } else {
+        if (isVisible()) {
+            // Das Fenster war schon offen (Aktion dauerte länger als 2 Sek) -> normal schließen
+            close();
+        } else {
+            // Das Fenster war noch unsichtbar -> beende gesamte Qt-Applikation
+            connect(m_workerThread, &QThread::finished, qApp, &QCoreApplication::quit);
+            m_workerThread->quit();
+        }
+    }
+}
+
+void MainWindow::onContinueRequested() {
+    m_pauseButton->setEnabled(false);
+
+    if (m_fileOp) {
+        m_fileOp->doContinue();
+    }
+}
+
+void MainWindow::onPauseRequested() {
+    m_pauseButton->setEnabled(false);
+
+    if (m_fileOp) {
+        m_fileOp->doPause();
+    }
+}
+
+void MainWindow::onRetryRequested() {
+    m_pauseButton->setEnabled(false);
+
+    m_cancelButton->setText(tr("Cancel"));
+    disconnect(m_cancelButton, &QPushButton::clicked, this, nullptr);
+    connect(m_cancelButton, &QPushButton::clicked, this, &MainWindow::onCancelRequested);
+    m_cancelButton->setEnabled(true);
+
+    if (m_fileOp) {
+        m_fileOp->doRetry();
     }
 }
 
@@ -351,9 +504,8 @@ void MainWindow::onCancelRequested() {
     m_headerLabel->setText(tr("Cancelling..."));
     m_cancelButton->setEnabled(false);
 
-    // Rufe die zentrale Abbruch-Logik des Workers auf
     if (m_fileOp) {
-        m_fileOp->cancel();
+        m_fileOp->doCancel();
     }
 }
 
@@ -381,12 +533,4 @@ QString MainWindow::formatAdaptiveSize(quint64 bytes) {
     }
 
     return m_locale.toString(size, 'f', precision) + " " + units[unitIndex];
-}
-
-double MainWindow::SizeToCoef(double aveSize) {
-    if (aveSize < 4096.0) return 2.0;
-    double ret = 65536.0 / aveSize; // 64 KiB
-    if (ret >= 2.0) return 2.0;
-    if (ret <= 0.1) return 0.1;
-    return ret;
 }

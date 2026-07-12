@@ -602,152 +602,50 @@ bool atWordBoundary(const QString &fileName, const QString &word, Qt::CaseSensit
     return false;
 };
 
-// Version for *.desktop files
-uint getDesktopNameMatchQuality(const QString &sFilePath, const QString &searchString, const QStringList &searchStringSplit, const QStringList &recentOpenList, const QString &alternativeNames) {
-    //qDebug() << "searchstring =" << searchString << "vs alternativeName=" << alternativeName;
-
-    if (QString::compare(alternativeNames, searchString, Qt::CaseInsensitive) == 0) {
-        return 99 - recentOpenList.indexOf(sFilePath);
-    }
-
-    if (alternativeNames.startsWith(searchString, Qt::CaseInsensitive)) {
-        return 199 - recentOpenList.indexOf(sFilePath);
-    }
-
-    // Match search terms separatately
-    bool bMatchType1 = true;
-    bool bMatchType2 = false;
-    bool bMatchType3 = false;
-    int iIndex = 0;
-    int iFoundPos = 0;
-
-    for (const QString &word : std::as_const(searchStringSplit)) {
-        iFoundPos = alternativeNames.indexOf(word, 0, Qt::CaseInsensitive);
-
-        if (iFoundPos == -1) { // not found
-            bMatchType1 = false;
-            break;
-        }
-
-        if (iFoundPos == 0) {   // Improved match, since one searchterm found at very beginning of filename
-            bMatchType2 = true;
-            if (iIndex == 0) {  // Further improved match, since *first* searchterm found at very beginning of filename
-                bMatchType3 = true;
-            }
-        } else if (atWordBoundary(alternativeNames, word, Qt::CaseInsensitive)) {
-            // Improved match: one searchterm found at a word boundary in filename
-            bMatchType2 = true;
-        }
-
-        iIndex++;
-    }
-
-    if (bMatchType1 == false) {
-        return 0;
-    }
-
-    if (bMatchType3 == true) {
-        return 399 - recentOpenList.indexOf(sFilePath);
-    } else if (bMatchType2 == true) {
-        return 499 - recentOpenList.indexOf(sFilePath);
-    } else {
-        return 599 - recentOpenList.indexOf(sFilePath);
-    }
-}
-
-uint getLauncherNameMatchQuality(const QFileInfo &fileInfo, const QString &searchString, const QStringList &searchStringSplit, const QStringList &recentOpenList) {
-    QString sFilePath = fileInfo.filePath();
-    QString sFileName = fileInfo.fileName();
-    QString sBaseNameComplete = fileInfo.completeBaseName();    // for "/home/user/archive.tar.gz" this would return "archive.tar"
-    QString sBaseName =  fileInfo.baseName();                   // for "/home/user/archive.tar.gz" this would return "archive"
-
-    if ((QString::compare(sFileName, searchString, Qt::CaseInsensitive) == 0) || (QString::compare(sBaseNameComplete, searchString, Qt::CaseInsensitive) == 0) || (QString::compare(sBaseName, searchString, Qt::CaseInsensitive) == 0)) {
-        return 99 - recentOpenList.indexOf(sFilePath);
-    }
-
-    if (sFileName.startsWith(searchString, Qt::CaseInsensitive)) {
-        return 199 - recentOpenList.indexOf(sFilePath);
-    }
-
-    if (searchString.contains("/", Qt::CaseSensitive) || searchString.contains("\\", Qt::CaseSensitive)) {
-        if (sFilePath.contains(searchString, Qt::CaseInsensitive)) {
-            return 299 - recentOpenList.indexOf(sFilePath);
-        }
-    }
-
-    // Match search terms separatately
-    bool bMatchType1 = true;
-    bool bMatchType2 = false;
-    bool bMatchType3 = false;
-    int iIndex = 0;
-    int iFoundPos = 0;
-
-    for (const QString &word : std::as_const(searchStringSplit)) {
-        iFoundPos = sFileName.indexOf(word, 0, Qt::CaseInsensitive);
-
-        if (iFoundPos == -1) { // not found
-            bMatchType1 = false;
-            break;
-        }
-
-        if (iFoundPos == 0) {   // Improved match, since one searchterm found at very beginning of filename
-            bMatchType2 = true;
-            if (iIndex == 0) {  // Further improved match, since *first* searchterm found at very beginning of filename
-                bMatchType3 = true;
-            }
-        } else if (atWordBoundary(sFileName, word, Qt::CaseInsensitive)) {
-            // Improved match: one searchterm found at a word boundary in filename
-            bMatchType2 = true;
-        }
-
-        iIndex++;
-    }
-
-    if (bMatchType1 == false) {
-        return 0;
-    }
-
-    if (bMatchType3 == true) {
-        return 399 - recentOpenList.indexOf(sFilePath);
-    } else if (bMatchType2 == true) {
-        return 499 - recentOpenList.indexOf(sFilePath);
-    } else {
-        return 599 - recentOpenList.indexOf(sFilePath);
-    }
-}
-
-
-uint getNameMatchQuality(const QFileInfo &fileInfo, const QString &searchString, const QStringList &searchStringSplit, Qt::CaseSensitivity caseSensitivity) {
-    QString sFileName = fileInfo.fileName();
-    QString sBaseNameComplete = fileInfo.completeBaseName();    // for "/home/user/archive.tar.gz" this would return "archive.tar"
-    QString sBaseName =  fileInfo.baseName();                   // for "/home/user/archive.tar.gz" this would return "archive"
-
-    if ((QString::compare(sFileName, searchString, caseSensitivity) == 0) || (QString::compare(sBaseNameComplete, searchString, caseSensitivity) == 0) || (QString::compare(sBaseName, searchString, caseSensitivity) == 0)) {
+uint getNameMatchQuality(const QString &itemName, const QString &path, const QString &searchString, const QStringList &searchStringSplit, Qt::CaseSensitivity caseSensitivity) {
+    if (QString::compare(itemName , searchString, caseSensitivity) == 0) {
         return 1;
     }
 
-    if (sFileName.startsWith(searchString, caseSensitivity)) {
-        return 2;
+    if (itemName.startsWith(searchString, caseSensitivity)) {
+        int searchLen = searchString.length();
+        if (itemName.length() > searchLen && itemName.at(searchLen) == '.') {
+            return 2;
+        }
+        return 3;
     }
-
-    if (searchString.contains("/", Qt::CaseSensitive) || searchString.contains("\\", Qt::CaseSensitive))  {
-        QString sFilePath = fileInfo.filePath();
-        if (sFilePath.contains(searchString, caseSensitivity)) {
-            return 3;
+    
+    QString pathMatchingString;
+    if (searchString.contains(QDir::separator())) {
+        QString itemPath = path.endsWith('/') ? (path + itemName) : (path + '/' + itemName);
+        pathMatchingString = QDir::toNativeSeparators(itemPath);
+        if (pathMatchingString.contains(searchString, caseSensitivity)) {
+            return 4;
         }
     }
 
-    // Match search terms separatately
+    // Match search terms separately
     bool bMatchType1 = true;
-    bool bMatchType2 = false;
-    bool bMatchType3 = false;
+    bool bMatchType2 = false; // Wortgrenze/Start im Dateinamen
+    bool bMatchType3 = false; // Erstes Wort bei Index 0 im Dateinamen
+    bool bMatchType4 = false; // Mindestens ein Wort musste in den Pfad ausweichen
     int iIndex = 0;
-    int iFoundPos = 0;
 
     for (const QString &word : std::as_const(searchStringSplit)) {
-        iFoundPos = sFileName.indexOf(word, 0, caseSensitivity);
+        int iFoundPos = itemName.indexOf(word, 0, caseSensitivity);
 
-        if (iFoundPos == -1) { // not found
+        if (iFoundPos == -1) { // not found in file name
+            if (!pathMatchingString.isEmpty()) {
+                if (pathMatchingString.indexOf(word, 0, caseSensitivity) == -1) { // not found in path either
+                    bMatchType1 = false;
+                    break;
+                } else {
+                    bMatchType4 = true;
+                    iIndex++;
+                    continue;
+                }
+            }
+
             bMatchType1 = false;
             break;
         }
@@ -757,7 +655,7 @@ uint getNameMatchQuality(const QFileInfo &fileInfo, const QString &searchString,
             if (iIndex == 0) {  // Further improved match, since *first* searchterm found at very beginning of filename
                 bMatchType3 = true;
             }
-        } else if (atWordBoundary(sFileName, word, caseSensitivity)) {
+        } else if (atWordBoundary(itemName, word, caseSensitivity)) {
             // Improved match: one searchterm found at a word boundary in filename
             bMatchType2 = true;
         }
@@ -769,13 +667,10 @@ uint getNameMatchQuality(const QFileInfo &fileInfo, const QString &searchString,
         return 0;
     }
 
-    if (bMatchType3 == true) {
-        return 4;
-    } else if (bMatchType2 == true) {
-        return 5;
-    } else {
-        return 6;
-    }
+    if (bMatchType3) return 5;
+    if (bMatchType2) return 6;
+    if (bMatchType4) return 7;
+    return 8;
 }
 
 uint getRegExNameMatchQuality(const QFileInfo &fileInfo, const QRegularExpression &re) {

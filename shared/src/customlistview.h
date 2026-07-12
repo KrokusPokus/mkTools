@@ -5,8 +5,6 @@
 #include <QDropEvent>
 #include <QListView>
 
-
-
 class CustomListView : public QListView {
     Q_OBJECT
 

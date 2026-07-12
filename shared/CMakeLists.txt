@@ -1,7 +1,10 @@
 # HIER KEIN cmake_minimum_required ODER project() ERNEUT AUFRUFEN!
 
 # Statische Bibliothek definieren
-add_library(shared STATIC)
+add_library(shared STATIC
+    src/customitemdelegates.h
+    src/customproxystyle.h
+    src/stylesheets.h)
 
 # Sourcen zuweisen
 target_sources(shared PRIVATE

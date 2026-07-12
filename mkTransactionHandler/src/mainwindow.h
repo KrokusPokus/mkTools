@@ -94,13 +94,20 @@ private slots:
     void onThreadStarted();
     void onProgressUpdated(const CopyStats &stats);
     void onConflictDetected(const Conflict &conflict);
+
+    void onOperationPaused();
+    void onOperationContinued();
     void onOperationFinished(int errorCount);
+    void onOperationCanceled(int errorCount);
+
+    void onPauseRequested();
+    void onContinueRequested();
+    void onRetryRequested();
     void onCancelRequested();
 
 private:
     void setupUi();
     QString formatAdaptiveSize(quint64 bytes);
-    double SizeToCoef(double aveSize);
 
     QLocale m_locale;
     bool m_isFinished;
@@ -115,11 +122,13 @@ private:
     ElidedLabel *m_nameLabel = nullptr;
     ElidedLabel *m_sourceLabel = nullptr;
     ElidedLabel *m_targetLabel = nullptr;
+    QProgressBar *m_progressBar = nullptr;
     CleanLabel *m_timeLabel = nullptr;
     CleanLabel *m_itemsLeftLabel = nullptr;
     CleanLabel *m_speedLabel = nullptr;
     CleanLabel *m_driveModeLabel = nullptr;
-    QPushButton *m_cancelButton;
+    QPushButton *m_pauseButton = nullptr;
+    QPushButton *m_cancelButton = nullptr;
 
     // Threading
     QThread *m_workerThread;

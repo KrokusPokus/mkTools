@@ -105,7 +105,7 @@ void FileOperation::run() {
 
     // PRE-SCAN PASS
     for (const QString &item : items) {
-        if (m_isCancelled.load()) break;
+        if (!checkInterruption()) break;
 
         QFileInfo info(item);
         if (info.isSymbolicLink() || info.isJunction()) {
@@ -120,8 +120,8 @@ void FileOperation::run() {
         }
     }
 
-    if (m_isCancelled.load()) {
-        emit finished(m_stats.filesError);
+    if (!checkInterruption()) {
+        emit wasCanceled(m_stats.filesError);
         return;
     }
 
@@ -131,7 +131,7 @@ void FileOperation::run() {
     m_timer.start();
 
     for (int i = 0; i < items.size(); ++i) {
-        if (m_isCancelled.load()) break;
+        if (!checkInterruption()) break;
 
         FileOpResult result = FileOpResult::Success;
         QString src = items.at(i);
@@ -204,15 +204,26 @@ void FileOperation::run() {
     m_stats.currentName = QString();
     m_stats.currentSourceDir = QString();
     updateProgress(true);
-    emit finished(m_stats.filesError);
+
+    if (!checkInterruption()) {
+        emit wasCanceled(m_stats.filesError);
+    } else {
+        emit wasFinished(m_stats.filesError);
+    }
 
     // <- Hier wird 'priorityGuard' zerstört und der Thread-Modus automatisch zurückgesetzt
 }
 
-void FileOperation::cancel() {
+void FileOperation::doCancel() {
     QMutexLocker locker(&m_mutex);
 
     m_isCancelled.store(true);
+
+    // Falls der Thread in der Pause-Bedingung schläft -> Aufwecken!
+    {
+        QMutexLocker pauseLocker(&m_pauseMutex);
+        m_pauseCond.wakeAll();
+    }
 
     ConflictState expected = ConflictState::WaitingForUser;
     if (m_conflictState.compare_exchange_strong(expected, ConflictState::SignalSent)) {
@@ -253,9 +264,9 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                 return FileOpResult::Cancelled;
             case ConflictResolution::Overwrite:
                 if (!QDir(dst).removeRecursively()) {
+                    if (!checkInterruption()) return FileOpResult::Cancelled;
                     m_stats.filesError++;
                     updateProgress();
-                    if (m_isCancelled.load()) return FileOpResult::Cancelled;
                     return FileOpResult::Error;
                 }
                 break;
@@ -272,9 +283,9 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                             updateProgress();
                             return FileOpResult::Success;
                         } else {
+                            if (!checkInterruption()) return FileOpResult::Cancelled;
                             m_stats.filesError++;
                             updateProgress();
-                            if (m_isCancelled.load()) return FileOpResult::Cancelled;
                             return FileOpResult::Error;
                         }
                     } else {
@@ -288,12 +299,12 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                 if (fileSizeSource == fileSizeTarget && fileSizeSource <= 134217728) {
                     auto crcSource = calculateCRC32(src);
                     if (!crcSource) { // Wenn crcSource kein Wert ist, gab es einen Abbruch oder Fehler
-                        return m_isCancelled.load() ? FileOpResult::Cancelled : FileOpResult::Error;
+                        return !checkInterruption() ? FileOpResult::Cancelled : FileOpResult::Error;
                     }
 
                     auto crcTarget = calculateCRC32(dst);
                     if (!crcTarget) {
-                        return m_isCancelled.load() ? FileOpResult::Cancelled : FileOpResult::Error;
+                        return !checkInterruption() ? FileOpResult::Cancelled : FileOpResult::Error;
                     }
 
                     // If the target file has the same crc as the source file (so same content), just skip.
@@ -308,13 +319,13 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                                 m_stats.filesWritten++; // Zählt als erfolgreich verarbeitete Datei
                                 m_stats.bytesWritten += fileSizeSource; // Fortschrittsbalken auffüllen
                                 updateProgress();
-                                if (m_isCancelled.load()) return FileOpResult::Cancelled;
+                                if (!checkInterruption()) return FileOpResult::Cancelled;
                                 return FileOpResult::Success;
                             } else {
+                                if (!checkInterruption()) return FileOpResult::Cancelled;
                                 qDebug() << "Move source with same context couln't be deleted:" << src;
                                 m_stats.filesError++;
                                 updateProgress();
-                                if (m_isCancelled.load()) return FileOpResult::Cancelled;
                                 return FileOpResult::Error;
                             }
                         } else {
@@ -345,9 +356,9 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                 return FileOpResult::Cancelled;
             case ConflictResolution::Overwrite:
                 if (!QFile::remove(dst)) {
+                    if (!checkInterruption()) return FileOpResult::Cancelled;
                     m_stats.filesError++;
                     updateProgress();
-                    if (m_isCancelled.load()) return FileOpResult::Cancelled;
                     return FileOpResult::Error;
                 }
                 break;
@@ -395,14 +406,14 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
             m_stats.filesWritten++;
         }
     } else {
+        if (!checkInterruption()) return FileOpResult::Cancelled;
         m_stats.filesError++;
         updateProgress();
-        if (m_isCancelled.load()) return FileOpResult::Cancelled;
         return FileOpResult::Error;
     }
 
     updateProgress();
-    if (m_isCancelled.load()) return FileOpResult::Cancelled;
+    if (!checkInterruption()) return FileOpResult::Cancelled;
     return FileOpResult::Success;
 }
 
@@ -490,7 +501,7 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
     bool anySkipped = false;
 
     for (const QFileInfo &entry : entries) {
-        if (m_isCancelled.load()) return FileOpResult::Cancelled;
+        if (!checkInterruption()) return FileOpResult::Cancelled;
 
         QDir dstDir(dst);
         QString childDst = dstDir.filePath(entry.fileName());
@@ -520,7 +531,7 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
 }
 
 FileOpResult FileOperation::deleteDirRecursively(const QString &dirPath) {
-    if (m_isCancelled.load()) return FileOpResult::Cancelled;
+    if (!checkInterruption()) return FileOpResult::Cancelled;
 
     QDir dir(dirPath);
     const QFileInfoList entries = dir.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::Hidden | QDir::System);
@@ -528,7 +539,7 @@ FileOpResult FileOperation::deleteDirRecursively(const QString &dirPath) {
     bool anyErrors = false;
 
     for (const QFileInfo &entry : entries) {
-        if (m_isCancelled.load()) return FileOpResult::Cancelled;
+        if (!checkInterruption()) return FileOpResult::Cancelled;
 
         if (entry.isDir() && !entry.isSymbolicLink() && !entry.isJunction()) {
             FileOpResult r = deleteDirRecursively(entry.filePath());
@@ -624,7 +635,7 @@ std::pair<qint64, int> FileOperation::getDirStats(const QString &dirPath) {
     const QFileInfoList entries = dir.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries| QDir::Hidden | QDir::System);
 
     for (const QFileInfo &entry : entries) {
-        if (m_isCancelled.load()) return {bytes, files};
+        if (!checkInterruption()) return {bytes, files};
 
         if (entry.isDir() && !entry.isSymbolicLink() && !entry.isJunction()) {
             auto sub = getDirStats(entry.filePath());
@@ -652,7 +663,7 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
 
     while (!srcFile.atEnd()) {
         // 1. Abbruchprüfung VOR dem nächsten Lese/Schreibzyklus
-        if (m_isCancelled.load()) {
+        if (!checkInterruption()) {
             success = false;
             break;
         }
@@ -673,7 +684,7 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
         updateProgress();
     }
 
-    if (success && !m_isCancelled.load()) {
+    if (success && checkInterruption()) {
         QFileInfo srcInfo(src);
         dstFile.flush();
         dstFile.setFileTime(srcInfo.fileTime(QFileDevice::FileBirthTime), QFileDevice::FileBirthTime);
@@ -686,7 +697,7 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
     dstFile.close();
 
     // 4. MÜLLBESEITIGUNG: Wenn abgebrochen wurde oder ein Fehler auftrat, Fragment löschen
-    if (!success || m_isCancelled.load()) {
+    if (!success || !checkInterruption()) {
         QFile::remove(dst); // Löscht die unvollständige Datei im Zielverzeichnis
         return false;
     }
@@ -738,7 +749,7 @@ std::optional<quint32> FileOperation::calculateCRC32(const QString &filePath) {
     QByteArray buffer(bufferSize, Qt::Uninitialized);
 
     while (!file.atEnd()) {
-        if (m_isCancelled.load()) {
+        if (!checkInterruption()) {
             file.close();
             return std::nullopt;
         }
@@ -764,7 +775,7 @@ ConflictResolution FileOperation::askUserForResolution(const Conflict &conflict)
     {
         QMutexLocker locker(&m_mutex);
 
-        if (m_isCancelled.load()) {
+        if (!checkInterruption()) {
             return ConflictResolution::Cancel;
         }
 
@@ -798,5 +809,49 @@ bool FileOperation::removeReadOnlyAttribute(const QString &path) {
         permissions |= QFileDevice::WriteUser;
         return QFile::setPermissions(path, permissions);
     }
+    return true;
+}
+
+void FileOperation::doPause() {
+    m_isPaused.store(true);
+}
+
+void FileOperation::doContinue() {
+    m_isPaused.store(false);
+    m_pauseCond.wakeAll(); // Weckt den wartenden Thread auf
+}
+
+void FileOperation::doRetry() {
+    m_isCancelled.store(false);
+    m_isPaused.store(false);
+    m_applyToAll = false; // Reset, damit der User bei neuen Konflikten wieder gefragt wird
+
+    // Startet die Schleife von vorne. Bereits kopierte Dateien werden via CRC übersprungen.
+    // FALSCH: run(); -> Würde den GUI-Thread blockieren
+    // RICHTIG: Signalisiert dem Worker-Thread, run() in SEINEM Thread auszuführen
+    QMetaObject::invokeMethod(this, "run", Qt::QueuedConnection);
+}
+
+bool FileOperation::checkInterruption() {
+    if (m_isCancelled.load()) {
+        return false;
+    }
+
+    if (m_isPaused.load()) {
+        emit wasPaused();
+
+        QMutexLocker locker(&m_pauseMutex);
+        // Schlafen legen, solange Pause aktiv ist und kein Abbruch kommt
+        while (m_isPaused.load() && !m_isCancelled.load()) {
+            m_pauseCond.wait(&m_pauseMutex);
+        }
+
+        if (m_isCancelled.load()) {
+            return false;
+        }
+
+        emit wasContinued(); // Thread läuft wieder weiter
+    }
+
     return true;
 }

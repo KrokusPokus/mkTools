@@ -1,14 +1,15 @@
 #ifndef FILEOPERATION_H
 #define FILEOPERATION_H
 
-#include <QList>
-#include <QObject>
 #include <QElapsedTimer>
+#include <QList>
 #include <QMutex>
+#include <QObject>
 #include <QSemaphore>
 #include <QStorageInfo>
 #include <QString>
 #include <QUrl>
+#include <QWaitCondition>
 #include <Qt>
 
 #include <atomic>
@@ -50,11 +51,17 @@ public:
 signals:
     void progress(const CopyStats &stats);
     void conflictDetected(const Conflict &conflict);  // blockierend via Qt::BlockingQueuedConnection
-    void finished(int filesError);
+    void wasContinued();
+    void wasPaused();
+    void wasFinished(int filesError);
+    void wasCanceled(int filesError);
 
 public slots:
     void run();
-    void cancel();
+    void doContinue();
+    void doPause();
+    void doRetry();
+    void doCancel();
     void resolveConflict(ConflictResolution resolution, bool applyToAll);
 
 private:
@@ -85,6 +92,11 @@ private:
     ConflictResolution m_applyToAllResolution = ConflictResolution::Skip;
     QSemaphore m_semaphore;
     QMutex m_mutex;
+
+    std::atomic<bool> m_isPaused{false};
+    QMutex m_pauseMutex;
+    QWaitCondition m_pauseCond;
+    bool checkInterruption();
 
     enum class ConflictState {
         Idle,           // Worker tut andere Dinge

@@ -43,10 +43,7 @@ QString argumentsToWinString(const QStringList &args);
 #endif
 
 bool atWordBoundary(const QString &fileName, const QString &word, Qt::CaseSensitivity cs);
-uint getDesktopNameMatchQuality(const QString &sFilePath, const QString &searchString, const QStringList &searchStringSplit, const QStringList &recentOpenList, const QString &alternativeNames);
-uint getLauncherNameMatchQuality(const QFileInfo &fileInfo, const QString &searchString, const QStringList &searchStringSplit, const QStringList &recentOpenList);
-
-uint getNameMatchQuality(const QFileInfo &fileInfo, const QString &searchStringFilename, const QStringList &searchStringSplit, Qt::CaseSensitivity caseSensitivity);
+uint getNameMatchQuality(const QString &itemName, const QString &path, const QString &searchString, const QStringList &searchStringSplit, Qt::CaseSensitivity caseSensitivity);
 uint getRegExNameMatchQuality(const QFileInfo &fileInfo, const QRegularExpression &re);
 uint getContentMatchCount(const QFileInfo &fileInfo, const QString &searchStringContent, Qt::CaseSensitivity caseSensitivity, const QSet<QString> &m_FileExtTextSet);
 uint getRegExContentMatchCount(const QFileInfo &fileInfo, const QRegularExpression &re, const QSet<QString> &m_FileExtTextSet);

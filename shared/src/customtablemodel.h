@@ -1,6 +1,9 @@
 #ifndef CUSTOMTABLEMODEL_H
 #define CUSTOMTABLEMODEL_H
 
+#include "helpers.h"
+#include "settingsmanager.h"
+
 #include <QAbstractTableModel>
 #include <QDateTime>
 #include <QFileIconProvider>
@@ -10,17 +13,16 @@
 #include <QUrl>
 #include <vector>
 
-#include "helpers.h"
-#include "settingsmanager.h"
-
 struct CustomFileInfo {
     QString name;
     QString displayName;
     QString drivePath;
     QString path;
+    QString filePath;
     qint64 size;
     QDateTime date;
     QString type;
+    QString crc;
     mutable QSize sizeHint;
     int anchorPathLength;
     int iconIndex;
@@ -45,6 +47,11 @@ struct ThumbnailCacheEntry {
     QDateTime lastModified;
 };
 
+struct CrcCacheEntry {
+    QString crc;
+    QDateTime lastModified;
+};
+
 class CustomTableModel : public QAbstractTableModel {
     Q_OBJECT
 
@@ -53,6 +60,18 @@ signals:
     void searchFinished(uint itemsFound, uint nameMatched, uint contentMatched, bool searchInterrupted);
 
 public:
+    enum Column {
+        eColName = 0,
+        eColPath = 1,
+        eColSize = 2,
+        eColDate = 3,
+        eColType = 4,
+        eColQuality = 5,
+        eColCount = 6,
+        eColCRC = 7,
+        ColumnCount // Ein oft genutzter Trick: Steht immer am Ende und gibt automatisch die Gesamtzahl der Spalten an (hier 8)
+    };
+
     enum ModelRoles {
         IsCutRole = Qt::UserRole + 1,
         IsDirectoryRole = Qt::UserRole + 2,
@@ -99,9 +118,13 @@ public:
     bool isThumbnailUpToDate(const QString &path, const QDateTime &currentDate) const;
     void addPathThumbnail(const QString &path, const QPixmap &thumb, const QDateTime &lastChanged, int row);
 
+    bool isCrcUpToDate(const QString &path, const QDateTime &currentDate) const;
+    void addCRC(const QString &path, const QString &crc, const QDateTime &lastChanged, int row);
+
     void setCutMarkers(const QStringList &absolutePaths);
     void clearCutMarkers();
     bool isDirectory(int row) const;
+    void removeFilePaths(const QSet<QString> &paths);
 
     const QString &currentDirectoryPath() const { return m_currentDirectoryPath; }
 
@@ -111,6 +134,7 @@ public:
 
 private:
     QPixmap generateDummyThumb(const QString &dummyName) const;
+    CustomFileInfo createCustomFileInfo(const QFileInfo &fileInfo, int anchorPathLength = 0) const;
 
     std::vector<CustomFileInfo> m_files;
     QString m_currentDirectoryPath;
@@ -124,6 +148,8 @@ private:
 
     mutable QHash<QString, IconCacheEntry> m_individualIconCache;         // Icon-Cache für individuelle Pfade (z.B. exe-Dateien)
     mutable QHash<QString, ThumbnailCacheEntry> m_individualThumbnailCache;
+    mutable QHash<QString, CrcCacheEntry> m_CrcCache;
+
 
     SettingsManager *m_settings;
     QFontMetrics m_fontMetrics;

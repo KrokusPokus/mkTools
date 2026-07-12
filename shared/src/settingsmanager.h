@@ -1,10 +1,8 @@
 #ifndef SETTINGSMANAGER_H
 #define SETTINGSMANAGER_H
 
-#include <QDir>
 #include <QSet>
 #include <QSettings>
-#include <QStandardPaths>
 #include <QString>
 
 class SettingsManager {

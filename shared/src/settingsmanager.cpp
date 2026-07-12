@@ -1,8 +1,10 @@
 #include "settingsmanager.h"
 
 #include <QCoreApplication>
+#include <QDir>
 #include <QFile>
 #include <QProcessEnvironment>
+#include <QStandardPaths>
 
 SettingsManager::SettingsManager() {
 	load(); // Lädt beim Erstellen automatisch

@@ -6,6 +6,7 @@
 #include <QMimeData>
 #include <QPainter>
 #include <QRegularExpression>
+#include <QStandardPaths>
 #include <QStorageInfo>
 
 #include <algorithm>        // needed for std::reverse();
@@ -58,7 +59,7 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
             case 4: return file.type;
             case 5: return file.nameMatchQuality;
             case 6: return file.contentMatchCount;
-            case 7: return QVariant();  // CRC
+            case 7: return file.crc;
             default: return QVariant();
         }
     }
@@ -71,7 +72,7 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
             case 4: return file.type;
             case 5: return file.nameMatchQuality;
             case 6: return file.contentMatchCount;
-            case 7: return QVariant();  // CRC
+            case 7: return file.crc;
             default:
                 return data(index, Qt::DisplayRole);
         }
@@ -79,7 +80,7 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
     else if (role == Qt::DecorationRole) {
         if (col != 0) return QVariant(); // Icons nur in der Namensspalte anzeigen
 
-        QString absolutePath = QDir::cleanPath(file.path + "/" + file.name);
+        QString absolutePath = file.filePath;
 #ifdef Q_OS_WIN
         if (!file.drivePath.isEmpty()) {
             absolutePath = file.drivePath;
@@ -240,6 +241,7 @@ QVariant CustomTableModel::headerData(int section, Qt::Orientation orientation, 
 Qt::ItemFlags CustomTableModel::flags(const QModelIndex &index) const {
     if (!index.isValid()) {                             // No index -> no item -> background!
         if (!m_currentDirectoryPath.isEmpty() && m_currentDirectoryPath != "drives://") {
+            qDebug() << "m_currentDirectoryPath:" << m_currentDirectoryPath;
         	return Qt::NoItemFlags | Qt::ItemIsDropEnabled;  // Background needs to have Qt::ItemIsDropEnabled to become a valid drop target.
     	}
         return Qt::NoItemFlags;
@@ -284,7 +286,7 @@ bool CustomTableModel::setData(const QModelIndex &index, const QVariant &value, 
     }
 
     // --- 1. DATEI AUF DER FESTPLATTE UMBENENNEN ---
-    QString oldPath = QDir::cleanPath(m_files[row].path + "/" + m_files[row].name);
+    QString oldPath = m_files[row].filePath;
     QString newPath = QDir::cleanPath(m_files[row].path + "/" + newName);
     
     // Versuchen, das Filesystem-Objekt umzubenennen
@@ -300,6 +302,7 @@ bool CustomTableModel::setData(const QModelIndex &index, const QVariant &value, 
     QString ext;
     info.name = newName;
     info.displayName = newName;
+    info.filePath = newPath;
 
     if (!info.isDir) {
         int lastDot = newName.lastIndexOf('.');
@@ -353,7 +356,7 @@ QString CustomTableModel::filePath(const QModelIndex &index) const {
     }
 
     int row = index.row();
-
+	
     if (row < 0 || row >= static_cast<int>(m_files.size())) {
         return QString();
     }
@@ -366,7 +369,7 @@ QString CustomTableModel::filePath(const QModelIndex &index) const {
     } else
 #endif
     {
-        return QDir::cleanPath(file.path + "/" + file.name);
+        return file.filePath;
     }
 }
 
@@ -375,7 +378,7 @@ bool CustomTableModel::isPathIconUpToDate(const QString &path, const QDateTime &
     if (it == m_individualIconCache.end()) {
         return false;
     }
-    // Wenn das Datum im Cache ungültig ist (Laufwerk-Dummy) oder exakt übereinstimmt -> Aktuell!
+    // Wenn das Datum im Cache ungültig ist (Laufwerk-Dummy) oder exakt übereinstimmt -> Aktuell bzw. passt schon!
     return !it.value().lastModified.isValid() || it.value().lastModified == currentDate;
 }
 
@@ -392,6 +395,7 @@ bool CustomTableModel::isThumbnailUpToDate(const QString &path, const QDateTime 
     if (it == m_individualThumbnailCache.end()) {
         return false;
     }
+    // Wenn das Datum im Cache ungültig ist (Laufwerk-Dummy) oder exakt übereinstimmt -> Aktuell bzw. passt schon!
     return !it.value().lastModified.isValid() || it.value().lastModified == currentDate;
 }
 
@@ -402,7 +406,7 @@ void CustomTableModel::addPathThumbnail(const QString &path, const QPixmap &thum
 
     if (targetRow == -1) {
         for (int i = 0; i < m_files.size(); ++i) {
-            QString fullFilePath = QDir::cleanPath(m_files[i].path + "/" + m_files[i].name);
+            QString fullFilePath = m_files[i].filePath;
             if (fullFilePath == path) {
                 targetRow = i;
                 break;
@@ -416,12 +420,46 @@ void CustomTableModel::addPathThumbnail(const QString &path, const QPixmap &thum
     }
 }
 
+bool CustomTableModel::isCrcUpToDate(const QString &path, const QDateTime &currentDate) const {
+    auto it = m_CrcCache.find(path);
+    if (it == m_CrcCache.end()) {
+        return false;
+    }
+    // Wenn das Datum im Cache ungültig ist (Laufwerk-Dummy) oder exakt übereinstimmt -> Aktuell bzw. passt schon!
+    return !it.value().lastModified.isValid() || it.value().lastModified == currentDate;
+}
+
+void CustomTableModel::addCRC(const QString &path, const QString &crc, const QDateTime &lastModified, int row) {
+    m_CrcCache.insert(path, {crc, lastModified});
+
+    int targetRow = row;
+
+    if (targetRow == -1) {
+        for (int i = 0; i < m_files.size(); ++i) {
+            QString fullFilePath = m_files[i].filePath;
+            if (fullFilePath == path) {
+                targetRow = i;
+                break;
+            }
+        }
+    }
+
+    if (targetRow != -1 && targetRow < static_cast<int>(m_files.size())) {
+        if (m_files[targetRow].crc != crc) {
+            m_files[targetRow].crc = crc;
+
+            QModelIndex idx = this->index(targetRow, CustomTableModel::eColCRC);
+            emit dataChanged(idx, idx, {Qt::DisplayRole});
+        }
+    }
+}
+
 void CustomTableModel::setCutMarkers(const QStringList &absolutePaths) {
     // Wir wandeln die Liste zur performanten Suche in ein QSet um
     QSet<QString> cutSet(absolutePaths.begin(), absolutePaths.end());
 
     for (size_t i = 0; i < m_files.size(); ++i) {
-        QString fullPath = QDir::cleanPath(m_files[i].path + "/" + m_files[i].name);
+        QString fullPath = m_files[i].filePath;
         bool newCutState = cutSet.contains(fullPath);
 
         if (m_files[i].isCut != newCutState) {
@@ -482,7 +520,7 @@ QMimeData* CustomTableModel::mimeData(const QModelIndexList &indexes) const {
 
     for (int row : processedRows) {
         if (row >= 0 && row < static_cast<int>(m_files.size())) {
-            QString absolutePath = QDir::cleanPath(m_files[row].path + "/" + m_files[row].name);
+            QString absolutePath = m_files[row].filePath;
             urls.append(QUrl::fromLocalFile(absolutePath));
         }
     }
@@ -517,7 +555,7 @@ bool CustomTableModel::canDropMimeData(const QMimeData *data, Qt::DropAction act
         // Wir prüfen das Ganze nur, wenn das Ziel-Item ein Ordner ist
         if (m_files[parentRow].isDir) {
             // Das ist der absolute Pfad des Ordners, über dem die Maus gerade schwebt:
-            QString targetFolderPath = QDir::cleanPath(m_files[parentRow].path + "/" + m_files[parentRow].name);
+            QString targetFolderPath = m_files[parentRow].filePath;
 
             // Schleife über alle Dateien/Ordner, am Mauszeiger hängen
             QList<QUrl> urls = data->urls();
@@ -603,7 +641,7 @@ bool CustomTableModel::dropMimeData(const QMimeData *data, Qt::DropAction action
     if (parent.isValid()) {
         int parentRow = parent.row();
         if (parentRow >= 0 && parentRow < static_cast<int>(m_files.size()) && m_files[parentRow].isDir) {
-            targetDir = QDir::cleanPath(m_files[parentRow].path + "/" + m_files[parentRow].name);
+            targetDir = m_files[parentRow].filePath;
         }
     }
 
@@ -691,7 +729,7 @@ QPixmap CustomTableModel::generateDummyThumb(const QString &dummyName) const {
 void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, const QString &searchStringFilename, const QString &searchStringContent, bool bRegExFilename, bool bRegExContent, bool bFilenameCaseSensitive, bool bContentCaseSensitive, Qt::CheckState cbDirState, const QSet<QString> &FileExtTextSet) {
     m_abortSearch.store(false);
     std::vector<CustomFileInfo> newFiles;
-    m_currentDirectoryPath = searchDir;
+    //m_currentDirectoryPath = searchDir; // commented out, since it would allow dropping on background (after first search)
 
     uint iItemsFound = 0;
     uint iNameMatched = 0;
@@ -761,11 +799,13 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
 
         iItemsFound++;
 
+        QFileInfo fileInfo = it.fileInfo();
+
         if (!bSearchStringFilenameEmpty) {
             if (bRegExFilename) {
-                nameMatchQuality = getRegExNameMatchQuality(it.fileInfo(), qreFileName);
+                nameMatchQuality = getRegExNameMatchQuality(fileInfo, qreFileName);
             } else {
-                nameMatchQuality = getNameMatchQuality(it.fileInfo(), searchStringFilename, searchStringFilenameSplit, caseSensitivityFilename);
+                nameMatchQuality = getNameMatchQuality(fileInfo.fileName(), fileInfo.path(), searchStringFilename, searchStringFilenameSplit, caseSensitivityFilename);
             }
 
             if (nameMatchQuality == 0) {
@@ -776,9 +816,9 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
 
         if (!bsearchStringContentEmpty) {
             if (bRegExContent) {
-                contentMatchCount = getRegExContentMatchCount(it.fileInfo(), qreContent, FileExtTextSet);
+                contentMatchCount = getRegExContentMatchCount(fileInfo, qreContent, FileExtTextSet);
             } else {
-                contentMatchCount = getContentMatchCount(it.fileInfo(), searchStringContent, caseSensitivityContent, FileExtTextSet);
+                contentMatchCount = getContentMatchCount(fileInfo, searchStringContent, caseSensitivityContent, FileExtTextSet);
             }
 
             if (contentMatchCount == 0) {
@@ -790,43 +830,7 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
 
         iNameMatched++;
 
-        QFileInfo fileInfo = it.fileInfo();
-
-        CustomFileInfo info;
-        info.name = fileInfo.fileName();
-        info.isDir = fileInfo.isDir();
-#ifdef Q_OS_WIN
-        info.isHidden = fileInfo.isHidden() || info.name.startsWith('.');
-#else
-        info.isHidden = fileInfo.isHidden();
-#endif
-        info.size = info.isDir ? 0 : fileInfo.size();
-        info.date = fileInfo.lastModified();
-        info.iconIndex = 0;
-
-        QString ext;
-        info.displayName = info.name;
-
-        if (!info.isDir) {
-            int lastDot = info.name.lastIndexOf('.');
-            if (lastDot > 0) {
-                ext = info.name.sliced(lastDot + 1).toLower();
-
-                if (!m_settings->showFileExtensions && m_settings->knownExts.contains(ext)) {
-                    info.displayName = info.name.sliced(0, lastDot);
-                }
-            }
-        }
-
-        info.type = ext;
-
-#ifdef Q_OS_WIN
-        info.isExecutable = (ext == "exe" || ext == "scr" || ext == "msi" || ext == "com" || ext == "bat");
-#else
-        info.isExecutable = fileInfo.isExecutable();
-#endif
-        info.path = fileInfo.absolutePath();
-        info.anchorPathLength = iAnchorPathLength;
+        CustomFileInfo info = createCustomFileInfo(fileInfo, iAnchorPathLength);
         info.nameMatchQuality = nameMatchQuality;
         info.contentMatchCount = contentMatchCount;
 
@@ -854,7 +858,7 @@ void CustomTableModel::populateModel_mkLauncher(const QStringList &searchFolders
 
     int nameMatchQuality = -1;
 
-#if defined(Q_OS_LINUX)
+//#if defined(Q_OS_LINUX)
     static const QString currentDesktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP").toUpper();
     static const QStringList appDirs = QStandardPaths::standardLocations(QStandardPaths::ApplicationsLocation);
     // Note to self: appDirs contains the path in the order from user specific to system defaults
@@ -942,36 +946,19 @@ void CustomTableModel::populateModel_mkLauncher(const QStringList &searchFolders
                             alternativeName += " " + iniGenericName;
                         }
 
-                        nameMatchQuality = getDesktopNameMatchQuality(filePath, searchString, searchStringSplit, recentOpenList, alternativeName);
+                        QFileInfo fileInfo = iter.fileInfo();
+
+                        nameMatchQuality = getNameMatchQuality(alternativeName, fileInfo.path(), searchString, searchStringSplit, Qt::CaseInsensitive);
                         if (nameMatchQuality == 0) {
                             continue;
+                        } else {
+                            int penalty = recentOpenList.indexOf(fileInfo.filePath());
+                            nameMatchQuality = ((nameMatchQuality * 100) - 1) - penalty;
                         }
 
                         iNameMatched++;
 
-                        QFileInfo fileInfo = iter.fileInfo();
-
-                        CustomFileInfo info;
-                        info.name = fileInfo.fileName();
-                        info.isDir = fileInfo.isDir();
-                        info.isHidden = fileInfo.isHidden();
-                        info.size = info.isDir ? 0 : fileInfo.size();
-                        info.date = fileInfo.lastModified();
-                        info.iconIndex = 0;
-
-                        QString ext;
-                        info.displayName = info.name;
-
-                        if (!info.isDir) {
-                            int lastDot = info.name.lastIndexOf('.');
-                            if (lastDot > 0) {
-                                ext = info.name.sliced(lastDot + 1).toLower();
-
-                                if (!m_settings->showFileExtensions && m_settings->knownExts.contains(ext)) {
-                                    info.displayName = info.name.sliced(0, lastDot);
-                                }
-                            }
-                        }
+                        CustomFileInfo info = createCustomFileInfo(fileInfo);
 
                         QString displayName = iniNameLocalised.isEmpty() ? iniName : iniNameLocalised;
                         if (iSystemSettings == 1) {
@@ -981,12 +968,6 @@ void CustomTableModel::populateModel_mkLauncher(const QStringList &searchFolders
                             info.displayName = displayName;
                         }
 
-                        info.type = ext;
-
-                        info.isExecutable = fileInfo.isExecutable();
-
-                        info.path = fileInfo.absolutePath();
-                        info.anchorPathLength = 0;
                         info.nameMatchQuality = nameMatchQuality;
 
                         newFiles.push_back(info);
@@ -999,7 +980,7 @@ void CustomTableModel::populateModel_mkLauncher(const QStringList &searchFolders
             break;
         }
     }
-#endif
+//#endif
 
     if (bSearchInterrupted == false) {
         // Search through list of user-defined folders
@@ -1017,51 +998,19 @@ void CustomTableModel::populateModel_mkLauncher(const QStringList &searchFolders
 
                 iItemsFound++;
 
-                nameMatchQuality = getLauncherNameMatchQuality(iter.fileInfo(), searchString, searchStringSplit, recentOpenList);
+                QFileInfo fileInfo = iter.fileInfo();
+
+                nameMatchQuality = getNameMatchQuality(fileInfo.fileName(), fileInfo.path(), searchString, searchStringSplit, Qt::CaseInsensitive);
                 if (nameMatchQuality == 0) {
                     continue;
+                } else {
+                    int penalty = recentOpenList.indexOf(fileInfo.filePath());
+                    nameMatchQuality = ((nameMatchQuality * 100) - 1) - penalty;
                 }
 
                 iNameMatched++;
 
-                QFileInfo fileInfo = iter.fileInfo();
-
-                CustomFileInfo info;
-                info.name = fileInfo.fileName();
-                info.isDir = fileInfo.isDir();
-#ifdef Q_OS_WIN
-                info.isHidden = fileInfo.isHidden() || info.name.startsWith('.');
-#else
-                info.isHidden = fileInfo.isHidden();
-#endif
-                info.size = info.isDir ? 0 : fileInfo.size();
-                info.date = fileInfo.lastModified();
-                info.iconIndex = 0;
-
-                QString ext;
-                info.displayName = info.name;
-
-                if (!info.isDir) {
-                    int lastDot = info.name.lastIndexOf('.');
-                    if (lastDot > 0) {
-                        ext = info.name.sliced(lastDot + 1).toLower();
-
-                        if (!m_settings->showFileExtensions && m_settings->knownExts.contains(ext)) {
-                            info.displayName = info.name.sliced(0, lastDot);
-                        }
-                    }
-                }
-
-                info.type = ext;
-
-#ifdef Q_OS_WIN
-                info.isExecutable = (ext == "exe" || ext == "scr" || ext == "msi" || ext == "com" || ext == "bat");
-#else
-                info.isExecutable = fileInfo.isExecutable();
-#endif
-
-                info.path = fileInfo.absolutePath();
-                info.anchorPathLength = 0;
+                CustomFileInfo info = createCustomFileInfo(fileInfo);
                 info.nameMatchQuality = nameMatchQuality;
 
                 newFiles.push_back(info);
@@ -1131,44 +1080,8 @@ void CustomTableModel::populateModel_mkFolderWidget(const QString &dirPath) {
         QDirIterator it(dirPath, filters, QDirIterator::NoIteratorFlags);
         while (it.hasNext()) {
             it.next();
-    
-            QFileInfo fileInfo = it.fileInfo();
-    
-            CustomFileInfo info;
-            info.name = fileInfo.fileName();
-            info.isDir = fileInfo.isDir();
-#ifdef Q_OS_WIN
-            info.isHidden = fileInfo.isHidden() || info.name.startsWith('.');
-#else
-            info.isHidden = fileInfo.isHidden();
-#endif
-            info.size = info.isDir ? 0 : fileInfo.size();
-            info.date = fileInfo.lastModified();
-            info.iconIndex = 0;
-    
-            QString ext;
-            info.displayName = info.name;
-    
-            if (!info.isDir) {
-                int lastDot = info.name.lastIndexOf('.');
-                if (lastDot > 0) {
-                    ext = info.name.sliced(lastDot + 1).toLower();
 
-                    if (!m_settings->showFileExtensions && m_settings->knownExts.contains(ext)) {
-                        info.displayName = info.name.sliced(0, lastDot);
-                    }
-                }
-            }
-    
-            info.type = ext;
-    
-#ifdef Q_OS_WIN
-            info.isExecutable = (ext == "exe" || ext == "scr" || ext == "msi" || ext == "com" || ext == "bat");
-#else
-            info.isExecutable = fileInfo.isExecutable();
-#endif
-            info.path = fileInfo.absolutePath();
-            info.anchorPathLength = 0;
+            CustomFileInfo info = createCustomFileInfo(it.fileInfo());
 
             newFiles.push_back(info);
         }
@@ -1177,4 +1090,65 @@ void CustomTableModel::populateModel_mkFolderWidget(const QString &dirPath) {
     beginResetModel();
     m_files = std::move(newFiles);
     endResetModel();
+}
+
+void CustomTableModel::removeFilePaths(const QSet<QString> &paths) {
+    if (paths.isEmpty()) return;
+
+    // Wir laufen rückwärts durch unsere internen Daten
+    for (int i = m_files.size() - 1; i >= 0; --i) {
+        const CustomFileInfo &file = m_files[i];
+        QString currentPath = file.filePath;
+
+        if (paths.contains(currentPath)) {
+            // Qt mitteilen, dass wir genau diese Zeile gleich löschen
+            beginRemoveRows(QModelIndex(), i, i);
+
+            m_files.erase(m_files.begin() + i);
+
+            // Optional: Auch aus dem CRC-Cache werfen, da die Datei weg ist
+            m_CrcCache.remove(currentPath);
+
+            endRemoveRows(); // View aktualisiert sich jetzt automatisch sauber
+        }
+    }
+}
+
+CustomFileInfo CustomTableModel::createCustomFileInfo(const QFileInfo &fileInfo, int anchorPathLength) const {
+    CustomFileInfo info;
+    info.name = fileInfo.fileName();
+    info.isDir = fileInfo.isDir();
+#ifdef Q_OS_WIN
+    info.isHidden = fileInfo.isHidden() || info.name.startsWith('.');
+#else
+    info.isHidden = fileInfo.isHidden();
+#endif
+    info.size = info.isDir ? 0 : fileInfo.size();
+    info.date = fileInfo.lastModified();
+    info.iconIndex = 0;
+    info.displayName = info.name;
+
+    QString ext;
+    if (!info.isDir) {
+        int lastDot = info.name.lastIndexOf('.');
+        if (lastDot > 0) {
+            ext = info.name.sliced(lastDot + 1).toLower();
+
+            if (!m_settings->showFileExtensions && m_settings->knownExts.contains(ext)) {
+                info.displayName = info.name.sliced(0, lastDot);
+            }
+        }
+    }
+
+    info.type = ext;
+
+#ifdef Q_OS_WIN
+    info.isExecutable = (ext == "exe" || ext == "scr" || ext == "msi" || ext == "com" || ext == "bat");
+#else
+    info.isExecutable = fileInfo.isExecutable();
+#endif
+    info.path = fileInfo.absolutePath();
+    info.filePath = fileInfo.absoluteFilePath();
+    info.anchorPathLength = anchorPathLength;
+    return info;
 }
