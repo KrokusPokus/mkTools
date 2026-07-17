@@ -25,13 +25,14 @@ void SettingsManager::load() {
     knownExts = audioExts | imageExts | textExts | videoExts | miscExts;
 
     // Handlers
-    audioEditor      = QDir::toNativeSeparators(s.value("Handlers/AudioEditor", DEFAULT_AUDIO_EDITOR).toString());
-    imageEditor      = QDir::toNativeSeparators(s.value("Handlers/ImageEditor", DEFAULT_IMAGE_EDITOR).toString());
-    textEditor       = QDir::toNativeSeparators(s.value("Handlers/TextEditor", DEFAULT_TEXT_EDITOR).toString());
-    videoEditor      = QDir::toNativeSeparators(s.value("Handlers/VideoEditor", DEFAULT_VIDEO_EDITOR).toString());
+    audioEditor      = QDir::toNativeSeparators(s.value("Handlers/EditorAudio", DEFAULT_AUDIO_EDITOR).toString());
+    imageEditor      = QDir::toNativeSeparators(s.value("Handlers/EditorImage", DEFAULT_IMAGE_EDITOR).toString());
+    textEditor       = QDir::toNativeSeparators(s.value("Handlers/EditorText", DEFAULT_TEXT_EDITOR).toString());
+    videoEditor      = QDir::toNativeSeparators(s.value("Handlers/EditorVideo", DEFAULT_VIDEO_EDITOR).toString());
+	diffTool         = QDir::toNativeSeparators(s.value("Handlers/DiffTool", DEFAULT_DIFF_TOOL).toString());
     fileManager      = QDir::toNativeSeparators(s.value("Handlers/FileManager", DEFAULT_FILE_MANAGER).toString());
-    searchTool       = QDir::toNativeSeparators(s.value("Handlers/SearchTool", DEFAULT_SEARCH_TOOL).toString());
     renameTool       = QDir::toNativeSeparators(s.value("Handlers/RenameTool", DEFAULT_RENAME_TOOL).toString());
+    searchTool       = QDir::toNativeSeparators(s.value("Handlers/SearchTool", DEFAULT_SEARCH_TOOL).toString());
 
     // Interface
     alternatingRowColors = s.value("Interface/AlternatingRowColors", DEFAULT_ALTERNATING_ROW_COLORS).toBool();
@@ -63,9 +64,11 @@ void SettingsManager::getDefaults() {
     DEFAULT_IMAGE_EDITOR = "gimp.desktop";
     DEFAULT_TEXT_EDITOR = "org.kde.kate.desktop";
     DEFAULT_VIDEO_EDITOR = "org.kde.kdenlive.desktop";
+    DEFAULT_DIFF_TOOL = "";
     DEFAULT_FILE_MANAGER = "mkFolderWidget";
-    DEFAULT_SEARCH_TOOL = "mkFileSearch";
     DEFAULT_RENAME_TOOL = "";
+    DEFAULT_SEARCH_TOOL = "mkFileSearch";
+
 
     DEFAULT_ALTERNATING_ROW_COLORS = true;
     DEFAULT_EXECUTABLE_FILES_RED = false;
@@ -89,9 +92,10 @@ void SettingsManager::getDefaults() {
     DEFAULT_IMAGE_EDITOR = "";
     DEFAULT_TEXT_EDITOR = "";
     DEFAULT_VIDEO_EDITOR = "";
+    DEFAULT_DIFF_TOOL = "";
     DEFAULT_FILE_MANAGER = "mkFolderWidget";
-    DEFAULT_SEARCH_TOOL = "mkFileSearch";
     DEFAULT_RENAME_TOOL = "";
+    DEFAULT_SEARCH_TOOL = "mkFileSearch";
 
     DEFAULT_ALTERNATING_ROW_COLORS = false;
     DEFAULT_EXECUTABLE_FILES_RED = true;
@@ -130,13 +134,14 @@ void SettingsManager::saveSettings() {
     safeSetValue(s, "Extensions/FileExtVideo", formatStringSet(videoExts));
 
     // Handlers
-    safeSetValue(s, "Handlers/AudioEditor", audioEditor);
-    safeSetValue(s, "Handlers/ImageEditor", imageEditor);
-    safeSetValue(s, "Handlers/TextEditor", textEditor);
-    safeSetValue(s, "Handlers/VideoEditor", videoEditor);
+    safeSetValue(s, "Handlers/EditorAudio", audioEditor);
+    safeSetValue(s, "Handlers/EditorImage", imageEditor);
+    safeSetValue(s, "Handlers/EditorText", textEditor);
+    safeSetValue(s, "Handlers/EditorVideo", videoEditor);
+	safeSetValue(s, "Handlers/DiffTool", diffTool);
     safeSetValue(s, "Handlers/FileManager", fileManager);
-    safeSetValue(s, "Handlers/SearchTool", searchTool);
     safeSetValue(s, "Handlers/RenameTool", renameTool);
+    safeSetValue(s, "Handlers/SearchTool", searchTool);
 
     // Interface
     safeSetValue(s, "Interface/AlternatingRowColors", alternatingRowColors);

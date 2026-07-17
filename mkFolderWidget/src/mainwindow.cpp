@@ -567,7 +567,7 @@ void MainWindow::onToggleListViewHeader() {
 void MainWindow::onDirectoryChangedOnDisk(const QString &path) {
     Q_UNUSED(path);
 
-    qDebug() << "QFileSystemWatcher::directoryChanged:" << path;
+    qDebug() << "QFileSystemWatcher::directoryChanged:" << path << "m_isEditingFile:" << m_isEditingFile << "m_refreshPendingWhileEditing:" << m_refreshPendingWhileEditing << "m_ignoreNextWatcherSignal:" << m_ignoreNextWatcherSignal;
     // Used during Rename EditBox to suppress directory reloads
     if (m_isEditingFile) {
         m_refreshPendingWhileEditing = true;
@@ -671,6 +671,7 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
     m_thumbnailView->setRootIndex(QModelIndex());
 
     m_currentDirectory = directoryPath;
+    m_ignoreNextWatcherSignal = false;
 
     qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed till loadDirectory() finished";
 
@@ -1113,7 +1114,33 @@ void MainWindow::action_ListViewDeleteFiles(bool bRecycleOnly) {
     if (!showDeleteConfirmationDialog(pathList, bRecycleOnly)) {
         return;
     }
+/*
+    // Special case: delete directly instead of handing over to mkTransactionHandler
+    if (hasOnlyFiles(pathList)) {
+        QSet<QString> successfullyDeletedPaths;
 
+        for (const QString &path : std::as_const(pathList)) {
+            bool success = false;
+            if (bRecycleOnly) {
+                success = QFile::moveToTrash(path);
+            } else {
+                success = QFile::remove(path);
+            }
+
+            if (success) {
+                successfullyDeletedPaths.insert(path);
+            } else {
+                qDebug() << "Could not delete:" << path;
+            }
+        }
+
+        if (!successfullyDeletedPaths.isEmpty()) {
+            m_abstractModel->removeFilePaths(successfullyDeletedPaths);
+        }
+
+        return;
+    }
+*/
     QList<QUrl> urlFileList;
     for (const QString &path : std::as_const(pathList)) {
         if (!path.isEmpty()) {
@@ -1126,6 +1153,8 @@ void MainWindow::action_ListViewDeleteFiles(bool bRecycleOnly) {
     } else {
         fileOperation(OperationType::Delete, urlFileList, "", false);
     }
+
+// FileSystemWatcher will trigger the update of the view
 }
 
 void MainWindow::action_ListViewCutFiles() {

@@ -33,6 +33,7 @@ QString getDisplayName(const QFileInfo &fileInfo, bool showFileExtensions);
 QString getDisplayName(const QString &filePath, bool isDir, bool showFileExtensions);
 QPixmap generateThumbnail(const QFileInfo &fileInfo);
 bool hasIconExt(const QFileInfo &fileInfo);
+bool hasOnlyFiles(const QStringList &pathList);
 bool isCurrentProcessElevated();
 bool onSameStorageDevice(const QString &pathA, const QString &pathB);
 void createInternetShortcut(const QString &urlStr, const QString &targetDir, const QString &webTitle);

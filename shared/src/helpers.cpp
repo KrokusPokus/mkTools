@@ -409,6 +409,18 @@ bool hasIconExt(const QFileInfo &fileInfo) {
     return (ext == "cur" || ext == "ico" || ext == "icns");
 }
 
+bool hasOnlyFiles(const QStringList &pathList) {
+    bool onlyFiles = true;
+    for (QString path : pathList) {
+        if (!QFileInfo(path).isFile()) {
+            onlyFiles = false;
+            break;
+        }
+    }
+
+    return onlyFiles;
+}
+
 bool onSameStorageDevice(const QString &pathA, const QString &pathB) {
     QString folderA = QFileInfo(pathA).absolutePath();
     QString folderB = QFileInfo(pathB).absolutePath();

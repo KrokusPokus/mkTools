@@ -24,9 +24,10 @@ public:
 	QString imageEditor;
 	QString textEditor;
 	QString videoEditor;
+    QString diffTool;
 	QString fileManager;
-    QString searchTool;
     QString renameTool;
+    QString searchTool;
 
 	bool alternatingRowColors;
     bool executableFilesRed;
@@ -65,6 +66,7 @@ private:
     QString DEFAULT_IMAGE_EDITOR;
     QString DEFAULT_TEXT_EDITOR;
     QString DEFAULT_VIDEO_EDITOR;
+    QString DEFAULT_DIFF_TOOL;
     QString DEFAULT_FILE_MANAGER;
     QString DEFAULT_SEARCH_TOOL;
     QString DEFAULT_RENAME_TOOL;

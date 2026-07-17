@@ -858,7 +858,7 @@ void CustomTableModel::populateModel_mkLauncher(const QStringList &searchFolders
 
     int nameMatchQuality = -1;
 
-//#if defined(Q_OS_LINUX)
+#if defined(Q_OS_LINUX)
     static const QString currentDesktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP").toUpper();
     static const QStringList appDirs = QStandardPaths::standardLocations(QStandardPaths::ApplicationsLocation);
     // Note to self: appDirs contains the path in the order from user specific to system defaults
@@ -980,7 +980,7 @@ void CustomTableModel::populateModel_mkLauncher(const QStringList &searchFolders
             break;
         }
     }
-//#endif
+#endif
 
     if (bSearchInterrupted == false) {
         // Search through list of user-defined folders
@@ -1080,7 +1080,6 @@ void CustomTableModel::populateModel_mkFolderWidget(const QString &dirPath) {
         QDirIterator it(dirPath, filters, QDirIterator::NoIteratorFlags);
         while (it.hasNext()) {
             it.next();
-
             CustomFileInfo info = createCustomFileInfo(it.fileInfo());
 
             newFiles.push_back(info);

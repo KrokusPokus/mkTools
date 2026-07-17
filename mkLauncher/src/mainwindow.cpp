@@ -998,6 +998,32 @@ void MainWindow::action_ListViewDeleteFiles(bool bRecycleOnly) {
         return;
     }
 
+    // Special case: delete directly instead of handing over to mkTransactionHandler
+    if (hasOnlyFiles(pathList)) {
+        QSet<QString> successfullyDeletedPaths;
+
+        for (const QString &path : std::as_const(pathList)) {
+            bool success = false;
+            if (bRecycleOnly) {
+                success = QFile::moveToTrash(path);
+            } else {
+                success = QFile::remove(path);
+            }
+
+            if (success) {
+                successfullyDeletedPaths.insert(path);
+            } else {
+                qDebug() << "Could not delete:" << path;
+            }
+        }
+
+        if (!successfullyDeletedPaths.isEmpty()) {
+            m_abstractModel->removeFilePaths(successfullyDeletedPaths);
+        }
+
+        return;
+    }
+
     QList<QUrl> urlFileList;
     for (const QString &path : std::as_const(pathList)) {
         if (!path.isEmpty()) {
@@ -1011,6 +1037,7 @@ void MainWindow::action_ListViewDeleteFiles(bool bRecycleOnly) {
         fileOperation(OperationType::Delete, urlFileList, "", false);
     }
 
+	// Trigger update of the view
     startSearch();
 }
 
