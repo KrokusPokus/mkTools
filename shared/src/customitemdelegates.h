@@ -95,15 +95,16 @@ public:
 
         if (QLineEdit *lineEdit = qobject_cast<QLineEdit*>(editor)) {
             QString text = lineEdit->text();
-
             QString displayName = index.data(CustomTableModel::DisplayNameRole).toString();
-            int displayNameLength = displayName.length();
 
-            if (displayNameLength > 0 && displayNameLength <= text.length()) {
+            // Prüfen, ob displayName nicht leer ist UND tatsächlich den Anfang von text bildet
+            if (!displayName.isEmpty() && text.startsWith(displayName)) {
+                int displayNameLength = displayName.length();
                 QTimer::singleShot(0, lineEdit, [lineEdit, displayNameLength]() {
                     lineEdit->setSelection(0, displayNameLength);
                 });
             } else {
+                // Fallback für .desktop-Dateien oder abweichende DisplayNames
                 lineEdit->selectAll();
             }
         }
@@ -183,15 +184,16 @@ public:
 
         if (QLineEdit *lineEdit = qobject_cast<QLineEdit*>(editor)) {
             QString text = lineEdit->text();
-
             QString displayName = index.data(CustomTableModel::DisplayNameRole).toString();
-            int displayNameLength = displayName.length();
 
-            if (displayNameLength > 0 && displayNameLength <= text.length()) {
+            // Prüfen, ob displayName nicht leer ist UND tatsächlich den Anfang von text bildet
+            if (!displayName.isEmpty() && text.startsWith(displayName)) {
+                int displayNameLength = displayName.length();
                 QTimer::singleShot(0, lineEdit, [lineEdit, displayNameLength]() {
                     lineEdit->setSelection(0, displayNameLength);
                 });
             } else {
+                // Fallback für .desktop-Dateien oder abweichende DisplayNames
                 lineEdit->selectAll();
             }
         }
@@ -357,15 +359,16 @@ public:
 
         if (QLineEdit *lineEdit = qobject_cast<QLineEdit*>(editor)) {
             QString text = lineEdit->text();
-
             QString displayName = index.data(CustomTableModel::DisplayNameRole).toString();
-            int displayNameLength = displayName.length();
 
-            if (displayNameLength > 0 && displayNameLength <= text.length()) {
+            // Prüfen, ob displayName nicht leer ist UND tatsächlich den Anfang von text bildet
+            if (!displayName.isEmpty() && text.startsWith(displayName)) {
+                int displayNameLength = displayName.length();
                 QTimer::singleShot(0, lineEdit, [lineEdit, displayNameLength]() {
                     lineEdit->setSelection(0, displayNameLength);
                 });
             } else {
+                // Fallback für .desktop-Dateien oder abweichende DisplayNames
                 lineEdit->selectAll();
             }
         }

@@ -93,6 +93,7 @@ private:
     void selectAllItems();
     void setupClipboardForCopyOrCut(const QStringList &cutFilePaths, bool isCut);
     void updateColumns();
+    void updateSearch();
     QPixmap generateThumbnailIcon(const QFileInfo &fileInfo);
     static QImage generateThumbnailAsync(const QFileInfo &fileInfo);
 

@@ -83,6 +83,8 @@ private:
     void navigateForward();
     void navigateToClipboardPath();
     void navigateUp();
+    void navigateSiblingNext();
+    void navigateSiblingPrevious();
     void fileOperation(OperationType opType, const QList<QUrl> &urls, const QString &targetDir, bool fromClipboard = false);
     void onShowContextMenu(QAbstractItemView *senderView, const QPoint &pos);
     void parseMimeAppsList(const QString &path);

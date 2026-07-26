@@ -2329,6 +2329,14 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                     action_ListViewCutFiles();
                     return true;
                 }
+                else if (keyEvent->key() == Qt::Key_Up) {
+                    navigateSiblingPrevious();
+                    return true;
+                }
+                else if (keyEvent->key() == Qt::Key_Down) {
+                    navigateSiblingNext();
+                    return true;
+                }
             }
             else {
                 if (keyEvent->key() == Qt::Key_F2) {
@@ -2672,3 +2680,16 @@ void MainWindow::navigateForward() {
     browseFolder(targetPath, QString(), true);
 }
 
+void MainWindow::navigateSiblingNext() {
+    QString siblingPath = getSiblingPath(m_currentDirectory, false);
+    if (!siblingPath.isEmpty()) {
+        browseFolder(siblingPath, QString(), false);
+    }
+}
+
+void MainWindow::navigateSiblingPrevious() {
+    QString siblingPath = getSiblingPath(m_currentDirectory, true);
+    if (!siblingPath.isEmpty()) {
+        browseFolder(siblingPath, QString(), false);
+    }
+}

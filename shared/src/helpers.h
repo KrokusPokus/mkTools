@@ -55,6 +55,7 @@ bool isCurrentProcessElevated();
 bool onSameStorageDevice(const QString &pathA, const QString &pathB);
 void createInternetShortcut(const QString &urlStr, const QString &targetDir, const QString &webTitle);
 QString readLnkTargetOnLinux(const QString &filePath);  // currently unused
+QString getSiblingPath(const QString &path, bool previous);
 
 #ifdef Q_OS_WIN
 bool startProcessElevatedWin(const QString &programPath, const QString &arguments);

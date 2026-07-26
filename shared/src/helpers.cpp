@@ -1,5 +1,6 @@
 #include "helpers.h"
 
+#include <QCollator>
 #include <QCoreApplication>
 #include <QDir>
 #include <QImageReader>
@@ -859,4 +860,49 @@ QString readLnkTargetOnLinux(const QString &lnkFilePath) {
     // 6. Pfad als ASCII-Null-terminierten String auslesen
     const char* pathPtr = data.constData() + finalPathOffset;
     return QString::fromLocal8Bit(pathPtr);
+}
+
+QString getSiblingPath(const QString &path, bool previous) {
+    QFileInfo info(path);
+    QString currentName = info.fileName();
+    QDir parentDir = info.dir();
+
+    // Abbruch, falls der Parent-Ordner nicht existiert oder der Pfad ungültig ist
+    if (!parentDir.exists() || currentName.isEmpty()) {
+        return QString();
+    }
+
+    // Nur Ordner auflisten, "." und ".." ignorieren.
+    // QDir::Unsorted spart CPU-Zeit, da wir die Liste ohnehin selbst sortieren.
+    parentDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
+    parentDir.setSorting(QDir::Unsorted);
+
+    QStringList siblings = parentDir.entryList();
+
+    // QCollator konfigurieren
+    QCollator collator;
+    collator.setNumericMode(true); // "Natural Sorting": 2 kommt vor 10
+    collator.setCaseSensitivity(Qt::CaseInsensitive); // a und A gleich behandeln
+
+    // QStringList mit dem QCollator als Funktor sortieren.
+    // QCollator hat den operator() überladen, std::sort akzeptiert ihn daher direkt.
+    std::sort(siblings.begin(), siblings.end(), collator);
+
+    // Position des aktuellen Ordners in der nun natürlich sortierten Liste finden
+    int currentIndex = siblings.indexOf(currentName);
+
+    if (currentIndex == -1) {
+        return QString();
+    }
+
+    // Ziel-Index berechnen
+    int targetIndex = previous ? (currentIndex - 1) : (currentIndex + 1);
+
+    // Prüfen, ob wir noch im Gültigkeitsbereich der Liste sind
+    if (targetIndex >= 0 && targetIndex < siblings.size()) {
+        return parentDir.absoluteFilePath(siblings.at(targetIndex));
+    }
+
+    // Am Anfang oder Ende der Liste angekommen -> Kein Sibling verfügbar
+    return QString();
 }

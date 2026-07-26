@@ -2063,6 +2063,10 @@ QImage MainWindow::generateThumbnailAsync(const QFileInfo &fileInfo) {
     return QImage();
 }
 
+void MainWindow::updateSearch() {
+    handleTextChange(QString());
+}
+
 //######################################################################################
 // Functions to receive data from other applications
 
@@ -2318,6 +2322,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
         else {
             if (keyEvent->key() == Qt::Key_F2) {
                 action_ListViewRenameFiles();
+                return true;
+            }
+            else if (keyEvent->key() == Qt::Key_F5) {
+                updateSearch();
                 return true;
             }
             else if (keyEvent->key() == Qt::Key_Backspace) {
