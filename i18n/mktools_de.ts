@@ -103,57 +103,57 @@
 <context>
     <name>CustomTableModel</name>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="198"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="207"/>
         <source>Name</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="200"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="209"/>
         <source>Path</source>
         <translation>Pfad</translation>
     </message>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="202"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="211"/>
         <source>Size</source>
         <translation>Größe</translation>
     </message>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="204"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="213"/>
         <source>Changed</source>
         <translation>Geändert</translation>
     </message>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="206"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="215"/>
         <source>Type</source>
         <translation>Typ</translation>
     </message>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="208"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="217"/>
         <source>Rating</source>
         <translation>Qualität</translation>
     </message>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="210"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="219"/>
         <source>Count</source>
         <translation>Treffer</translation>
     </message>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="212"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="221"/>
         <source>CRC</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="965"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="974"/>
         <source>System Settings:</source>
         <translation>Systemeinstellungen:</translation>
     </message>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="1048"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="1057"/>
         <source>Optical Drive</source>
         <translation>Optisches Laufwerk</translation>
     </message>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="1050"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="1059"/>
         <source>Local Drive</source>
         <translation>Lokaler Datenträger</translation>
     </message>
@@ -184,17 +184,17 @@
 <context>
     <name>FileOperation</name>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="99"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="100"/>
         <source>Scanning files...</source>
         <translation>Scanne Dateien...</translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="623"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="652"/>
         <source> (Copy)</source>
         <translation> (Kopie)</translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="623"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="652"/>
         <source> (Copy %1)</source>
         <translation> (Kopie %1)</translation>
     </message>
@@ -202,12 +202,12 @@
 <context>
     <name>FilePropertiesDialog</name>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="28"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="33"/>
         <source>Properties of %1 elements</source>
         <translation>Eigenschaften von %1 Elementen</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="32"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="37"/>
         <source>Properties of %1</source>
         <translation>Eigenschaften von %1</translation>
     </message>
@@ -223,7 +223,7 @@
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="62"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="82"/>
         <source>&lt;strong&gt;%n element selected&lt;/strong&gt;</source>
         <translation>
             <numerusform>&lt;strong&gt;%n Element ausgewählt&lt;/strong&gt;</numerusform>
@@ -231,262 +231,281 @@
         </translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="83"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="304"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="103"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="391"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="417"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="453"/>
         <source>Calculating content...</source>
         <translation>Berechne Inhalt...</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="85"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="259"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="105"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="302"/>
         <source>Calculating size...</source>
         <translation>Berechne Größe...</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="87"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="107"/>
         <source>Multiple types</source>
         <translation>Verschiedene Typen</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="89"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="192"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="109"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="219"/>
         <source>Type:</source>
         <translation>Typ:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="90"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="110"/>
         <source>Total size:</source>
         <translation>Gesamtgröße:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="91"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="306"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="111"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="390"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="416"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="452"/>
         <source>Content:</source>
         <translation>Inhalt:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="107"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="558"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="127"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="665"/>
         <source>OK</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="108"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="559"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="128"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="666"/>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="195"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="222"/>
         <source>Network Drive</source>
         <translation>Netzwerklaufwerk</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="197"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="224"/>
         <source>Optical Drive</source>
         <translation>Optisches Laufwerk</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="199"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="226"/>
         <source>Local Drive</source>
         <translation>Lokaler Datenträger</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="211"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="238"/>
         <source>File System:</source>
         <translation>Dateisystem:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="214"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="243"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="248"/>
         <source>MimeType:</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="224"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="258"/>
         <source>Path:</source>
         <translation>Pfad:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="241"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="275"/>
         <source>Used Space:</source>
         <translation>Belegter Platz:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="243"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="277"/>
         <source>Size:</source>
         <translation>Größe:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="256"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="264"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="277"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="290"/>
         <location filename="../shared/src/filepropertiesdialog.cpp" line="297"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="619"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="308"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="320"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="344"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="689"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="699"/>
         <source>%1 (%2 Bytes)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="274"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="317"/>
         <source>Free Space:</source>
         <translation>Freier Platz:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="294"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="341"/>
         <source>Total Space:</source>
         <translation>Gesamtkapazität:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="323"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="360"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="378"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="362"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="406"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="435"/>
         <source>Target:</source>
         <translation>Ziel:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="328"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="367"/>
         <source>Arguments:</source>
         <translation>Argumente:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="333"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="372"/>
         <source>WorkDir:</source>
         <translation>Arbeitsverzeichnis:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="397"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="443"/>
+        <source>Target (raw):</source>
+        <translation>Ziel (orig.):</translation>
+    </message>
+    <message>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="489"/>
         <source>Created:</source>
         <translation>Erstellt:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="404"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="496"/>
         <source>Modified:</source>
         <translation>Geändert:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="411"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="503"/>
         <source>Accessed:</source>
         <translation>Letzter Zugriff:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="433"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="540"/>
         <source>Attributes:</source>
         <translation>Attribute:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="434"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="541"/>
         <source>Read-only</source>
         <translation>Schreibgeschützt</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="440"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="547"/>
         <source>Hidden</source>
         <translation>Versteckt</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="446"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="553"/>
         <source>System</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="461"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="568"/>
         <source>Owner:</source>
         <translation>Eigentümer:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="465"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="572"/>
         <source>Group:</source>
         <translation>Gruppe:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="469"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="576"/>
         <source>Permissions:</source>
         <translation>Berechtigungen:</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="481"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="588"/>
         <source>Read</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="482"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="589"/>
         <source>Write</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="483"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="590"/>
         <source>eXecute</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="486"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="593"/>
         <source>Owner</source>
         <translation>Eigentümer</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="486"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="593"/>
         <source>Group</source>
         <translation>Gruppe</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="486"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="593"/>
         <source>Others</source>
         <translation>Sonstige</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="504"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="511"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="611"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="618"/>
         <source>%1 (%2)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="625"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="704"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="721"/>
+        <source>  Real: </source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="712"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="717"/>
         <source>%1 Files, %2 Folders</source>
         <translation>%1 Dateien, %2 Ordner</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="684"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="885"/>
         <source>SymLink</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="688"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="889"/>
         <source>Junction</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="691"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="892"/>
         <source>Shortcut</source>
         <translation>Verknüpfung</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="695"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="896"/>
         <source>Folder</source>
         <translation>Ordner</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="698"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="899"/>
         <source>File</source>
         <translation>Datei</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="698"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="899"/>
         <source>-File</source>
         <translation>-Datei</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="726"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="767"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="927"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="968"/>
         <source>Error</source>
         <translation>Fehler</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="727"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="928"/>
         <source>Failed to apply file attributes.
 Do you have permission to modify this file?</source>
         <translation>Datei-Attribute konnten nicht gesetzt werden. Hast du die notwendigen Rechte, diese Datei zu modifizieren?</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="768"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="969"/>
         <source>Failed to set permissions for:
 %1
 
@@ -517,7 +536,7 @@ Do you have sufficient rights?</source>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="134"/>
         <source>Directories</source>
-        <translation>Verzeichnisse</translation>
+        <translation>Ordner</translation>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="139"/>
@@ -567,11 +586,11 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="356"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2060"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2082"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="290"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1905"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1934"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="332"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1964"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1991"/>
         <source>Delete</source>
         <translation>Löschen</translation>
     </message>
@@ -679,113 +698,113 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="967"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="800"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="801"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="695"/>
         <source>View</source>
         <translation>Ansichtsmodus</translation>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="988"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="821"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="822"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="716"/>
         <source>Sort by</source>
         <translation>Sortieren nach</translation>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="1037"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="870"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="871"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="765"/>
         <source>Send to</source>
         <translation>Senden an</translation>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="1084"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="917"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="918"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="812"/>
         <source>Open with</source>
         <translation>Öffnen mit</translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1977"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1987"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1822"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1832"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1881"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1891"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1999"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2009"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1851"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1861"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1908"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1918"/>
         <source>Delete File</source>
         <translation>Datei löschen</translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1978"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1823"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1882"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2000"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1852"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1909"/>
         <source>Do you really want to move this file into the recycle bin?</source>
         <translation>Möchtest du diese Datei wirklich in den Papierkorb verschieben?</translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1980"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1990"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1825"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1835"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1884"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1894"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2002"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2012"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1854"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1864"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1911"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1921"/>
         <source>Delete multiple elements</source>
         <translation>Mehrere Dateien löschen</translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1981"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1826"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1885"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2003"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1855"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1912"/>
         <source>Do you really want to move these %1 files into the recycle bin?</source>
         <translation>Möchtest du diese %1 Dateien wirklich in den Papierkorb verschieben?</translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1985"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1830"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1889"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2007"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1859"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1916"/>
         <source>This process cannot be undone.</source>
         <translation>Dieser Vorgang kann nicht rückgängig gemacht werden.</translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1988"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1833"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1892"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2010"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1862"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1919"/>
         <source>Are you sure you want to delete this file permanently?</source>
         <translation>Möchtest du diese Datei wirklich unwiderruflich löschen?</translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1991"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1836"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1895"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2013"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1865"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1922"/>
         <source>Are you sure you want to delete these %1 files permanently?</source>
         <translation>Möchtest du diese %1 Dateien wirklich unwiderruflich löschen?</translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2047"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1892"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1951"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2069"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1921"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1978"/>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="119"/>
         <source>Name:</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2049"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1894"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1953"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2071"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1923"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1980"/>
         <source>Size:</source>
         <translation>Größe:</translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2051"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1896"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1955"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2073"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1925"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1982"/>
         <source>Date:</source>
         <translation>Datum:</translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2061"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1906"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1965"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2083"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1935"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1992"/>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="203"/>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="493"/>
         <source>Cancel</source>
@@ -812,22 +831,22 @@ Do you have sufficient rights?</source>
         <translation>Text Datei</translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="738"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="739"/>
         <source>This Computer</source>
         <translation>Dieser Computer</translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="842"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="843"/>
         <source>New</source>
         <translation>Neu</translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2413"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2442"/>
         <source>New Folder</source>
         <translation>Neuer Ordner</translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2465"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2494"/>
         <source>New Text Document</source>
         <translation>Neue Text Datei</translation>
     </message>
@@ -1004,43 +1023,78 @@ Do you have sufficient rights?</source>
         <translation></translation>
     </message>
     <message numerus="yes">
-        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="225"/>
         <source>Copying %n file. (%1)</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>Kopiere %n Datei. (%1)</numerusform>
             <numerusform>Kopiere %n Dateien. (%1)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="229"/>
         <source>Moving %n file. (%1)</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>Verschiebe %n Datei. (%1)</numerusform>
             <numerusform>Verschiebe %n Dateien. (%1)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="233"/>
         <source>Linking %n file. (%1)</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>Verlinke %n Datei. (%1)</numerusform>
             <numerusform>Verlinke %n Dateien. (%1)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="237"/>
         <source>Deleting %n file. (%1)</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>Lösche %n Datei. (%1)</numerusform>
             <numerusform>Lösche %n Dateien. (%1)</numerusform>
         </translation>
     </message>
     <message numerus="yes">
-        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="241"/>
         <source>Recycling %n file. (%1)</source>
-        <translation>
+        <translation type="vanished">
             <numerusform>Recycle %n Datei. (%1)</numerusform>
             <numerusform>Recycle %n Dateien. (%1)</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="225"/>
+        <source>Copying %n file (%1)</source>
+        <translation>
+            <numerusform>Kopiere %n Datei (%1)</numerusform>
+            <numerusform>Kopiere %n Dateien (%1)</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="229"/>
+        <source>Moving %n file (%1)</source>
+        <translation>
+            <numerusform>Verschiebe %n Datei (%1)</numerusform>
+            <numerusform>Verschiebe %n Dateien (%1)</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="233"/>
+        <source>Linking %n file (%1)</source>
+        <translation>
+            <numerusform>Verlinke %n Datei (%1)</numerusform>
+            <numerusform>Verlinke %n Dateien (%1)</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="237"/>
+        <source>Deleting %n file (%1)</source>
+        <translation>
+            <numerusform>Lösche %n Datei (%1)</numerusform>
+            <numerusform>Lösche %n Dateien (%1)</numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="241"/>
+        <source>Recycling %n file (%1)</source>
+        <translation>
+            <numerusform>Recycle %n Datei (%1)</numerusform>
+            <numerusform>Recycle %n Dateien (%1)</numerusform>
         </translation>
     </message>
     <message>
@@ -1112,16 +1166,16 @@ Do you have sufficient rights?</source>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="329"/>
         <source>Deleting %n file (%1) at %2%</source>
         <translation>
-            <numerusform>Lösche %n Datei (%1) nach &apos;%2&apos; bei %3%</numerusform>
-            <numerusform>Lösche %n Dateien (%1) nach &apos;%2&apos; bei %3%</numerusform>
+            <numerusform>Lösche %n Datei (%1) bei %2%</numerusform>
+            <numerusform>Lösche %n Dateien (%1) bei %2%</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="333"/>
         <source>Recycling %n file (%1) at %2%</source>
         <translation>
-            <numerusform>Recycle %n Datei (%1) nach &apos;%2&apos; bei %3%</numerusform>
-            <numerusform>Recycle %n Dateien (%1) nach &apos;%2&apos; bei %3%</numerusform>
+            <numerusform>Recycle %n Datei (%1) bei %2%</numerusform>
+            <numerusform>Recycle %n Dateien (%1) bei %2%</numerusform>
         </translation>
     </message>
     <message>

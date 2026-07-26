@@ -1,6 +1,8 @@
 #ifndef FILEOPERATION_H
 #define FILEOPERATION_H
 
+#include "helpers.h"
+
 #include <QElapsedTimer>
 #include <QList>
 #include <QMutex>
@@ -34,11 +36,16 @@ struct Conflict {
     QString targetPath;;
 };
 
+struct FailedItem {
+    QString sourcePath;
+    QString targetPath;
+    OperationType type;
+    QString errorReason;
+};
+
 enum class FileOpResult { Success, Skipped, Error, Cancelled};
 
 enum class ConflictResolution { Overwrite, Skip, Cancel };
-
-enum class OperationType { Copy, Move, Link, Delete, Recycle };
 
 class FileOperation : public QObject {
     Q_OBJECT
@@ -47,6 +54,8 @@ public:
                            QList<QUrl> urls,
                            QString targetDir = QString(),
                            QObject *parent = nullptr);
+
+    QList<FailedItem> failedItems() const { return m_failedItems; }
 
 signals:
     void progress(const CopyStats &stats);
@@ -65,18 +74,21 @@ public slots:
     void resolveConflict(ConflictResolution resolution, bool applyToAll);
 
 private:
-    FileOpResult copyOrMoveFile(const QString &src, const QString &dst, bool isCrossDevice);
-    FileOpResult copyOrMoveDir(const QString &src, const QString &dst, bool isCrossDevice);
+    FileOpResult copyOrMoveFile(const QString &src, const QString &dst, bool isCrossDevice, bool forceCopyOnly);
+    FileOpResult copyOrMoveDir(const QString &src, const QString &dst, bool isCrossDevice, bool forceCopyOnly);
     FileOpResult deleteDirRecursively(const QString &dirPath);
     QString calculateRelativeDisplayPath(const QFileInfo &info);
     bool isOnSameDevice(const QString &src, const QString &dst) const;
     QString generateUniqueCopyName(const QFileInfo &srcInfo, const QString &targetDir);
-    std::pair<qint64, int> getDirStats(const QString &dirPath);
+    std::pair<qint64, int> calculateStats(const QStringList &filePaths);
     bool copyFileInChunks(const QString &src, const QString &dst);
     void updateProgress(bool force = false);
     std::optional<quint32> calculateCRC32(const QString &filePath);
     ConflictResolution askUserForResolution(const Conflict &conflict);
     bool removeReadOnlyAttribute(const QString &path);
+    void runRetryList(const QList<FailedItem> &itemsToRetry);
+    bool checkTargetSymlinkSupport(const QString &targetDir) const;
+    bool targetSupportsSymlinks(); // Lazy Evaluator
 
     CopyStats m_stats;
     QElapsedTimer m_timer;
@@ -86,6 +98,8 @@ private:
     QString m_sourceDir;
     QString m_targetDir;
     OperationType m_operationType;
+    QList<FailedItem> m_failedItems;
+    mutable std::optional<bool> m_targetSupportsSymlinks;
 
     bool m_applyToAll = false;
     ConflictResolution m_pendingResolution;

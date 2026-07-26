@@ -27,7 +27,9 @@ public:
     ~MainWindow() override;
 
 public slots:
-    Q_SCRIPTABLE void wasRestored();
+    Q_SCRIPTABLE void focusEditBox();
+    Q_SCRIPTABLE void winHide();
+    Q_SCRIPTABLE void winUnhide();
 
 private slots:
     void onClipboardChanged();

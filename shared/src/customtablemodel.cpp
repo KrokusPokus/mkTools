@@ -56,7 +56,16 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
                     return formatAdaptiveSize(file.size);
                 }
             case 3: return file.date.toString("yyyy-MM-dd  HH:mm:ss");
-            case 4: return file.type;
+            case 4: {
+                    if (file.isSymbolicLink) {
+                        if (file.type.isEmpty()) {
+                            return "SymLink";
+                        } else {
+                            return file.type + " (SymLink)";
+                        }
+                    }
+                }
+                return file.type;
             case 5: return file.nameMatchQuality;
             case 6: return file.contentMatchCount;
             case 7: return file.crc;
@@ -1117,13 +1126,25 @@ CustomFileInfo CustomTableModel::createCustomFileInfo(const QFileInfo &fileInfo,
     CustomFileInfo info;
     info.name = fileInfo.fileName();
     info.isDir = fileInfo.isDir();
+    info.isSymbolicLink = fileInfo.isSymbolicLink();
+
 #ifdef Q_OS_WIN
-    info.isHidden = fileInfo.isHidden() || info.name.startsWith('.');
-#else
-    info.isHidden = fileInfo.isHidden();
+    if (fileInfo.isShortcut()) {
+        LnkInfo lnkinfo = getLnkInfo(fileInfo.filePath());
+        if (lnkinfo.exists) {
+            info.isHidden = lnkinfo.isHidden;
+            info.size = lnkinfo.size;
+            info.date = lnkinfo.lastWriteTime;
+        }
+    }
+    else
 #endif
-    info.size = info.isDir ? 0 : fileInfo.size();
-    info.date = fileInfo.lastModified();
+    {
+        info.isHidden = fileInfo.isHidden();
+        info.size = info.isDir ? 0 : fileInfo.size();
+        info.date = fileInfo.lastModified();
+    }
+
     info.iconIndex = 0;
     info.displayName = info.name;
 

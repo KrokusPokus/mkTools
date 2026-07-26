@@ -20,11 +20,16 @@ FilePropertiesDialog::FilePropertiesDialog(const QStringList &filePaths, QWidget
 
     setAttribute(Qt::WA_DeleteOnClose);
 
+    if (m_filePaths.isEmpty()) {
+        reject();
+        return;
+    }
+
     m_isMultiMode = (m_filePaths.size() > 1);
 
     if (m_isMultiMode) {
         setupUiMultiMode();
-        updateUiAsyncStart();
+        initiateStatsCalculation();
         setWindowTitle(tr("Properties of %1 elements").arg(m_filePaths.size()));
     } else {
         QFileInfo fileInfo(m_filePaths.first());
@@ -35,14 +40,29 @@ FilePropertiesDialog::FilePropertiesDialog(const QStringList &filePaths, QWidget
 }
 
 FilePropertiesDialog::~FilePropertiesDialog() {
-    if (m_watcher) {
-        m_abort.store(true);
-        m_watcher->waitForFinished();
+    m_abort.store(true);
+    if (m_updateTimer) {
+        m_updateTimer->stop();
+    }
+
+    m_watcher.disconnect();
+
+    if (m_watcher.future().isRunning()) {
+        m_watcher.future().waitForFinished();
     }
 }
 
 void FilePropertiesDialog::done(int r) {
-    m_abort.store(true);    // signal thread that it should stop
+    m_abort.store(true);
+    if (m_updateTimer) {
+        m_updateTimer->stop();
+    }
+
+    m_watcher.disconnect();
+
+    if (m_watcher.future().isRunning()) {
+        m_watcher.future().waitForFinished();
+    }
     QDialog::done(r);       // call default behaviour (closes window)
 }
 
@@ -123,6 +143,13 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
     if (isDrive) {
         driveInfo.setPath(fileInfo.absoluteFilePath());
     }
+
+#ifdef Q_OS_WIN
+    LnkInfo lnkinfo;
+    if (fileInfo.isShortcut()) {
+        lnkinfo = getLnkInfo(fileInfo.filePath());
+    }
+#endif
 
     auto *mainLayout = new QVBoxLayout(this);
     mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -210,10 +237,17 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
     if (isDrive) {
         fileinfoGridLayout->addWidget(new QLabel(tr("File System:")), row, colLabel);
         m_typeLabel2->setText(driveInfo.fileSystemType());
-    } else {
+    }
+#ifdef Q_OS_WIN
+    else if (fileInfo.isShortcut()) {
+        fileinfoGridLayout->addWidget(new QLabel(tr("MimeType:")), row, colLabel);
+        m_typeLabel2->setText("application/x-ms-shortcut");
+    }
+#endif
+    else {
         fileinfoGridLayout->addWidget(new QLabel(tr("MimeType:")), row, colLabel);
         QMimeDatabase mimeDb;
-        QMimeType mime = mimeDb.mimeTypeForFile(absoluteFilePath);  // .mimeTypeForFile goes by file extension AND if neccessary by content (magic bytes)
+        QMimeType mime = mimeDb.mimeTypeForFile(absoluteFilePath);  // .mimeTypeForFile goes by file extension AND if neccessary by content (magic bytes). Can be restricted by mimeTypeForFile(absoluteFilePath, QMimeDatabase::MatchExtension)
         m_typeLabel2->setText(mime.name());
     }
     m_typeLabel2->setTextInteractionFlags(Qt::TextSelectableByMouse);
@@ -254,15 +288,24 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
         driveSpaceTotal = driveInfo.bytesTotal();
         driveSpaceUsed = driveSpaceTotal - driveSpaceFree;
         m_sizeLabel->setText(tr("%1 (%2 Bytes)").arg(formatAdaptiveSize(driveSpaceUsed)).arg(m_locale.toString(driveSpaceUsed)));
-    } else {
-        if (fileInfo.isDir()) {
-            m_sizeLabel->setText(tr("Calculating size..."));    // will be changed again by updateUiAsyncStart() later on
+    }
+#ifdef Q_OS_WIN
+    else if (fileInfo.isShortcut() && lnkinfo.exists) {
+        if (lnkinfo.size <= 1024) {
+            m_sizeLabel->setText(formatAdaptiveSize(lnkinfo.size));
         } else {
-            if (fileInfo.size() <= 1024) {
-                m_sizeLabel->setText(formatAdaptiveSize(fileInfo.size()));
-            } else {
-                m_sizeLabel->setText(tr("%1 (%2 Bytes)").arg(formatAdaptiveSize(fileInfo.size())).arg(m_locale.toString(fileInfo.size())));
-            }
+            m_sizeLabel->setText(tr("%1 (%2 Bytes)").arg(formatAdaptiveSize(lnkinfo.size)).arg(m_locale.toString(lnkinfo.size)));
+        }
+    }
+#endif
+    else if (fileInfo.isDir()) {
+        m_sizeLabel->setText(tr("Calculating size..."));    // will be changed again by initiateStatsCalculation() later on
+    }
+    else {
+        if (fileInfo.size() <= 1024) {
+            m_sizeLabel->setText(formatAdaptiveSize(fileInfo.size()));
+        } else {
+            m_sizeLabel->setText(tr("%1 (%2 Bytes)").arg(formatAdaptiveSize(fileInfo.size())).arg(m_locale.toString(fileInfo.size())));
         }
     }
 
@@ -284,7 +327,11 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
         QProgressBar *progressBar = new QProgressBar();
         progressBar->setMinimum(0);
         progressBar->setMaximum(100);
-        progressBar->setValue(driveSpaceUsed*100/driveSpaceTotal);
+        if (driveSpaceTotal > 0) {
+            progressBar->setValue(static_cast<int>(driveSpaceUsed * 100 / driveSpaceTotal));
+        } else {
+            progressBar->setValue(0);
+        }
         progressBar->setTextVisible(false);
         progressBar->setFixedHeight(8);
         fileinfoGridLayout->addWidget(progressBar, row, colLabel, 1, 3);
@@ -300,16 +347,8 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
         fileinfoGridLayout->addWidget(m_sizeLabel3, row, colField);
         row++;
     }
-    else if (fileInfo.isDir()) {
-        m_containsLabel = new QLabel(tr("Calculating content..."));
-        m_containsLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        fileinfoGridLayout->addWidget(new QLabel(tr("Content:")), row, colLabel);
-        fileinfoGridLayout->addWidget(m_containsLabel, row, colField);
-        row++;
-    }
 #ifdef Q_OS_WIN
-    else if (fileInfo.isShortcut()) {
-
+    else if (fileInfo.isShortcut()) { // Windows *.lnk files
         // ================= TRENNLINIE =================
         QFrame *line5 = new QFrame();
         line5->setFrameShape(QFrame::HLine);
@@ -347,6 +386,14 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
         row++;
     }
     else if (fileInfo.isJunction()) {
+        if (fileInfo.isDir()) {
+            fileinfoGridLayout->addWidget(new QLabel(tr("Content:")), row, colLabel);
+            m_containsLabel = new QLabel(tr("Calculating content..."));
+            m_containsLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+            fileinfoGridLayout->addWidget(m_containsLabel, row, colField);
+            row++;
+        }
+
         // ================= TRENNLINIE =================
         QFrame *line5 = new QFrame();
         line5->setFrameShape(QFrame::HLine);
@@ -356,15 +403,23 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
         fileinfoGridLayout->addWidget(line5, row, colLeftMargin, 1, 5);
         row++;
 
-
         fileinfoGridLayout->addWidget(new QLabel(tr("Target:")), row, colLabel);
-        m_linkTargetEdit = new QLineEdit();
-        m_linkTargetEdit->setText(fileInfo.junctionTarget());
-        fileinfoGridLayout->addWidget(m_linkTargetEdit, row, colField);
+        m_linkTargetLabel = new QLabel();
+        m_linkTargetLabel->setText(QDir::toNativeSeparators(fileInfo.junctionTarget()));
+        m_linkTargetLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        fileinfoGridLayout->addWidget(m_linkTargetLabel, row, colField);
         row++;
     }
 #endif
     else if (fileInfo.isSymbolicLink()) {
+        if (fileInfo.isDir()) {
+            fileinfoGridLayout->addWidget(new QLabel(tr("Content:")), row, colLabel);
+            m_containsLabel = new QLabel(tr("Calculating content..."));
+            m_containsLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+            fileinfoGridLayout->addWidget(m_containsLabel, row, colField);
+            row++;
+        }
+
         // ================= TRENNLINIE =================
         QFrame *line5 = new QFrame();
         line5->setFrameShape(QFrame::HLine);
@@ -374,14 +429,32 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
         fileinfoGridLayout->addWidget(line5, row, colLeftMargin, 1, 5);
         row++;
 
+        QString SLTpath = fileInfo.symLinkTarget();
+        QString SLTpathRaw = fileInfo.readSymLink();
 
         fileinfoGridLayout->addWidget(new QLabel(tr("Target:")), row, colLabel);
-        m_linkTargetEdit = new QLineEdit();
-        m_linkTargetEdit->setText(fileInfo.symLinkTarget());
-        fileinfoGridLayout->addWidget(m_linkTargetEdit, row, colField);
+        m_linkTargetLabel = new QLabel();
+        m_linkTargetLabel->setText(QDir::toNativeSeparators(SLTpath));
+        m_linkTargetLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        fileinfoGridLayout->addWidget(m_linkTargetLabel, row, colField);
+        row++;
+
+        if (SLTpathRaw != SLTpath) {
+            fileinfoGridLayout->addWidget(new QLabel(tr("Target (raw):")), row, colLabel);
+            m_linkTargetLabelRaw = new QLabel();
+            m_linkTargetLabelRaw->setText(QDir::toNativeSeparators(SLTpathRaw));
+            m_linkTargetLabelRaw->setTextInteractionFlags(Qt::TextSelectableByMouse);
+            fileinfoGridLayout->addWidget(m_linkTargetLabelRaw, row, colField);
+            row++;
+        }
+    }
+    else if (fileInfo.isDir()) {
+        fileinfoGridLayout->addWidget(new QLabel(tr("Content:")), row, colLabel);
+        m_containsLabel = new QLabel(tr("Calculating content..."));
+        m_containsLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        fileinfoGridLayout->addWidget(m_containsLabel, row, colField);
         row++;
     }
-
 
     // ================= TRENNLINIE =================
     QFrame *line6 = new QFrame();
@@ -393,24 +466,43 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
     row++;
 
     if (!isDrive) {
+        QString timeCreated;
+        QString timeModified;
+        QString timeAccessed;
+
+#ifdef Q_OS_WIN
+        if (fileInfo.isShortcut() && lnkinfo.exists)
+            {
+            timeCreated = lnkinfo.birthTime.toString("yyyy-MM-dd  HH:mm:ss");
+            timeModified = lnkinfo.lastWriteTime.toString("yyyy-MM-dd  HH:mm:ss");
+            timeAccessed = lnkinfo.lastAccessTime.toString("yyyy-MM-dd  HH:mm:ss");
+            }
+        else
+#endif
+            {
+            timeCreated = fileInfo.birthTime().toString("yyyy-MM-dd  HH:mm:ss");
+            timeModified = fileInfo.lastModified().toString("yyyy-MM-dd  HH:mm:ss");
+            timeAccessed = fileInfo.lastRead().toString("yyyy-MM-dd  HH:mm:ss");
+            }
+
         // ================= BLOCK 2 =================
         fileinfoGridLayout->addWidget(new QLabel(tr("Created:")), row, colLabel);
         m_createdLabel = new QLabel();
-        m_createdLabel->setText(fileInfo.birthTime().toString("yyyy-MM-dd  HH:mm:ss"));
+        m_createdLabel->setText(timeCreated);
         m_createdLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
         fileinfoGridLayout->addWidget(m_createdLabel, row, colField);
         row++;
 
         fileinfoGridLayout->addWidget(new QLabel(tr("Modified:")), row, colLabel);
         m_modifiedLabel = new QLabel();
-        m_modifiedLabel->setText(fileInfo.lastModified().toString("yyyy-MM-dd  HH:mm:ss"));
+        m_modifiedLabel->setText(timeModified);
         m_modifiedLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
         fileinfoGridLayout->addWidget(m_modifiedLabel, row, colField);
         row++;
 
         fileinfoGridLayout->addWidget(new QLabel(tr("Accessed:")), row, colLabel);
         m_lastReadLabel = new QLabel();
-        m_lastReadLabel->setText(fileInfo.lastRead().toString("yyyy-MM-dd  HH:mm:ss"));
+        m_lastReadLabel->setText(timeAccessed);
         m_lastReadLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
         fileinfoGridLayout->addWidget(m_lastReadLabel, row, colField);
         row++;
@@ -426,25 +518,40 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
 #ifdef Q_OS_WIN
     if (!isDrive) {
         // Windows Attributes
-        DWORD fileAttr = getWindowsFileAttributes(fileInfo.filePath());
+
+        bool bHidden = false;
+        bool bReadOnly = false;
+        bool bSystem = false;
+
+        if (fileInfo.isShortcut() && lnkinfo.exists) {
+            bHidden = lnkinfo.isHidden;
+            bReadOnly = lnkinfo.isReadOnly;
+            bSystem = lnkinfo.isSystem;
+        } else {
+            DWORD fileAttr = getWindowsFileAttributes(fileInfo.filePath());
+            bHidden = fileAttr & FILE_ATTRIBUTE_HIDDEN;
+            bReadOnly = fileAttr & FILE_ATTRIBUTE_READONLY;
+            bSystem = fileAttr & FILE_ATTRIBUTE_SYSTEM;
+        }
+
         QDir parentDir = fileInfo.dir();
         bool canModifyAttributes = QFileInfo(parentDir.absolutePath()).isWritable();
 
         fileinfoGridLayout->addWidget(new QLabel(tr("Attributes:")), row, colLabel);
         m_readOnlyCB = new QCheckBox(tr("Read-only"));
-        m_readOnlyCB->setChecked(fileAttr & FILE_ATTRIBUTE_READONLY);
+        m_readOnlyCB->setChecked(bReadOnly);
         m_readOnlyCB->setEnabled(canModifyAttributes);
         fileinfoGridLayout->addWidget(m_readOnlyCB, row, colField);
         row++;
 
         m_hiddenCB = new QCheckBox(tr("Hidden"));
-        m_hiddenCB->setChecked(fileAttr & FILE_ATTRIBUTE_HIDDEN);
+        m_hiddenCB->setChecked(bHidden);
         m_hiddenCB->setEnabled(canModifyAttributes);
         fileinfoGridLayout->addWidget(m_hiddenCB, row, colField);
         row++;
 
         m_systemCB = new QCheckBox(tr("System"));
-        m_systemCB->setChecked(fileAttr & FILE_ATTRIBUTE_SYSTEM);
+        m_systemCB->setChecked(bSystem);
         m_systemCB->setEnabled(canModifyAttributes);
         fileinfoGridLayout->addWidget(m_systemCB, row, colField);
         row++;
@@ -565,118 +672,212 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
     connect(okBtn, &QPushButton::clicked, this, &FilePropertiesDialog::onOkPressed);
     connect(cancelBtn, &QPushButton::clicked, this, &QDialog::reject);
 
-    if (fileInfo.isDir() && !isDrive) {
-        updateUiAsyncStart();
+    if (fileInfo.isDir() && !fileInfo.isShortcut() && !isDrive) {
+        initiateStatsCalculation();
     }
 }
 
 
-void FilePropertiesDialog::updateUiAsyncStart() {
-    m_watcher = new QFutureWatcher<ProgressResult>(this);
-
-    connect(m_watcher, &QFutureWatcher<ProgressResult>::finished, this, [this]() {
-        updateUiAsync(m_watcher->result());
-    });
-
-    auto computeTask = [this]() -> ProgressResult {
-        ProgressResult res;
-        QSet<QString> visitedDirs; // Das Set wird hier einmalig für den Task erstellt
-
-        for (const QString &path : std::as_const(m_filePaths)) {
-            if (m_abort.load())
-                return {};
-
-            QFileInfo info(path);
-            if (info.isDir()) {
-                res.folders++; // Der ausgewählte Hauptordner selbst
-
-                int subFiles = 0;
-                int subFolders = 0;
-
-                // Funktion mit dem visitedDirs-Set aufrufen
-                res.size += calculateFolderSize(path, subFiles, subFolders, visitedDirs, m_abort);
-
-                res.files += subFiles;
-                res.folders += subFolders;
-            } else {
-                res.files++;
-                res.size += info.size();
-            }
-        }
-        return res;
-    };
-
-    m_watcher->setFuture(QtConcurrent::run(computeTask));
-}
-
-
-void FilePropertiesDialog::updateUiAsync(ProgressResult result) {
+void FilePropertiesDialog::updateGuiLabelText(const ProgressResult &result) {
     if (m_abort.load()) return;
 
-    if (result.size <= 1024) {
-        m_sizeLabel->setText(formatAdaptiveSize(result.size));
+    QString sizeInfoDisplay;
+
+    if (result.followedSize <= 1024) {
+        sizeInfoDisplay = formatAdaptiveSize(result.followedSize);
     } else {
-        m_sizeLabel->setText(tr("%1 (%2 Bytes)")
-                                 .arg(formatAdaptiveSize(result.size))
-                                 .arg(m_locale.toString(result.size)));
+        sizeInfoDisplay = tr("%1 (%2 Bytes)")
+        .arg(formatAdaptiveSize(result.followedSize))
+            .arg(m_locale.toString(result.followedSize));
     }
+
+    if (result.followedSize != result.directSize) {
+        QString bonusInfo;
+        if (result.directSize <= 1024) {
+            bonusInfo = formatAdaptiveSize(result.directSize);
+        } else {
+            bonusInfo = tr("%1 (%2 Bytes)")
+            .arg(formatAdaptiveSize(result.directSize))
+                .arg(m_locale.toString(result.directSize));
+        }
+
+        sizeInfoDisplay += tr("  Real: ") + bonusInfo;
+    }
+
+    m_sizeLabel->setText(sizeInfoDisplay);
 
     if (m_containsLabel) { // Null pointer check since m_containsLabel is only created in single file mode if isDir()
-        m_containsLabel->setText(tr("%1 Files, %2 Folders")
-                                     .arg(m_locale.toString(result.files))
-                                     .arg(m_locale.toString(result.folders)));
-    }
+        QString contentInfoDisplay;
 
-    m_watcher->deleteLater();
-    m_watcher = nullptr;
+        contentInfoDisplay = tr("%1 Files, %2 Folders")
+                                 .arg(m_locale.toString(result.followedFiles))
+                                 .arg(m_locale.toString(result.followedFolders));
+
+        if (result.followedFiles != result.directFiles || result.followedFolders != result.directFolders) {
+            QString contentBonusInfo = tr("%1 Files, %2 Folders")
+            .arg(m_locale.toString(result.directFiles))
+                .arg(m_locale.toString(result.directFolders));
+
+            contentInfoDisplay += tr("  Real: ") + contentBonusInfo;
+        }
+
+        m_containsLabel->setText(contentInfoDisplay);
+    }
 }
 
-quint64 FilePropertiesDialog::calculateFolderSize(const QString &rootPath, int &fileCount, int &folderCount, QSet<QString> &visitedDirs, const std::atomic<bool> &abortFlag) {
-    quint64 totalSize = 0;
+void FilePropertiesDialog::initiateStatsCalculation() {
+    m_progress.reset();
 
-    QStack<QString> dirStack;
-    dirStack.push(rootPath);
+    if (!m_updateTimer) {
+        m_updateTimer = new QTimer(this);
+        connect(m_updateTimer, &QTimer::timeout, this, [this]() {
+            ProgressResult currentRes;
+            m_progress.snapshot(currentRes);
+            updateGuiLabelText(currentRes);
+        });
+    }
+    m_updateTimer->start(200);
 
+    m_watcher.disconnect();
+
+    connect(&m_watcher, &QFutureWatcher<void>::finished, this, [this]() {
+        if (m_updateTimer) {
+            m_updateTimer->stop();
+        }
+
+        ProgressResult finalRes;
+        m_progress.snapshot(finalRes);
+        updateGuiLabelText(finalRes);
+    });
+
+    // Variablen für den Thread als Wert kopieren (thread-safe)
+    const QStringList filePathsCopy = m_filePaths;
+
+    auto computeTask = [filePathsCopy, &res = m_progress, &abort = m_abort]() {
+        calculateStats(filePathsCopy, res, abort);
+    };
+
+    m_watcher.setFuture(QtConcurrent::run(computeTask));
+}
+
+
+void FilePropertiesDialog::calculateStats(const QStringList &filePaths,
+                                          AtomicProgressResult &res,
+                                          const std::atomic<bool> &abortFlag) {
+    const bool isMultiMode = (filePaths.count() > 1);
+    QSet<QString> visitedDirs;
+
+    struct StackItem {
+        QString path;
+        bool isSymlinkBranch = false;
+    };
+
+    QStack<StackItem> dirStack;
+
+    // Hilfs-Lambda zur einheitlichen Bewertung
+    auto processInfo = [&](const QFileInfo &info, bool isSymlinkBranch, bool isTopLevel) {
+#ifdef Q_OS_WIN
+        // --- 1. WINDOWS .LNK SHORTCUTS ---
+        if (info.isShortcut()) {
+            quint64 lnkSize = getLnkSize(info.filePath());
+
+            res.followedFiles++;
+            res.followedSize += lnkSize;
+
+            if (!isSymlinkBranch) {
+                res.directFiles++;
+                res.directSize += lnkSize;
+            }
+            return;
+        }
+#endif
+        // --- 2. SYMLINKS & JUNCTIONS ---
+        if (info.isSymbolicLink() || info.isJunction()) {
+            // Der Link selbst
+            if (!isSymlinkBranch) {
+                res.directFiles++;
+                res.directSize += info.size();
+            }
+
+           // Das Ziel auflösen
+            QString targetPath = info.isJunction() ? info.junctionTarget() : info.symLinkTarget();
+
+            QFileInfo targetInfo(targetPath);
+            if (targetInfo.exists()) {
+                if (targetInfo.isDir()) {
+                    res.followedFolders++;
+                    // Ordner-Ziele landen auf dem Stack (immer als Symlink-Zweig!)
+                    dirStack.push({targetInfo.absoluteFilePath(), true});
+                } else {
+                    res.followedFiles++;
+                    res.followedSize += targetInfo.size();
+                }
+            } else {
+                // Toter Symlink
+                res.followedFiles++;
+                res.followedSize += info.size();
+            }
+        }
+        // --- 3. NORMALE ORDNER ---
+        else if (info.isDir()) {
+            if (isTopLevel) {
+                // Im Multi-Mode zählen wir markierte Top-Level Ordner mit
+                if (isMultiMode) {
+                    res.directFolders++;
+                    res.followedFolders++;
+                }
+            } else {
+                // Normale Unterordner-Zählung
+                res.followedFolders++;
+                if (!isSymlinkBranch) {
+                    res.directFolders++;
+                }
+            }
+            dirStack.push({info.absoluteFilePath(), isSymlinkBranch});
+        }
+        // --- 4. NORMALE DATEIEN ---
+        else {
+            res.followedFiles++;
+            res.followedSize += info.size();
+
+            if (!isSymlinkBranch) {
+                res.directFiles++;
+                res.directSize += info.size();
+            }
+        }
+    };
+
+    // --- PHASE 1: Top-Level Elemente verarbeiten ---
+    for (const QString &path : filePaths) {
+        if (abortFlag.load()) return;
+        // Aufruf: Kein Symlink-Zweig (false), aber Top-Level (true)
+        processInfo(QFileInfo(path), false, true);
+    }
+
+    // --- PHASE 2: Stack-basierte Traversierung ---
     while (!dirStack.isEmpty()) {
-        if (abortFlag.load())
-            return totalSize;
+        if (abortFlag.load()) return;
 
-        // Den nächsten Ordner vom Stack holen
-        QString currentPath = dirStack.pop();
-        QFileInfo dirInfo(currentPath);
+        StackItem current = dirStack.pop();
+        QFileInfo dirInfo(current.path);
         QString canonical = dirInfo.canonicalFilePath();
 
-        if (canonical.isEmpty()) continue; // dangling symlink
-
-        // SCHLEIFEN-SCHUTZ: Haben wir diesen echten Ort bereits gescannt?
-        if (visitedDirs.contains(canonical)) {
-            continue; // Überspringen, aber im Stack weitermachen
+        // Defekter Pfad oder Schleifenschutz für zirkuläre Symlinks
+        if (canonical.isEmpty() || visitedDirs.contains(canonical)) {
+            continue;
         }
         visitedDirs.insert(canonical);
 
-        QDirIterator it(currentPath, QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot);
+        QDirIterator it(current.path, QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot);
 
         while (it.hasNext()) {
-            if (abortFlag.load())
-                return totalSize;
+            if (abortFlag.load()) return;
 
             it.next();
-            QFileInfo info = it.fileInfo();
-
-            if (info.isDir()) {
-                folderCount++;
-
-                // Statt die Funktion neu aufzurufen, legen wir den Pfad
-                // einfach auf unseren Heap-Stack. Die Schleife arbeitet ihn ab.
-                dirStack.push(info.absoluteFilePath());
-            } else {
-                totalSize += info.size();
-                fileCount++;
-            }
+            // Aufruf: Vererbt den Symlink-Status vom Parent, aber nicht Top-Level (false)
+            processInfo(it.fileInfo(), current.isSymlinkBranch, false);
         }
     }
-
-    return totalSize;
 }
 
 QString FilePropertiesDialog::getFileType(const QFileInfo &info) {
@@ -829,7 +1030,6 @@ bool FilePropertiesDialog::getWindowsShortcutDetails(const QString &lnkFilePath,
         psl->Release();
     }
 
-    // Falls CoInitialize erfolgreich war, wieder freigeben
     if (SUCCEEDED(hres)) {
         CoUninitialize();
     }

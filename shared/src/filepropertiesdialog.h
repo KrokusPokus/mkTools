@@ -17,6 +17,46 @@
 #include <shlobj.h>     // needed for getWindowsShortcutDetails() and setWindowsShortcutDetails()
 #endif
 
+struct ProgressResult {
+    // physical values (symlinks NOT resolved)
+    quint64 directSize = 0;
+    quint64 directFiles = 0;
+    quint64 directFolders = 0;
+
+    // logical values (symlinks resolved)
+    quint64 followedSize = 0;
+    quint64 followedFiles = 0;
+    quint64 followedFolders = 0;
+};
+
+struct AtomicProgressResult {
+    std::atomic<quint64> directFiles{0};
+    std::atomic<quint64> directFolders{0};
+    std::atomic<quint64> directSize{0};
+    std::atomic<quint64> followedFiles{0};
+    std::atomic<quint64> followedFolders{0};
+    std::atomic<quint64> followedSize{0};
+
+    // Hilfsmethode, um ein konsistentes, nicht-atomares Foto für das UI zu machen
+    void snapshot(ProgressResult &out) const {
+        out.directFiles = directFiles.load(std::memory_order_relaxed);
+        out.directFolders = directFolders.load(std::memory_order_relaxed);
+        out.directSize = directSize.load(std::memory_order_relaxed);
+        out.followedFiles = followedFiles.load(std::memory_order_relaxed);
+        out.followedFolders = followedFolders.load(std::memory_order_relaxed);
+        out.followedSize = followedSize.load(std::memory_order_relaxed);
+    }
+
+    void reset() {
+        directFiles = 0;
+        directFolders = 0;
+        directSize = 0;
+        followedFiles = 0;
+        followedFolders = 0;
+        followedSize = 0;
+    }
+};
+
 class FilePropertiesDialog : public QDialog {
     Q_OBJECT
 
@@ -25,11 +65,11 @@ public:
     ~FilePropertiesDialog();
 
 private:
+    static void calculateStats(const QStringList &filePaths, AtomicProgressResult &res, const std::atomic<bool> &abortFlag);
     void setupUi(const QFileInfo &fileInfo);
     void setupUiMultiMode();
-    void updateUiAsyncStart();
+    void initiateStatsCalculation();
     QString getFileType(const QFileInfo &info);
-    quint64 calculateFolderSize(const QString &path, int &fileCount, int &folderCount, QSet<QString> &visitedDirs, const std::atomic<bool> &abortFlag);
     void onOkPressed();
     bool canModifyPermissions(const QFileInfo &fileInfo);
     bool pathIsDrive(const QString &absoluteFilePath);
@@ -64,6 +104,8 @@ private:
     QLabel *m_createdLabel = nullptr;
     QLabel *m_lastReadLabel = nullptr;
     QLabel *m_modifiedLabel = nullptr;
+    QLabel *m_linkTargetLabel = nullptr;
+    QLabel *m_linkTargetLabelRaw = nullptr;
 
     QLineEdit *m_linkTargetEdit = nullptr;
     QLineEdit *m_linkArgumentsEdit = nullptr;
@@ -80,17 +122,11 @@ private:
     QCheckBox *m_permCBs[3][3]{};   // The '{}' initializes all 9 pointers to nullptr
 #endif
 
+    AtomicProgressResult m_progress;
+    QTimer *m_updateTimer{nullptr};
     std::atomic<bool> m_abort{false};
-
-    // For calculating size concurrently
-    struct ProgressResult {
-        quint64 size = 0;
-        int files = 0;
-        int folders = 0;
-    };
-
-    QFutureWatcher<ProgressResult> *m_watcher = nullptr;
-    void updateUiAsync(ProgressResult result);
+    QFutureWatcher<void> m_watcher;
+    void updateGuiLabelText(const ProgressResult &result);
 
 protected:
     void done(int r) override;

@@ -15,7 +15,6 @@
 #include <zlib.h>
 
 #ifdef Q_OS_WIN
-#include <qt_windows.h>
 #include <shellapi.h>   // needed for ShellExecuteEx in startProcessElevatedWin()
 #endif
 
@@ -758,4 +757,106 @@ uint getRegExContentMatchCount(const QFileInfo &fileInfo, const QRegularExpressi
     }
 
     return iCount;
+}
+
+#ifdef Q_OS_WIN
+LnkInfo getLnkInfo(const QString &filePath) {
+    LnkInfo info;
+    WIN32_FILE_ATTRIBUTE_DATA fileData;
+
+    if (GetFileAttributesExW(reinterpret_cast<LPCWSTR>(filePath.utf16()),
+                             GetFileExInfoStandard,
+                             &fileData))
+    {
+        ULARGE_INTEGER size;
+        size.LowPart = fileData.nFileSizeLow;
+        size.HighPart = fileData.nFileSizeHigh;
+        info.size = static_cast<qint64>(size.QuadPart);
+
+        info.birthTime      = fileTimeToQDateTime(fileData.ftCreationTime);
+        info.lastAccessTime = fileTimeToQDateTime(fileData.ftLastAccessTime);
+        info.lastWriteTime  = fileTimeToQDateTime(fileData.ftLastWriteTime);
+
+        info.isReadOnly = (fileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0;
+        info.isHidden   = (fileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
+        info.isSystem   = (fileData.dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0;
+
+        info.exists = true;
+    }
+
+    return info;
+}
+qint64 getLnkSize(const QString &filePath) {
+    WIN32_FILE_ATTRIBUTE_DATA fileData;
+    if (GetFileAttributesExW(reinterpret_cast<LPCWSTR>(filePath.utf16()), GetFileExInfoStandard, &fileData)) {
+        ULARGE_INTEGER size;
+        size.LowPart = fileData.nFileSizeLow;
+        size.HighPart = fileData.nFileSizeHigh;
+        return static_cast<qint64>(size.QuadPart);
+    }
+
+    return 0;
+}
+QDateTime fileTimeToQDateTime(const FILETIME &ft) {
+    ULARGE_INTEGER uli;
+    uli.LowPart = ft.dwLowDateTime;
+    uli.HighPart = ft.dwHighDateTime;
+
+    const ULONGLONG epochOffset = 116444736000000000ULL;
+
+    // Underflow verhindern! (Falls Zeitstempel 0 oder vor 1.1.1970 ist)
+    if (uli.QuadPart < epochOffset) {
+        return QDateTime();
+    }
+
+    qint64 msecs = static_cast<qint64>((uli.QuadPart - epochOffset) / 10000ULL);
+
+    return QDateTime::fromMSecsSinceEpoch(msecs, QTimeZone::UTC).toLocalTime();
+}
+#endif
+
+QString readLnkTargetOnLinux(const QString &lnkFilePath) {
+    QFile file(lnkFilePath);
+    if (!file.open(QIODevice::ReadOnly)) {
+        return QString();
+    }
+
+    QByteArray data = file.readAll();
+    file.close();
+
+    // 1. Minimum Header-Größe prüfen (76 Bytes Header)
+    if (data.size() < 0x4C) return QString();
+
+    // 2. Prüfen, ob es eine valide LNK-Datei ist (Header GUID prüfen)
+    static const char lnkGuid[] = "\x01\x14\x02\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46";
+    if (data.mid(4, 16) != QByteArray(lnkGuid, 16)) {
+        return QString(); // Keine echte .lnk Datei
+    }
+
+    // 3. Flags an Offset 0x14 lesen
+    quint32 flags = *reinterpret_cast<const quint32*>(data.constData() + 0x14);
+    bool hasLinkInfo = (flags & 0x02) != 0;
+    bool hasTargetIDList = (flags & 0x01) != 0;
+
+    if (!hasLinkInfo) return QString(); // Enthält keine Pfad-Info
+
+    // 4. Offset der LinkInfo-Struktur ermitteln
+    int offset = 0x4C;
+    if (hasTargetIDList) {
+        if (data.size() < offset + 2) return QString();
+        quint16 idListSize = *reinterpret_cast<const quint16*>(data.constData() + offset);
+        offset += 2 + idListSize; // IDList überspringen
+    }
+
+    if (data.size() < offset + 0x10) return QString();
+
+    // 5. Lokalen Pfad-Offset aus der LinkInfo-Struktur lesen
+    quint32 localPathOffset = *reinterpret_cast<const quint32*>(data.constData() + offset + 0x10);
+    int finalPathOffset = offset + localPathOffset;
+
+    if (finalPathOffset >= data.size()) return QString();
+
+    // 6. Pfad als ASCII-Null-terminierten String auslesen
+    const char* pathPtr = data.constData() + finalPathOffset;
+    return QString::fromLocal8Bit(pathPtr);
 }

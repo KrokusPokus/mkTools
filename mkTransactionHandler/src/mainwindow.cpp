@@ -222,23 +222,23 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
     // 1. Summary
     switch (m_operationType) {
         case OperationType::Copy:
-            m_headerLabel->setText(tr("Copying %n file. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setText(tr("Copying %n file (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
             break;
 
         case OperationType::Move:
-            m_headerLabel->setText(tr("Moving %n file. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setText(tr("Moving %n file (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
             break;
 
         case OperationType::Link:
-            m_headerLabel->setText(tr("Linking %n file. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setText(tr("Linking %n file (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
             break;
 
         case OperationType::Delete:
-            m_headerLabel->setText(tr("Deleting %n file. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setText(tr("Deleting %n file (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
             break;
 
         case OperationType::Recycle:
-            m_headerLabel->setText(tr("Recycling %n file. (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setText(tr("Recycling %n file (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
             break;
 
         default:
@@ -265,7 +265,7 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
     if (secondsElapsed > 0.1 && stats.bytesWritten > 0) {
         // Geschwindigkeit in Bytes pro Sekunde
         double bytesPerSecond = stats.bytesWritten / secondsElapsed;
-        m_speedLabel->setText(tr("%1/s").arg(m_locale.formattedDataSize(bytesPerSecond)));
+        m_speedLabel->setText(tr("%1/s").arg(formatAdaptiveSize(bytesPerSecond)));
 
         // Geschätzte Restzeit (Time Remaining)
         double secondsLeft = bytesLeft / bytesPerSecond;

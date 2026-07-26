@@ -51,7 +51,9 @@
 #include <qt_windows.h>
 #include <shellapi.h>
 #include <shlobj.h>
-#define WM_MY_LAUNCHER_RESTORE (WM_APP + 123)
+#define WM_MY_LAUNCHER_FOCUS_EDITBOX (WM_APP + 0x7B)
+#define WM_MY_LAUNCHER_HIDE (WM_APP + 0x7C)
+#define WM_MY_LAUNCHER_UNHIDE (WM_APP + 0x7D)
 #endif
 
 
@@ -1749,14 +1751,10 @@ QString MainWindow::RecentInputList_GetNext(const QString &currentText) {
 }
 
 void MainWindow::guiHideConditional() {
-    if (!(windowState() & Qt::WindowMinimized)) {
-        m_LineEdit2->clear();
-        m_LineEdit1->setFocus();
-        //this->showMinimized();
-        QTimer::singleShot(50, this, [this]() {
-            this->setWindowState(Qt::WindowMinimized);
-        });
-    }
+    m_LineEdit2->clear();
+    QTimer::singleShot(50, this, [this]() {
+    this->hide();
+    });
 }
 
 #ifdef Q_OS_WIN
@@ -2069,22 +2067,35 @@ QImage MainWindow::generateThumbnailAsync(const QFileInfo &fileInfo) {
 // Functions to receive data from other applications
 
 // This belongs to a Public Slot!
-void MainWindow::wasRestored() {
-    qDebug() << "wasRestored()";
-    //this->raise();
-    //this->activateWindow();
+void MainWindow::focusEditBox() {
     m_LineEdit1->setFocus();
     m_LineEdit1->selectAll();
 }
 
+void MainWindow::winHide() {
+    this->hide();
+}
+
+void MainWindow::winUnhide() {
+    focusEditBox();
+    this->show();
+}
+
 #ifdef Q_OS_WIN
-// Note: To use this, you can do something akin to "PostMessage(hWnd, 0x807B, 0, 0)" with the hWnd of the window with the name "mkLauncher" and class "Qt6110QWindowIcon"
+// Note: To use this, you can do something akin to "PostMessage(hWnd, 0x807B, 0, 0)" with the hWnd of the window with the name "mkLauncher" and class "Qt6111QWindowIcon"
 bool MainWindow::nativeEvent(const QByteArray &eventType, void *message, qintptr *result) {
     MSG *msg = static_cast<MSG *>(message);
-    if (msg->message == WM_MY_LAUNCHER_RESTORE) {
-        this->wasRestored();
+    if (msg->message == WM_MY_LAUNCHER_FOCUS_EDITBOX) {
+        this->focusEditBox();
+        return true;
+    } else if (msg->message == WM_MY_LAUNCHER_HIDE) {
+        this->winHide();
+        return true;
+    } else if (msg->message == WM_MY_LAUNCHER_UNHIDE) {
+        this->winUnhide();
         return true;
     }
+
     return QMainWindow::nativeEvent(eventType, message, result);
 }
 #endif

@@ -30,6 +30,7 @@ struct CustomFileInfo {
     int contentMatchCount;
     bool isCut = false;
     bool isDir;
+    bool isSymbolicLink;
     bool isDrive = false;
     bool isExecutable;
     bool isHidden;

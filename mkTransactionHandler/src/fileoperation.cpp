@@ -1,7 +1,11 @@
 #include "fileoperation.h"
 
+#include <QCoreApplication>
 #include <QDir>
+#include <QDirIterator>
 #include <QFileInfo>
+#include <QRandomGenerator>
+#include <QStack>
 
 #include <zlib.h>
 
@@ -94,7 +98,6 @@ void FileOperation::run() {
         QFileInfo firstInfo(firstPath);
         m_sourceDir = firstInfo.absolutePath();
     }
-
     m_stats = CopyStats();
     m_stats.currentName = tr("Scanning files...");
 
@@ -104,21 +107,10 @@ void FileOperation::run() {
     updateProgress();
 
     // PRE-SCAN PASS
-    for (const QString &item : items) {
-        if (!checkInterruption()) break;
+    auto [totalBytes, totalFiles] = calculateStats(items);
 
-        QFileInfo info(item);
-        if (info.isSymbolicLink() || info.isJunction()) {
-            m_stats.totalFiles++;
-        } else if (info.isDir() && !info.isSymbolicLink() && !info.isJunction()) {
-            auto dirStats = getDirStats(item);
-            m_stats.totalBytes += dirStats.first;
-            m_stats.totalFiles += dirStats.second;
-        } else {
-            m_stats.totalBytes += info.size();
-            m_stats.totalFiles++;
-        }
-    }
+    m_stats.totalBytes = totalBytes;
+    m_stats.totalFiles = totalFiles;
 
     if (!checkInterruption()) {
         emit wasCanceled(m_stats.filesError);
@@ -134,65 +126,127 @@ void FileOperation::run() {
         if (!checkInterruption()) break;
 
         FileOpResult result = FileOpResult::Success;
-        QString src = items.at(i);
-        QFileInfo srcInfo(src);
+        QString srcPath = items.at(i);
+        QFileInfo srcInfo(srcPath);
         m_stats.currentName = calculateRelativeDisplayPath(srcInfo);
         updateProgress();
 
         if (m_operationType == OperationType::Copy || m_operationType == OperationType::Move) {
-            QString dst;
-
-            // MoveAction into same folder blocked in MainWindow::onFilesDropped(), so we don't need to do anything special here
+            QString dstPath;
             if (srcInfo.absolutePath() == m_targetDir) {
-                dst = generateUniqueCopyName(srcInfo, m_targetDir);
+                dstPath = generateUniqueCopyName(srcInfo, m_targetDir);
             } else {
-                dst = QDir(m_targetDir).filePath(srcInfo.fileName());
+                dstPath = QDir(m_targetDir).filePath(srcInfo.fileName());
             }
 
-            if (srcInfo.isDir() && !srcInfo.isSymbolicLink() && !srcInfo.isJunction()) {
-                result = copyOrMoveDir(src, dst, isCrossDevice);
+            bool isSymlink = srcInfo.isSymbolicLink() || srcInfo.isJunction();
+
+            // FALL 1: Ziel unterstützt KEINE Symlinks -> Deep Copy Fallback
+            if (isSymlink && !targetSupportsSymlinks()) {
+                QString targetResolved = srcInfo.isJunction() ? srcInfo.junctionTarget() : srcInfo.symLinkTarget();
+                QFileInfo resolvedInfo(targetResolved);
+
+                if (!resolvedInfo.exists()) {
+                    m_stats.filesError++;
+                    m_failedItems.append(FailedItem{srcPath, dstPath, m_operationType, tr("Symlink target does not exist")});
+                    result = FileOpResult::Error;
+                } else {
+                    // Bei Move erzwingen wir für den Inhalt ein Kopieren, damit das Quell-Ziel des Links nicht gelöscht wird
+                    bool forceCopyOnly = (m_operationType == OperationType::Move);
+
+                    if (resolvedInfo.isDir()) {
+                        result = copyOrMoveDir(targetResolved, dstPath, isCrossDevice, forceCopyOnly);
+                    } else {
+                        result = copyOrMoveFile(targetResolved, dstPath, isCrossDevice, forceCopyOnly);
+                    }
+
+                    // Nach erfolgreichem Verschieben des Inhalts löschen wir NUR die Verknüpfung selbst
+                    if (result == FileOpResult::Success && m_operationType == OperationType::Move) {
+                        removeReadOnlyAttribute(srcPath);
+                        if (!QFile::remove(srcPath)) {
+                            m_stats.filesError++;
+                            m_failedItems.append(FailedItem{srcPath, dstPath, m_operationType, tr("Could not remove source symlink after move")});
+                            result = FileOpResult::Error;
+                        }
+                    }
+                }
             }
+            // FALL 2: Ziel unterstützt Symlinks ODER normale Datei/Ordner
             else {
-                result = copyOrMoveFile(src, dst, isCrossDevice);
+                if (srcInfo.isDir() && !isSymlink) {
+                    result = copyOrMoveDir(srcPath, dstPath, isCrossDevice, false);
+                } else {
+                    result = copyOrMoveFile(srcPath, dstPath, isCrossDevice, false);
+                }
             }
         }
         else if (m_operationType == OperationType::Delete || m_operationType == OperationType::Recycle) {
             bool success = false;
 
             if (m_operationType == OperationType::Recycle) {
-                success = QFile::moveToTrash(src);
+                success = QFile::moveToTrash(srcPath);
                 if (success) {
                     // Da moveToTrash extrem schnell ist (OS-Schnittstelle),
                     // können wir hier die pauschalen Dir-Stats dazurechnen
 
                     auto dirStats = std::make_pair(srcInfo.size(), 1);
                     if (srcInfo.isDir() && !srcInfo.isSymbolicLink() && !srcInfo.isJunction()) {
-                        dirStats = getDirStats(src);
+                        dirStats = calculateStats({srcPath});
                     }
 
                     m_stats.bytesWritten += dirStats.first;
                     m_stats.filesWritten += dirStats.second;
                 } else {
                     m_stats.filesError++;
-                    qDebug() << "Could not move to trash:" << src;
+                    m_failedItems.append({srcPath, QString(), m_operationType, tr("moveToTrash() failed")});
                 }
                 updateProgress();
             } else {
                 if (srcInfo.isDir() && !srcInfo.isSymbolicLink() && !srcInfo.isJunction()) {
-                    result = deleteDirRecursively(src); // Errors are counted within deleteDirRecursively()
+                    result = deleteDirRecursively(srcPath); // Errors are counted within deleteDirRecursively()
                 } else {
-                    removeReadOnlyAttribute(src);
-                    success = QFile::remove(src);
+                    removeReadOnlyAttribute(srcPath);
+                    success = QFile::remove(srcPath);
                     if (success) {
                         m_stats.bytesWritten += srcInfo.size();
                         m_stats.filesWritten++;
                     } else {
                         m_stats.filesError++;
-                        qDebug() << "Could not delete file:" << src;
+                        m_failedItems.append({srcPath, QString(), m_operationType, tr("File deletion failed")});
                     }
                     updateProgress();
                 }
             }
+        }
+        else if (m_operationType == OperationType::Link) {
+            QString baseName = srcInfo.fileName();
+
+#ifdef Q_OS_WIN
+            // Unter Windows MÜSSEN Shortcuts zwingend die Dateiendung .lnk haben,
+            // damit QFile::link() eine korrekte Shell-Verknüpfung via COM-API erstellt.
+            if (!baseName.endsWith(".lnk", Qt::CaseInsensitive)) {
+                baseName += ".lnk";
+            }
+#endif
+
+            QString dstPath = QDir(m_targetDir).filePath(baseName);
+            QFileInfo linkDstInfo(dstPath);
+
+            // Konfliktprüfung mit dem neuen Namen (inkl. evtl. .lnk Endung)
+            if (linkDstInfo.exists() || linkDstInfo.isSymbolicLink()) {
+                // Wir erzeugen eine temporäre QFileInfo für generateUniqueCopyName,
+                // damit die "(Copy)"-Endung korrekt VOR dem ".lnk" eingefügt wird.
+                dstPath = generateUniqueCopyName(QFileInfo(dstPath), m_targetDir);
+            }
+
+            if (QFile::link(srcPath, dstPath)) {
+                m_stats.filesWritten++;
+            } else {
+                m_stats.filesError++;
+                qDebug() << "Could not create link for:" << srcPath << "at" << dstPath;
+                m_failedItems.append({srcPath, dstPath, m_operationType, tr("Link creation failed")});
+            }
+            updateProgress();
         }
 
         if (result == FileOpResult::Cancelled) {
@@ -232,12 +286,16 @@ void FileOperation::doCancel() {
     }
 }
 
-FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &dst, bool isCrossDevice) {
+FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &dst, bool isCrossDevice, bool forceCopyOnly) {
     QFileInfo srcInfo(src);
     QFileInfo dstInfo(dst);
 
     m_stats.currentName = calculateRelativeDisplayPath(srcInfo);
     updateProgress();
+
+    // Effektiver Move-Status: Wenn forceCopyOnly == true ist (z.B. bei Deep Copy eines Symlinks),
+    // behandeln wir die Operation intern strikt als Copy, damit die Quelldatei NICHT gelöscht wird!
+    const bool isMove = (m_operationType == OperationType::Move) && !forceCopyOnly;
 
     const bool isSymlinkSource = srcInfo.isSymbolicLink() || srcInfo.isJunction();
     const bool isSymlinkTarget = dstInfo.isSymbolicLink() || dstInfo.isJunction();
@@ -267,6 +325,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                     if (!checkInterruption()) return FileOpResult::Cancelled;
                     m_stats.filesError++;
                     updateProgress();
+                    m_failedItems.append({src, dst, m_operationType, tr("Target folder deletion failed")});
                     return FileOpResult::Error;
                 }
                 break;
@@ -277,7 +336,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                 qint64 fileSizeTarget = dstInfo.size();
 
                 if (fileSizeSource == 0 && fileSizeTarget == 0) {
-                    if (m_operationType == OperationType::Move) {
+                    if (isMove) {
                         if (QFile::remove(src)) {
                             m_stats.filesWritten++;
                             updateProgress();
@@ -286,6 +345,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                             if (!checkInterruption()) return FileOpResult::Cancelled;
                             m_stats.filesError++;
                             updateProgress();
+                            m_failedItems.append({src, dst, m_operationType, tr("Source deletion during move failed")});
                             return FileOpResult::Error;
                         }
                     } else {
@@ -298,23 +358,31 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                 // Only check crc for files up to 128 MiB which have the same size
                 if (fileSizeSource == fileSizeTarget && fileSizeSource <= 134217728) {
                     auto crcSource = calculateCRC32(src);
-                    if (!crcSource) { // Wenn crcSource kein Wert ist, gab es einen Abbruch oder Fehler
-                        return !checkInterruption() ? FileOpResult::Cancelled : FileOpResult::Error;
+                    if (!crcSource) {
+                        if (!checkInterruption()) return FileOpResult::Cancelled;
+                        m_stats.filesError++;
+                        updateProgress();
+                        m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("CRC32 calculation failed for source")});
+                        return FileOpResult::Error;
                     }
 
                     auto crcTarget = calculateCRC32(dst);
                     if (!crcTarget) {
-                        return !checkInterruption() ? FileOpResult::Cancelled : FileOpResult::Error;
+                        if (!checkInterruption()) return FileOpResult::Cancelled;
+                        m_stats.filesError++;
+                        updateProgress();
+                        m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("CRC32 calculation failed for target")});
+                        return FileOpResult::Error;
                     }
 
                     // If the target file has the same crc as the source file (so same content), just skip.
                     // No point wasting the user's time and attention on a unneccessary MessageBox.
                     // Regarding "std::optional<quint32>" if both exist, "==" compares the inner quint32.
                     if (crcSource == crcTarget) {
-                        if (m_operationType == OperationType::Move) {
+                        if (isMove) {
                             // MOVE-MODUS: Source needs to be deleted since identical target exists
                             if (QFile::remove(src)) {
-                                qDebug() << "Move source with same context deleted:" << src;
+                                qDebug() << "Move-source with identical CRC deleted:" << src;
 
                                 m_stats.filesWritten++; // Zählt als erfolgreich verarbeitete Datei
                                 m_stats.bytesWritten += fileSizeSource; // Fortschrittsbalken auffüllen
@@ -323,9 +391,9 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                                 return FileOpResult::Success;
                             } else {
                                 if (!checkInterruption()) return FileOpResult::Cancelled;
-                                qDebug() << "Move source with same context couln't be deleted:" << src;
                                 m_stats.filesError++;
                                 updateProgress();
+                                m_failedItems.append({src, dst, m_operationType, tr("CRC-Twin source deletion during move failed")});
                                 return FileOpResult::Error;
                             }
                         } else {
@@ -359,6 +427,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                     if (!checkInterruption()) return FileOpResult::Cancelled;
                     m_stats.filesError++;
                     updateProgress();
+                    m_failedItems.append({src, dst, m_operationType, tr("Destination deletion failed")});
                     return FileOpResult::Error;
                 }
                 break;
@@ -369,7 +438,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
     bool ok = false;
     bool movedViaRename = false;
 
-    if (m_operationType == OperationType::Move && !isCrossDevice) {
+    if (isMove && !isCrossDevice) {
         ok = QFile::rename(src, dst);           // Verschieben auf demselben Laufwerk durch einfaches Umbenennen
         if (ok) {
             movedViaRename = true;
@@ -380,7 +449,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                 ok = copyFileInChunks(src, dst);
             }
         }
-    } else { // OperationType::Copy ODER Cross-Device Move
+    } else { // OperationType::Copy ODER Cross-Device Move ODER forceCopyOnly
         if (isSymlinkSource) {
             ok = QFile::link(srcInfo.symLinkTarget(), dst);
         } else {
@@ -390,7 +459,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
 
     bool sourceDeleteFailed = false;
 
-    if (ok && m_operationType == OperationType::Move && !movedViaRename) {
+    if (ok && isMove && !movedViaRename) {
         if (!QFile::remove(src)) { // Löschen der Quelle NUR bei Move und wenn es nicht schon durch rename() verschoben wurde
             // Wenn das Löschen der Quelle fehlschlägt, war die Move-Operation fehlerhaft
             qDebug() << "Verschieben unvollständig: Quelldatei konnte nicht gelöscht werden:" << src;
@@ -409,6 +478,15 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
         if (!checkInterruption()) return FileOpResult::Cancelled;
         m_stats.filesError++;
         updateProgress();
+
+        if (!ok) {
+            m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("CopyOrMove failed.")});
+        }
+
+        if (sourceDeleteFailed) {
+            m_failedItems.append({src, dst, m_operationType, tr("Source deletion after successful move failed.")});
+        }
+
         return FileOpResult::Error;
     }
 
@@ -417,7 +495,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
     return FileOpResult::Success;
 }
 
-FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst, bool isCrossDevice) {
+FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst, bool isCrossDevice, bool forceCopyOnly) {
     QFileInfo srcInfo(src);
     QFileInfo dstInfo(dst);
 
@@ -425,10 +503,10 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
     updateProgress();
 
     // Wenn wir einen Ordner auf demselben Laufwerk verschieben, können wir uns die komplette Rekursion sparen!
-    // Aber NUR, wenn das Ziel noch nicht existiert, sonst müssen wir erst Konflikte prüfen.
-    if (m_operationType == OperationType::Move && !isCrossDevice && !dstInfo.exists()) {
+    // Aber NUR, wenn das Ziel noch nicht existiert und wir NICHT im forceCopyOnly-Modus sind!
+    if (m_operationType == OperationType::Move && !forceCopyOnly && !isCrossDevice && !dstInfo.exists()) {
         // Wir müssen die Stats VOR dem Rename holen, weil danach der Quellpfad weg ist.
-        auto dirStats = getDirStats(src);
+        auto dirStats = calculateStats({src});
 
         if (QFile::rename(src, dst)) {
             m_stats.bytesWritten += dirStats.first;
@@ -451,7 +529,7 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
             switch (resolution) {
             case ConflictResolution::Skip:
             {
-                auto dirStats = getDirStats(src);
+                auto dirStats = calculateStats({src});
                 m_stats.filesSkipped += dirStats.second;
                 m_stats.bytesWritten += dirStats.first;
                 updateProgress();
@@ -461,12 +539,25 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
                 return FileOpResult::Cancelled;
             case ConflictResolution::Overwrite:
                 // Lösche die blockierende Datei, damit danach der Ordner erstellt werden kann
-                // (QFile::remove löscht bei einem Symlink NUR die Verknüpfung,
-                // nicht den Inhalt des Ordners, auf den sie zeigt.)
+                // (QFile::remove löscht bei einem Symlink NUR die Verknüpfung, nicht den Inhalt des Ordners, auf den sie zeigt.)
                 if (!QFile::remove(dst)) {
+                    if (!checkInterruption()) return FileOpResult::Cancelled;
                     m_stats.filesError++;
+                    updateProgress();
+                    m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("Failed to remove blocking file for directory creation")});
                     return FileOpResult::Error;
                 }
+
+                if (!QDir().mkpath(dst)) {
+                    if (!checkInterruption()) return FileOpResult::Cancelled;
+                    m_stats.filesError++;
+                    updateProgress();
+                    m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("Failed to create directory")});
+                    return FileOpResult::Error;
+                }
+
+                m_stats.filesWritten++; // Ordner erfolgreich erstellt
+                updateProgress();
                 break;
             }
         } else {
@@ -478,7 +569,7 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
             switch (resolution) {
             case ConflictResolution::Skip:
             {
-                auto dirStats = getDirStats(src);
+                auto dirStats = calculateStats({src});
                 m_stats.bytesWritten += dirStats.first;
                 m_stats.filesSkipped += dirStats.second;
                 updateProgress();
@@ -487,15 +578,25 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
             case ConflictResolution::Cancel:
                 return FileOpResult::Cancelled;
             case ConflictResolution::Overwrite:
+                m_stats.filesWritten++; // Ordner erfolgreich zusammengeführt (Merge)
+                updateProgress();
                 break; // Zusammenführen, weiter in die Rekursion
             }
         }
     } else { // Destination does not exist as file or directory -> create directory
-        if (!QDir().mkpath(dst)) return FileOpResult::Error;
+        if (!QDir().mkpath(dst)) {
+            if (!checkInterruption()) return FileOpResult::Cancelled;
+            m_stats.filesError++;
+            updateProgress();
+            m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("Failed to create target directory")});
+            return FileOpResult::Error;
+        }
+        m_stats.filesWritten++; // Ordner erfolgreich erstellt
+        updateProgress();
     }
 
     QDir srcDir(src);
-    const QFileInfoList entries = srcDir.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries| QDir::Hidden | QDir::System);
+    const QFileInfoList entries = srcDir.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries | QDir::Hidden | QDir::System);
 
     bool anyErrors = false;
     bool anySkipped = false;
@@ -507,10 +608,42 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
         QString childDst = dstDir.filePath(entry.fileName());
         FileOpResult r = FileOpResult::Success;
 
-        if (entry.isDir() && !entry.isSymbolicLink() && !entry.isJunction()) {
-            r = copyOrMoveDir(entry.filePath(), childDst, isCrossDevice);
+        bool isSymlink = entry.isSymbolicLink() || entry.isJunction();
+
+        // --- NEU: SYMLINK AUF ZIEL OHNE SYMLINK-SUPPORT (DEEP COPY FALLBACK) ---
+        if (isSymlink && !targetSupportsSymlinks()) {
+            QString targetResolved = entry.isJunction() ? entry.junctionTarget() : entry.symLinkTarget();
+            QFileInfo resolvedInfo(targetResolved);
+
+            if (!resolvedInfo.exists()) {
+                m_stats.filesError++;
+                m_failedItems.append(FailedItem{ entry.filePath(), childDst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("Symlink target does not exist") });
+                r = FileOpResult::Error;
+            } else {
+                bool childForceCopy = forceCopyOnly || (m_operationType == OperationType::Move);
+
+                if (resolvedInfo.isDir()) {
+                    r = copyOrMoveDir(targetResolved, childDst, isCrossDevice, childForceCopy);
+                } else {
+                    r = copyOrMoveFile(targetResolved, childDst, isCrossDevice, childForceCopy);
+                }
+
+                // Bei Move: Wenn der Inhalt kopiert wurde, löschen wir NUR den Symlink selbst
+                if (r == FileOpResult::Success && m_operationType == OperationType::Move && !forceCopyOnly) {
+                    removeReadOnlyAttribute(entry.filePath());
+                    if (!QFile::remove(entry.filePath())) {
+                        m_stats.filesError++;
+                        m_failedItems.append(FailedItem{ entry.filePath(), childDst, m_operationType, tr("Could not remove source symlink after move") });
+                        r = FileOpResult::Error;
+                    }
+                }
+            }
+        }
+        // --- DEINE ORIGINALE UNTERSCHEIDUNG (mit weitergegebenem forceCopyOnly) ---
+        else if (entry.isDir() && !isSymlink) {
+            r = copyOrMoveDir(entry.filePath(), childDst, isCrossDevice, forceCopyOnly);
         } else {
-            r = copyOrMoveFile(entry.filePath(), childDst, isCrossDevice);
+            r = copyOrMoveFile(entry.filePath(), childDst, isCrossDevice, forceCopyOnly);
         }
 
         if (r == FileOpResult::Cancelled) return FileOpResult::Cancelled;
@@ -518,7 +651,8 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
         if (r == FileOpResult::Skipped)   anySkipped = true;
     }
 
-    if (!anyErrors && !anySkipped && m_operationType == OperationType::Move) {
+    // Bei Move: Quellordner am Ende nur löschen, wenn kein Fehler/Skip auftrat UND nicht forceCopyOnly aktiv ist
+    if (!anyErrors && !anySkipped && m_operationType == OperationType::Move && !forceCopyOnly) {
         if (!srcDir.removeRecursively()) {
             anyErrors = true;
         }
@@ -529,6 +663,7 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
 
     return FileOpResult::Success;
 }
+
 
 FileOpResult FileOperation::deleteDirRecursively(const QString &dirPath) {
     if (!checkInterruption()) return FileOpResult::Cancelled;
@@ -541,22 +676,28 @@ FileOpResult FileOperation::deleteDirRecursively(const QString &dirPath) {
     for (const QFileInfo &entry : entries) {
         if (!checkInterruption()) return FileOpResult::Cancelled;
 
-        if (entry.isDir() && !entry.isSymbolicLink() && !entry.isJunction()) {
+        const bool isLink = entry.isSymbolicLink() || entry.isJunction();
+
+        // Rekursion NUR wenn es ein echtes Verzeichnis ist, KEIN Symlink!
+        if (entry.isDir() && !isLink) {
             FileOpResult r = deleteDirRecursively(entry.filePath());
             if (r == FileOpResult::Cancelled) return FileOpResult::Cancelled;
             if (r == FileOpResult::Error)     anyErrors = true;
         } else {
+            // Symlinks (egal ob Datei oder Ordner) und normale Dateien hier löschen
             m_stats.currentName = calculateRelativeDisplayPath(entry);
 
             removeReadOnlyAttribute(entry.filePath());
 
             if (QFile::remove(entry.filePath())) {
-                m_stats.bytesWritten += entry.size();
+                if (!isLink) {
+                    m_stats.bytesWritten += entry.size();
+                }
                 m_stats.filesWritten++;
             } else {
                 m_stats.filesError++;
                 anyErrors = true;
-                qDebug() << "Could not delete file:" << entry.filePath();
+                m_failedItems.append({entry.filePath(), QString(), m_operationType, tr("File deletion failed")});
             }
             updateProgress();
         }
@@ -572,7 +713,7 @@ FileOpResult FileOperation::deleteDirRecursively(const QString &dirPath) {
         } else {
             m_stats.filesError++;
             updateProgress();
-            qDebug() << "Could not remove empty directory:" << dirPath;
+            m_failedItems.append({dirPath, QString(), m_operationType, tr("Empty folder deletion failed")});
             return FileOpResult::Error;
         }
     }
@@ -617,46 +758,126 @@ QString FileOperation::generateUniqueCopyName(const QFileInfo &srcInfo, const QS
     }
 
     int counter = 1;
-    QString newPath;
 
-    do {
+    while (true) {
         QString suffix = (counter == 1) ? tr(" (Copy)") : QString(tr(" (Copy %1)")).arg(counter);
-        newPath = QDir(targetDir).filePath(base + suffix + ext);
+        QString newPath = QDir(targetDir).filePath(base + suffix + ext);
         counter++;
-    } while (QFile::exists(newPath));
 
-    return newPath;
-}
-
-std::pair<qint64, int> FileOperation::getDirStats(const QString &dirPath) {
-    qint64 bytes = 0;
-    int files = 0;
-    QDir dir(dirPath);
-    const QFileInfoList entries = dir.entryInfoList(QDir::NoDotAndDotDot | QDir::AllEntries| QDir::Hidden | QDir::System);
-
-    for (const QFileInfo &entry : entries) {
-        if (!checkInterruption()) return {bytes, files};
-
-        if (entry.isDir() && !entry.isSymbolicLink() && !entry.isJunction()) {
-            auto sub = getDirStats(entry.filePath());
-            bytes += sub.first;
-            files += sub.second;
-        } else {
-            bytes += entry.size();
-            files++;
+        QFileInfo info(newPath);
+        if (!info.exists() && !info.isSymbolicLink() && !info.isJunction()) {
+            return newPath;
         }
     }
-    return {bytes, files};
 }
+
+std::pair<qint64, int> FileOperation::calculateStats(const QStringList &filePaths) {
+    qint64 totalBytes = 0;
+    int totalFiles = 0;
+
+    QSet<QString> visitedDirs;
+    QStack<QString> dirStack;
+
+    // Hilfs-Lambda zur einheitlichen Bewertung jedes FileInfo-Objekts
+    auto processInfo = [&](const QFileInfo &info) {
+#ifdef Q_OS_WIN
+        // --- WINDOWS .LNK SHORTCUTS ---
+        if (info.isShortcut()) {
+            totalBytes += getLnkSize(info.filePath());
+            totalFiles++;
+            return;
+        }
+#endif
+        // --- SYMLINKS & JUNCTIONS ---
+        if (info.isSymbolicLink() || info.isJunction()) {
+            // Case 1: Löschen, Papierkorb oder Link erstellen -> Immer nur das Link-Objekt selbst zählen
+            if (m_operationType == OperationType::Delete ||
+                m_operationType == OperationType::Recycle ||
+                m_operationType == OperationType::Link)
+            {
+                totalFiles++;
+            }
+            // Case 2: Copy oder Move UND Ziel unterstützt Symlinks -> schlank als Link zählen
+            else if (targetSupportsSymlinks()) {
+                totalFiles++;
+            }
+            // Case 3: Copy oder Move UND Ziel unterstützt KEINE Symlinks -> Deep Copy (Ziel auflösen)
+            else {
+                QString targetPath = info.isJunction() ? info.junctionTarget() : info.symLinkTarget();
+                QFileInfo targetInfo(targetPath);
+
+                if (targetInfo.exists()) {
+                    if (targetInfo.isDir()) {
+                        // Verzeichnis-Symlink: Einfach auf den Stack legen.
+                        // Phase 2 kümmert sich um Zyklenschutz und Entfaltung!
+                        dirStack.push(targetPath);
+                    } else {
+                        // Datei-Symlink: Echtes Ziel muss kopiert werden -> Größe & Datei mitzählen
+                        totalFiles++;
+                        totalBytes += targetInfo.size();
+                    }
+                }
+            }
+        }
+        // --- NORMALE ORDNER ---
+        else if (info.isDir()) {
+            totalFiles++;
+            if (m_operationType != OperationType::Link) {
+                // Einfach auf den Stack legen. Phase 2 übernimmt Dedupe/Verarbeitung.
+                dirStack.push(info.absoluteFilePath());
+            }
+        }
+        // --- NORMALE DATEIEN ---
+        else {
+            totalBytes += info.size();
+            totalFiles++;
+        }
+    };
+
+    // PHASE 1: Top-Level-Items verarbeiten (Einstiegspunkt aus 'items')
+    for (const QString &path : filePaths) {
+        if (!checkInterruption()) return {totalBytes, totalFiles};
+        processInfo(QFileInfo(path));
+    }
+
+    // PHASE 2: Unterordner speicherschonend abarbeiten
+    while (!dirStack.isEmpty()) {
+        if (!checkInterruption()) return {totalBytes, totalFiles};
+
+        QString currentDir = dirStack.pop();
+        QFileInfo dirInfo(currentDir);
+        QString canonical = dirInfo.canonicalFilePath();
+
+        // ZYKLENSCHUTZ & DEDUPLIZIERUNG (EINZIGE ZENTRALE PRÜFUNG)
+        // Wenn der Pfad ungültig ist oder wir den kanonischen Zielordner
+        // schon einmal betreten haben (z. B. durch rekursive Symlinks), überspringen.
+        if (canonical.isEmpty() || visitedDirs.contains(canonical)) {
+            continue;
+        }
+        visitedDirs.insert(canonical);
+
+        QDirIterator it(currentDir, QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot);
+
+        while (it.hasNext()) {
+            if (!checkInterruption()) return {totalBytes, totalFiles};
+
+            it.next();
+            processInfo(it.fileInfo());
+        }
+    }
+
+    return {totalBytes, totalFiles};
+}
+
 
 bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
     QFile srcFile(src);
     QFile dstFile(dst);
 
     if (!srcFile.open(QIODevice::ReadOnly)) return false;
-    if (!dstFile.open(QIODevice::WriteOnly)) return false;
+    if (!dstFile.open(QIODevice::WriteOnly | QIODevice::Unbuffered)) return false;
 
-    constexpr qint64 bufferSize = 4 * 1024 * 1024; // 4 MiB
+    constexpr qint64 bufferSize = 16 * 1024 * 1024; // 16 MiB
     QByteArray buffer(bufferSize, 0);
 
     bool success = true;
@@ -669,17 +890,37 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
         }
 
         qint64 bytesRead = srcFile.read(buffer.data(), bufferSize);
-        if (bytesRead <= 0) break;
+        if (bytesRead <= 0) {
+            if (bytesRead < 0) {
+                // ECHTER LESEFEHLER! (z.B. Lesefehler auf Datenträger)
+                qWarning() << "Lesefehler beim Kopieren von" << src << ":" << srcFile.errorString();
+                success = false;
+            }
+            break; // Sauberes EOF (0) oder Lesefehler (-1) -> Schleife beenden
+        }
 
         qint64 bytesWritten = dstFile.write(buffer.data(), bytesRead);
 
         // 2. Fehlerprüfung beim Schreiben (z.B. Festplatte voll)
         if (bytesWritten != bytesRead) {
+            qWarning() << "Schreibfehler bei" << dst << ":" << dstFile.errorString();
             success = false;
             break;
         }
 
-        // Statistiken updaten
+        // Qt-Puffer an Kernel übergeben
+        dstFile.flush();
+
+        // Kernel zwingen, den Chunk SOFORT physisch auf das Medium zu schreiben
+#if defined(Q_OS_WIN)
+        FlushFileBuffers(reinterpret_cast<HANDLE>(dstFile.handle()));
+#else
+        // fdatasync ist unter Linux tick schneller als fsync, da es nur Daten
+        // und keine irrelevanten Metadaten/Timestamps pro Chunk synchronisiert!
+        ::fdatasync(dstFile.handle());
+#endif
+
+        // Erst JETZT ist der Chunk physikalisch geschrieben -> Statistik & UI aktualisieren
         m_stats.bytesWritten += bytesWritten;
         updateProgress();
     }
@@ -687,6 +928,7 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
     if (success && checkInterruption()) {
         QFileInfo srcInfo(src);
         dstFile.flush();
+
         dstFile.setFileTime(srcInfo.fileTime(QFileDevice::FileBirthTime), QFileDevice::FileBirthTime);
         dstFile.setFileTime(srcInfo.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
         dstFile.setFileTime(srcInfo.fileTime(QFileDevice::FileAccessTime), QFileDevice::FileAccessTime);
@@ -719,19 +961,18 @@ void FileOperation::updateProgress(bool force) {
 QString FileOperation::calculateRelativeDisplayPath(const QFileInfo &info) {
     QString fullPath = info.absoluteFilePath();
 
-    if (!m_sourceDir.isEmpty() && fullPath.startsWith(m_sourceDir) && fullPath.length() > m_sourceDir.length()) {
-        int skipLength = m_sourceDir.length();
-
-        // NUR wenn m_sourceDir NICHT auf einen Slash endet, müssen wir den
-        // darauffolgenden Separator manuell mitüberspringen (+1)
-        if (!m_sourceDir.endsWith('/') && !m_sourceDir.endsWith('\\')) {
-            skipLength += 1;
+    if (!m_sourceDir.isEmpty()) {
+        QString cleanSource = QDir::cleanPath(m_sourceDir);
+        if (!cleanSource.endsWith('/') && !cleanSource.endsWith('\\')) {
+            cleanSource += '/';
         }
 
-        return QDir::toNativeSeparators(fullPath.sliced(skipLength));
+        if (fullPath.startsWith(cleanSource, Qt::CaseInsensitive)) {
+            return QDir::toNativeSeparators(fullPath.sliced(cleanSource.length()));
+        }
     }
 
-    return info.fileName(); // Fallback
+    return info.fileName();
 }
 
 std::optional<quint32> FileOperation::calculateCRC32(const QString &filePath) {
@@ -772,10 +1013,16 @@ std::optional<quint32> FileOperation::calculateCRC32(const QString &filePath) {
 ConflictResolution FileOperation::askUserForResolution(const Conflict &conflict) {
     updateProgress(true);
 
+    if (!checkInterruption()) {
+        return ConflictResolution::Cancel;
+    }
+
     {
         QMutexLocker locker(&m_mutex);
 
-        if (!checkInterruption()) {
+        // Schnelle, nicht-blockierender re-check falls doCancel() zwischen
+        // obigem checkInterruption() und hier durchgelaufen ist.
+        if (m_isCancelled.load()) {
             return ConflictResolution::Cancel;
         }
 
@@ -822,15 +1069,170 @@ void FileOperation::doContinue() {
 }
 
 void FileOperation::doRetry() {
+    if (m_failedItems.isEmpty()) {
+        return;
+    }
+
+    // 1. Die alte Fehlerliste für den neuen Versuch umkopieren
+    QList<FailedItem> itemsToRetry = std::move(m_failedItems);
+    m_failedItems.clear(); // Für den neuen Versuch frisch leeren
+
+    // 2. Status/Flags zurücksetzen
     m_isCancelled.store(false);
     m_isPaused.store(false);
-    m_applyToAll = false; // Reset, damit der User bei neuen Konflikten wieder gefragt wird
+    m_applyToAll = false;
 
-    // Startet die Schleife von vorne. Bereits kopierte Dateien werden via CRC übersprungen.
+    // 3. Einen gezielten Retry-Durchlauf anfordern
     // FALSCH: run(); -> Würde den GUI-Thread blockieren
     // RICHTIG: Signalisiert dem Worker-Thread, run() in SEINEM Thread auszuführen
-    QMetaObject::invokeMethod(this, "run", Qt::QueuedConnection);
+    QMetaObject::invokeMethod(this, [this, itemsToRetry = std::move(itemsToRetry)]() {
+        runRetryList(itemsToRetry);
+    }, Qt::QueuedConnection);
+
 }
+
+void FileOperation::runRetryList(const QList<FailedItem> &itemsToRetry) {
+#ifdef Q_OS_WIN
+    WindowsBackgroundPriorityGuard priorityGuard;
+#elif defined(Q_OS_LINUX)
+    LinuxBackgroundPriorityGuard priorityGuard;
+#endif
+
+    // 1. STATISTIKEN ZURÜCKSETZEN & NEU BERECHNEN
+    m_stats = CopyStats();
+    m_stats.currentName = tr("Scanning files for retry...");
+    m_timer.start();
+    updateProgress(true);
+
+    QStringList retryPaths;
+    for (const FailedItem &item : itemsToRetry) {
+        retryPaths.append(item.sourcePath);
+    }
+
+    auto [totalBytes, totalFiles] = calculateStats(retryPaths);
+    m_stats.totalBytes = totalBytes;
+    m_stats.totalFiles = totalFiles;
+
+    // isSameDevice aus dem ersten Pfad ableiten (falls relevant)
+    if (!itemsToRetry.isEmpty()) {
+        m_stats.isSameDevice = isOnSameDevice(itemsToRetry.first().sourcePath, m_targetDir);
+    }
+
+    if (!checkInterruption()) {
+        emit wasCanceled(m_stats.filesError);
+        return;
+    }
+
+    m_timer.start();
+
+    // 2. RETRY SCHLEIFE
+    for (const FailedItem &item : itemsToRetry) {
+        if (!checkInterruption()) break;
+
+        FileOpResult result = FileOpResult::Success;
+        QFileInfo srcInfo(item.sourcePath);
+        m_stats.currentName = calculateRelativeDisplayPath(srcInfo);
+        updateProgress();
+
+        switch (item.type) {
+        case OperationType::Copy:
+        case OperationType::Move: {
+            bool isCrossDevice = !isOnSameDevice(item.sourcePath, item.targetPath);
+            bool isSymlink = srcInfo.isSymbolicLink() || srcInfo.isJunction();
+
+            // Ziel unterstützt KEINE Symlinks -> Deep Copy Fallback beim Retry
+            if (isSymlink && !targetSupportsSymlinks()) {
+                QString targetResolved = srcInfo.isJunction() ? srcInfo.junctionTarget() : srcInfo.symLinkTarget();
+                QFileInfo resolvedInfo(targetResolved);
+
+                if (!resolvedInfo.exists()) {
+                    m_stats.filesError++;
+                    m_failedItems.append(FailedItem{item.sourcePath, item.targetPath, item.type, tr("Symlink target does not exist")});
+                    result = FileOpResult::Error;
+                } else {
+                    bool forceCopyOnly = (item.type == OperationType::Move);
+
+                    if (resolvedInfo.isDir()) {
+                        result = copyOrMoveDir(targetResolved, item.targetPath, isCrossDevice, forceCopyOnly);
+                    } else {
+                        result = copyOrMoveFile(targetResolved, item.targetPath, isCrossDevice, forceCopyOnly);
+                    }
+
+                    if (result == FileOpResult::Success && item.type == OperationType::Move) {
+                        removeReadOnlyAttribute(item.sourcePath);
+                        if (!QFile::remove(item.sourcePath)) {
+                            m_stats.filesError++;
+                            m_failedItems.append(FailedItem{item.sourcePath, item.targetPath, item.type, tr("Could not remove source symlink after move")});
+                            result = FileOpResult::Error;
+                        }
+                    }
+                }
+            }
+            else if (srcInfo.isDir() && !isSymlink) {
+                result = copyOrMoveDir(item.sourcePath, item.targetPath, isCrossDevice, false);
+            } else {
+                result = copyOrMoveFile(item.sourcePath, item.targetPath, isCrossDevice, false);
+            }
+            break;
+        }
+        case OperationType::Delete: {
+            if (srcInfo.isDir() && !srcInfo.isSymbolicLink() && !srcInfo.isJunction()) {
+                result = deleteDirRecursively(item.sourcePath);
+            } else {
+                removeReadOnlyAttribute(item.sourcePath);
+                if (QFile::remove(item.sourcePath)) {
+                    if (!srcInfo.isSymbolicLink() && !srcInfo.isJunction()) {
+                        m_stats.bytesWritten += srcInfo.size();
+                    }
+                    m_stats.filesWritten++;
+                } else {
+                    m_stats.filesError++;
+                    m_failedItems.append(item);
+                }
+            }
+            break;
+        }
+        case OperationType::Recycle: {
+            if (QFile::moveToTrash(item.sourcePath)) {
+                auto dirStats = std::make_pair(srcInfo.size(), 1);
+                if (srcInfo.isDir() && !srcInfo.isSymbolicLink() && !srcInfo.isJunction()) {
+                    dirStats = calculateStats({item.sourcePath});
+                }
+                m_stats.bytesWritten += dirStats.first;
+                m_stats.filesWritten += dirStats.second;
+            } else {
+                m_stats.filesError++;
+                m_failedItems.append(item);
+            }
+            break;
+        }
+        case OperationType::Link: {
+            if (QFile::link(item.sourcePath, item.targetPath)) {
+                m_stats.filesWritten++;
+            } else {
+                m_stats.filesError++;
+                m_failedItems.append(item);
+            }
+            break;
+        }
+        }
+
+        if (result == FileOpResult::Cancelled) {
+            m_isCancelled.store(true);
+            break;
+        }
+    }
+
+    m_stats.currentName = QString();
+    updateProgress(true);
+
+    if (!checkInterruption()) {
+        emit wasCanceled(m_stats.filesError);
+    } else {
+        emit wasFinished(m_stats.filesError);
+    }
+}
+
 
 bool FileOperation::checkInterruption() {
     if (m_isCancelled.load()) {
@@ -854,4 +1256,53 @@ bool FileOperation::checkInterruption() {
     }
 
     return true;
+}
+
+bool FileOperation::checkTargetSymlinkSupport(const QString &targetDir) const {
+#ifdef Q_OS_WIN
+    // Unter Windows erzwingen wir immer eine "Deep Copy" (Inhalte auflösen/kopieren),
+    // da Symlinks Rechte (Admin/Developer Mode) erfordern und Explorer-Standard sind.
+    return false;
+#else
+    QDir target(targetDir);
+    if (!target.exists()) {
+        if (!target.mkpath(".")) {
+            return false;
+        }
+    }
+
+    // Eindeutige, temporäre Namen für Test-Ordner und Test-Link generieren
+    quint32 randomId = QRandomGenerator::global()->generate();
+    qint64 pid = QCoreApplication::applicationPid();
+
+    QString testTargetName = QString(".tmp_symtest_dir_%1_%2").arg(pid).arg(randomId);
+    QString testLinkName   = QString(".tmp_symtest_link_%1_%2").arg(pid).arg(randomId);
+
+    QString testTargetAbs = target.filePath(testTargetName);
+    QString testLinkAbs   = target.filePath(testLinkName);
+
+    // 1. Temporären Test-Ordner im Zielverzeichnis anlegen
+    if (!QDir().mkdir(testTargetAbs)) {
+        return false;
+    }
+
+    // 2. Versuchen, einen echten Symlink darauf zu erstellen
+    bool supportsSymlinks = QFile::link(testTargetAbs, testLinkAbs);
+
+    // 3. Sofortiges Aufräumen der Spuren
+    if (supportsSymlinks) {
+        QFile::remove(testLinkAbs); // Löscht nur das Symlink-Element
+    }
+    QDir().rmdir(testTargetAbs); // Löscht den Test-Ordner
+
+    return supportsSymlinks;
+#endif
+}
+
+// Lazy Evaluator!
+bool FileOperation::targetSupportsSymlinks() {
+    if (!m_targetSupportsSymlinks.has_value()) {
+        m_targetSupportsSymlinks = checkTargetSymlinkSupport(m_targetDir);
+    }
+    return m_targetSupportsSymlinks.value();
 }

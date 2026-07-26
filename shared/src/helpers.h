@@ -5,6 +5,10 @@
 #include <QPixmap>
 #include <QString>
 
+#ifdef Q_OS_WIN
+#include <qt_windows.h>
+#endif
+
 enum class OperationType { Copy, Move, Link, Delete, Recycle }; // needed for interop with mkTransactionHandler
 enum ViewMode {List = 0, Detail = 1, Thumbnail = 2};
 
@@ -17,6 +21,19 @@ struct DesktopEntry {
     QString workDir;
     bool isValid = false;
     bool useTerminal = false;
+};
+
+struct LnkInfo {
+    qint64 size = 0;
+    QDateTime birthTime;
+    QDateTime lastAccessTime;
+    QDateTime lastWriteTime;
+
+    bool isReadOnly = false;
+    bool isHidden   = false;
+    bool isSystem   = false;
+
+    bool exists     = false;
 };
 
 bool isTextFile(const QString &filePath);
@@ -37,10 +54,14 @@ bool hasOnlyFiles(const QStringList &pathList);
 bool isCurrentProcessElevated();
 bool onSameStorageDevice(const QString &pathA, const QString &pathB);
 void createInternetShortcut(const QString &urlStr, const QString &targetDir, const QString &webTitle);
+QString readLnkTargetOnLinux(const QString &filePath);  // currently unused
 
 #ifdef Q_OS_WIN
 bool startProcessElevatedWin(const QString &programPath, const QString &arguments);
 QString argumentsToWinString(const QStringList &args);
+LnkInfo getLnkInfo(const QString &filePath);
+qint64 getLnkSize(const QString &filePath);
+QDateTime fileTimeToQDateTime(const FILETIME &ft);
 #endif
 
 bool atWordBoundary(const QString &fileName, const QString &word, Qt::CaseSensitivity cs);

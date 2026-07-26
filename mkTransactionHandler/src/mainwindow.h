@@ -43,7 +43,7 @@ class ElidedLabel : public QLabel {
     Q_OBJECT
 public:
     explicit ElidedLabel(QWidget *parent = nullptr) : QLabel(parent) {
-        setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+        setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     }
 
     // Wir überschreiben setText, um den originalen, ungekürzten Text im Speicher zu behalten
@@ -71,7 +71,13 @@ private:
         int availableWidth = contentsRect().width();
         if (availableWidth <= 0) availableWidth = width();
 
+        if (availableWidth <= 0) {
+            QLabel::setText(m_fullText);
+            return;
+        }
+
         QString elided = fm.elidedText(m_fullText, Qt::ElideMiddle, availableWidth);
+
         QLabel::setText(elided);
     }
 
@@ -80,6 +86,7 @@ private:
             parentWidget()->update(geometry().adjusted(-2, 0, 2, 0));
         }
     }
+
     QString m_fullText;
 };
 
