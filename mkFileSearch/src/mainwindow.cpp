@@ -1414,6 +1414,9 @@ void MainWindow::action_ListViewRenameFiles() {
 void MainWindow::action_ListViewFileProperties() {
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) {
+        if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") {
+            return;
+        }
         pathList = { m_currentDirectory };
     }
 

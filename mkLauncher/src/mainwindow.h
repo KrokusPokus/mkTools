@@ -128,6 +128,7 @@ private:
     QAction *m_actionViewModeList = nullptr;
     QAction *m_actionViewModeDetails = nullptr;
     QAction *m_actionViewModeThumbs = nullptr;
+    QAction *m_actionViewModeRefresh = nullptr;
     QAction *m_actionSortByName = nullptr;
     QAction *m_actionSortBySize = nullptr;
     QAction *m_actionSortByDate = nullptr;

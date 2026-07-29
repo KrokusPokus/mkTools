@@ -370,6 +370,12 @@ MainWindow::MainWindow(QWidget *parent)
     viewModeGroup->addAction(m_actionViewModeThumbs);
     viewModeGroup->setExclusive(true);
 
+    m_actionViewModeRefresh = new QAction(tr("Refresh"),this);
+    m_actionViewModeRefresh->setShortcut(QKeySequence("F5"));
+    connect(m_actionViewModeRefresh, &QAction::triggered, this, &MainWindow::updateSearch);
+
+    //-----------------------------------------------------------
+
     m_actionSortByName = new QAction(tr("Name"),this);
     m_actionSortByName->setCheckable(true);
     connect(m_actionSortByName, &QAction::triggered, this, &MainWindow::action_SortByName);
@@ -434,6 +440,7 @@ MainWindow::MainWindow(QWidget *parent)
         m_actionViewModeList->setShortcutVisibleInContextMenu(false);
         m_actionViewModeDetails->setShortcutVisibleInContextMenu(false);
         m_actionViewModeThumbs->setShortcutVisibleInContextMenu(false);
+        m_actionViewModeRefresh->setShortcutVisibleInContextMenu(false);
     }
 
     // --------------------------------------------------------------------
@@ -701,6 +708,8 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         subMenuView->addAction(m_actionViewModeList);
         subMenuView->addAction(m_actionViewModeDetails);
         subMenuView->addAction(m_actionViewModeThumbs);
+        subMenuView->addSeparator();
+        subMenuView->addAction(m_actionViewModeRefresh);
 
         mainMenu.addSeparator(); //-----------------------------------------
 
@@ -742,9 +751,9 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         }
         subMenuNew->addAction(m_actionListViewNewFolder);
         subMenuNew->addAction(m_actionListViewNewTextFile);
-        */
         mainMenu.addSeparator(); //-----------------------------------------
         mainMenu.addAction(m_actionListViewFileProperties);
+        */
     } else if (m_currentDirectory == "drives://") {
         mainMenu.addAction(m_actionListViewOpenFiles);
         mainMenu.setDefaultAction(m_actionListViewOpenFiles);
@@ -1152,8 +1161,10 @@ void MainWindow::action_ListViewRenameFiles() {
 void MainWindow::action_ListViewFileProperties() {
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) {
-        //pathList = { m_currentDirectory };
-        return;
+        if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") {
+            return;
+        }
+        pathList = { m_currentDirectory };
     }
 
     auto *dialog = new FilePropertiesDialog(pathList);

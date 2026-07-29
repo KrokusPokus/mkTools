@@ -73,6 +73,7 @@ private:
     void action_SortByType();
     void action_SortAscending();
     void action_SortDescending();
+    void action_toggleShowHidden();
 
     bool showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly);
     void browseFolder(QString directoryPath, const QString &focusPath = QString(), bool isHistoryNavigation = false);
@@ -128,12 +129,21 @@ private:
     QAction *m_actionViewModeList = nullptr;
     QAction *m_actionViewModeDetails = nullptr;
     QAction *m_actionViewModeThumbs = nullptr;
+    QAction *m_actionViewModeShowHidden = nullptr;
+    QAction *m_actionViewModeRefresh = nullptr;
     QAction *m_actionSortByName = nullptr;
     QAction *m_actionSortBySize = nullptr;
     QAction *m_actionSortByDate = nullptr;
     QAction *m_actionSortByType = nullptr;
     QAction *m_actionSortAscending = nullptr;
     QAction *m_actionSortDescending = nullptr;
+    QAction *m_actionNavigateUp = nullptr;
+    QAction *m_actionNavigateBack = nullptr;
+    QAction *m_actionNavigateForward = nullptr;
+    QAction *m_actionNavigateSiblingPrevious = nullptr;
+    QAction *m_actionNavigateSiblingNext = nullptr;
+    QAction *m_actionNavigateClipboardPath = nullptr;
+    QAction *m_actionNavigateDuplicate = nullptr;
 
     QTimer *m_timerUpdateIcons = nullptr;
     QTimer *m_scrollToDebounceTimer = nullptr;

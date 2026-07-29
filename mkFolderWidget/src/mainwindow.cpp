@@ -327,6 +327,7 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
 #endif
     connect(m_actionListViewNewTextFile, &QAction::triggered, this, &MainWindow::action_ListViewNewTextFile);
 
+    //-----------------------------------------------------------
 
     m_actionViewModeList = new QAction(tr("List"),this);
     m_actionViewModeList->setIcon(QIcon::fromTheme("view-list-details"));
@@ -351,6 +352,17 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     viewModeGroup->addAction(m_actionViewModeDetails);
     viewModeGroup->addAction(m_actionViewModeThumbs);
     viewModeGroup->setExclusive(true);
+
+    m_actionViewModeShowHidden = new QAction(tr("Show hidden"),this);
+    m_actionViewModeShowHidden->setCheckable(true);
+    m_actionViewModeShowHidden->setShortcut(QKeySequence("Ctrl+H"));
+    connect(m_actionViewModeShowHidden, &QAction::triggered, this, &MainWindow::action_toggleShowHidden);
+
+    m_actionViewModeRefresh = new QAction(tr("Refresh"),this);
+    m_actionViewModeRefresh->setShortcut(QKeySequence("F5"));
+    connect(m_actionViewModeRefresh, &QAction::triggered, this, &MainWindow::reloadDirectory);
+
+    //-----------------------------------------------------------
 
     m_actionSortByName = new QAction(tr("Name"),this);
     m_actionSortByName->setCheckable(true);
@@ -388,6 +400,40 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     sortOrderGroup->addAction(m_actionSortDescending);
     sortOrderGroup->setExclusive(true);
 
+    //-----------------------------------------------------------
+//QKeySequence(Qt::Key_Up)
+//QKeySequence("Ctrl+H")
+
+    m_actionNavigateUp = new QAction(tr("Up"),this);
+    m_actionNavigateUp->setShortcut(QKeySequence(Qt::Key_Backspace));
+    connect(m_actionNavigateUp, &QAction::triggered, this, &MainWindow::navigateUp);
+
+    m_actionNavigateBack = new QAction(tr("Back"),this);
+    m_actionNavigateBack->setShortcut(QKeySequence("Alt+Left"));
+    connect(m_actionNavigateBack, &QAction::triggered, this, &MainWindow::navigateBack);
+
+    m_actionNavigateForward = new QAction(tr("Forward"),this);
+    m_actionNavigateForward->setShortcut(QKeySequence("Alt+Right"));
+    connect(m_actionNavigateForward, &QAction::triggered, this, &MainWindow::navigateForward);
+
+    m_actionNavigateSiblingPrevious = new QAction(tr("Previous sibling folder"),this);
+    m_actionNavigateSiblingPrevious->setShortcut(QKeySequence("Ctrl+Up"));
+    connect(m_actionNavigateSiblingPrevious, &QAction::triggered, this, &MainWindow::navigateSiblingPrevious);
+
+    m_actionNavigateSiblingNext = new QAction(tr("Next sibling folder"),this);
+    m_actionNavigateSiblingNext->setShortcut(QKeySequence("Ctrl+Down"));
+    connect(m_actionNavigateSiblingNext, &QAction::triggered, this, &MainWindow::navigateSiblingNext);
+
+    m_actionNavigateClipboardPath = new QAction(tr("To clipboard path"),this);
+    m_actionNavigateClipboardPath->setShortcut(QKeySequence("Ctrl+P"));
+    connect(m_actionNavigateClipboardPath, &QAction::triggered, this, &MainWindow::navigateToClipboardPath);
+
+    m_actionNavigateDuplicate = new QAction(tr("Duplicate view"),this);
+    m_actionNavigateDuplicate->setShortcut(QKeySequence("Ctrl+D"));
+    connect(m_actionNavigateDuplicate, &QAction::triggered, this, &MainWindow::duplicateInstance);
+
+    //-----------------------------------------------------------
+
     if (m_settings.showIconsInMenu == false) {
         m_actionListViewOpenFiles->setIconVisibleInMenu(false);
         m_actionListViewEditFiles->setIconVisibleInMenu(false);
@@ -420,6 +466,15 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
         m_actionViewModeList->setShortcutVisibleInContextMenu(false);
         m_actionViewModeDetails->setShortcutVisibleInContextMenu(false);
         m_actionViewModeThumbs->setShortcutVisibleInContextMenu(false);
+        m_actionViewModeShowHidden->setShortcutVisibleInContextMenu(false);
+        m_actionViewModeRefresh->setShortcutVisibleInContextMenu(false);
+        m_actionNavigateUp->setShortcutVisibleInContextMenu(false);
+        m_actionNavigateBack->setShortcutVisibleInContextMenu(false);
+        m_actionNavigateForward->setShortcutVisibleInContextMenu(false);
+        m_actionNavigateSiblingPrevious->setShortcutVisibleInContextMenu(false);
+        m_actionNavigateSiblingNext->setShortcutVisibleInContextMenu(false);
+        m_actionNavigateClipboardPath->setShortcutVisibleInContextMenu(false);
+        m_actionNavigateDuplicate->setShortcutVisibleInContextMenu(false);
     }
 
     // --------------------------------------------------------------------
@@ -794,6 +849,8 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
     QMenu mainMenu(this);
 
     if (filePath.isEmpty()) {
+        const QMimeData *mimeData = QApplication::clipboard()->mimeData();  // Note: This CAN be slow if acquiring the clipboard is delayed.
+
         if      (m_viewStack->currentWidget() == m_listView)      m_actionViewModeList->setChecked(true);
         else if (m_viewStack->currentWidget() == m_tableView)     m_actionViewModeDetails->setChecked(true);
         else if (m_viewStack->currentWidget() == m_thumbnailView) m_actionViewModeThumbs->setChecked(true);
@@ -805,6 +862,10 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         subMenuView->addAction(m_actionViewModeList);
         subMenuView->addAction(m_actionViewModeDetails);
         subMenuView->addAction(m_actionViewModeThumbs);
+        subMenuView->addSeparator();
+        subMenuView->addAction(m_actionViewModeShowHidden);
+        m_actionViewModeShowHidden->setChecked(m_bShowHiddenFiles);
+        subMenuView->addAction(m_actionViewModeRefresh);
 
         mainMenu.addSeparator(); //-----------------------------------------
 
@@ -833,8 +894,29 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
 
         mainMenu.addSeparator(); //-----------------------------------------
 
+        QMenu *subMenuNavigate = mainMenu.addMenu(tr("Navigate"));
+        subMenuNavigate->addAction(m_actionNavigateUp);
+        subMenuNavigate->addSeparator();
+        subMenuNavigate->addAction(m_actionNavigateBack);
+        subMenuNavigate->addAction(m_actionNavigateForward);
+        subMenuNavigate->addSeparator();
+        subMenuNavigate->addAction(m_actionNavigateSiblingPrevious);
+        subMenuNavigate->addAction(m_actionNavigateSiblingNext);
+        subMenuNavigate->addSeparator();
+        subMenuNavigate->addAction(m_actionNavigateClipboardPath);
+        bool bClipboardHasPath = false;
+        if (mimeData && mimeData->hasText()) {
+            QString rawText = mimeData->text().trimmed();
+            QUrl url(rawText);
+            QString localPath = url.isLocalFile() ? url.toLocalFile() : rawText;
+            bClipboardHasPath = !localPath.isEmpty() && QFile::exists(localPath);
+        }
+        m_actionNavigateClipboardPath->setEnabled(bClipboardHasPath);
+        subMenuNavigate->addAction(m_actionNavigateDuplicate);
+
+        mainMenu.addSeparator(); //-----------------------------------------
+
         mainMenu.addAction(m_actionListViewPasteFiles);
-        const QMimeData *mimeData = QApplication::clipboard()->mimeData();  // Note: This CAN be slow if acquiring the clipboard is delayed.
         bool canPaste = (mimeData && mimeData->hasUrls());
         m_actionListViewPasteFiles->setEnabled(canPaste);
 
@@ -1265,6 +1347,9 @@ void MainWindow::action_ListViewRenameFiles() {
 void MainWindow::action_ListViewFileProperties() {
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) {
+        if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") {
+            return;
+        }
         pathList = { m_currentDirectory };
     }
 
@@ -2008,6 +2093,11 @@ QImage MainWindow::generateThumbnailAsync(const QFileInfo &fileInfo) {
     return QImage();
 }
 
+void MainWindow::action_toggleShowHidden() {
+    m_bShowHiddenFiles = !m_bShowHiddenFiles;
+    m_proxyModel->setShowHiddenFiles(m_bShowHiddenFiles);
+}
+
 //######################################################################################
 // Functions to receive data from other applications
 
@@ -2232,8 +2322,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                 return true;
             }
             else if (keyEvent->key() == Qt::Key_H) {
-                m_bShowHiddenFiles = !m_bShowHiddenFiles;
-                m_proxyModel->setShowHiddenFiles(m_bShowHiddenFiles);
+                action_toggleShowHidden();
                 return true;
             }
             else if (keyEvent->key() == Qt::Key_W) {
