@@ -804,11 +804,14 @@ void FilePropertiesDialog::calculateStats(const QStringList &filePaths,
 
             QFileInfo targetInfo(targetPath);
             if (targetInfo.exists()) {
+                /*
                 if (targetInfo.isDir()) {
                     res.followedFolders++;
                     // Ordner-Ziele landen auf dem Stack (immer als Symlink-Zweig!)
                     dirStack.push({targetInfo.absoluteFilePath(), true});
-                } else {
+                } else
+                */
+                {
                     res.followedFiles++;
                     res.followedSize += targetInfo.size();
                 }

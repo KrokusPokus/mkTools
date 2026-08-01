@@ -1099,7 +1099,7 @@ void MainWindow::action_ListViewOpenFiles() {
                       << "-Y" << QString::number(this->y() + 40)
                       << "-W" << QString::number(this->width())
                       << "-H" << QString::number(this->height())
-                      << "-p" << fileInfo.absoluteFilePath();
+                      << fileInfo.absoluteFilePath();
             QProcess::startDetached(appPath, arguments);
         } else {
             browseFolder(fileInfo.absoluteFilePath());
@@ -2675,7 +2675,7 @@ void MainWindow::duplicateInstance() {
               << "-Y" << QString::number(this->y() + 40)
               << "-W" << QString::number(this->width())
               << "-H" << QString::number(this->height())
-              << "-p" << m_currentDirectory;
+              << m_currentDirectory;
 
     QString focusedFile = getActiveViewCurrentItemPath();
     if (!focusedFile.isEmpty()) {
@@ -2694,7 +2694,7 @@ void MainWindow::elevateInstance() {
               << "-Y" << QString::number(this->y() + 40)
               << "-W" << QString::number(this->width())
               << "-H" << QString::number(this->height())
-              << "-p" << m_currentDirectory;
+              << m_currentDirectory;
 
     QString focusedFile = getActiveViewCurrentItemPath();
     if (!focusedFile.isEmpty()) {

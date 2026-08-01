@@ -27,6 +27,9 @@ int main(int argc, char *argv[])
     parser.setApplicationDescription("Qt6 based minimalistic file manager");
     auto helpOption = parser.addHelpOption();
     auto versionOption = parser.addVersionOption();
+
+    parser.addPositionalArgument("directory", "target directory to open", "[directory]");
+
     QCommandLineOption xOpt("X", "x-position of window", "PosX");
     QCommandLineOption yOpt("Y", "y-position of window", "PosY");
     QCommandLineOption wOpt("W", "window width", "WinW");
@@ -34,7 +37,7 @@ int main(int argc, char *argv[])
     QCommandLineOption pOpt("p", "target directory", "sPathDir");
     QCommandLineOption fOpt("f", "filepath to focus", "sPathFocus");
 
-    parser.addOptions({xOpt, yOpt, wOpt, hOpt, pOpt, fOpt});
+    parser.addOptions({xOpt, yOpt, wOpt, hOpt, fOpt});
 
     if (!parser.parse(QCoreApplication::arguments())) {
         std::cerr << qPrintable(parser.errorText()) << std::endl;
@@ -85,7 +88,12 @@ int main(int argc, char *argv[])
 
     //-----------------------------------------------------------------------------------------
 
-    QString targetDir = parser.value(pOpt);
+    // Holen aller optionslosen Argumente
+    const QStringList positionalArgs = parser.positionalArguments();
+
+    // .value(0) gibt das erste Argument zurück oder einen leeren QString(),
+    // falls kein Argument übergeben wurde (ohne Out-of-bounds Absturz)
+    QString targetDir = positionalArgs.value(0);
 
     // Falls der Windows-Parser den Backslash geschluckt und ein " an den String gehängt hat:
     if (targetDir.endsWith('"')) {
@@ -94,12 +102,24 @@ int main(int argc, char *argv[])
     }
     targetDir = QDir::cleanPath(targetDir);
 
-    QString focusPath = QDir::cleanPath(parser.value(fOpt));
-
     if (targetDir == "::{20d04fe0-3aea-1069-a2d8-08002b30309d}") {
         targetDir = "drives://";
     } else if (targetDir.isEmpty() || !QDir(targetDir).exists()) {
         targetDir = QDir::homePath();
+    }
+
+    QString focusPath;
+
+    QString rawFocus = parser.value(fOpt);
+    if (!rawFocus.isEmpty()) {
+        QFileInfo focusInfo(rawFocus);
+
+        // focusInfo.absolutePath() gibt den Ordner ZUR Datei zurück
+        // (z. B. aus "/home/user/bla/blub.txt" wird "/home/user/bla")
+        targetDir = focusInfo.absolutePath();
+
+        // focusPath speichert den bereinigten, absoluten Pfad zur Datei für den Fokus
+        focusPath = focusInfo.absoluteFilePath();
     }
 
     MainWindow w(targetDir, focusPath);

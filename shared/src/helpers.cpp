@@ -300,7 +300,7 @@ void browseToFile(const QString &path, const QString &fileManager) {
 
     if (QFile::exists(mkFolderWidgetPath) && (fileManager.isEmpty() || fileManager == "mkFolderWidget")) {
         QStringList args;
-        args << "-p" << QDir::toNativeSeparators(targetPath);
+        args << QDir::toNativeSeparators(targetPath);
         if (!targetFile.isEmpty()) {
             args << "-f" << QDir::toNativeSeparators(targetFile);
         }
