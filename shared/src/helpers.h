@@ -71,4 +71,9 @@ uint getRegExNameMatchQuality(const QFileInfo &fileInfo, const QRegularExpressio
 uint getContentMatchCount(const QFileInfo &fileInfo, const QString &searchStringContent, Qt::CaseSensitivity caseSensitivity, const QSet<QString> &m_FileExtTextSet);
 uint getRegExContentMatchCount(const QFileInfo &fileInfo, const QRegularExpression &re, const QSet<QString> &m_FileExtTextSet);
 
+namespace Helpers {
+    QString expandPath(QString path);
+    QString getPathFromClipboard(QString text);
+}
+
 #endif // HELPERS_H

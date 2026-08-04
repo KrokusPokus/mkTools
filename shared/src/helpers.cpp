@@ -211,18 +211,7 @@ void launchDesktopFile(const DesktopEntry &info, const QStringList &fileList) {
         args.removeIf([&](const QString &a) { return a.contains(placeholders); });
     }
 
-    auto expandHome = [](QString path) -> QString {
-        if (path.startsWith("$HOME") || path.startsWith('~')) {
-            const QString home = QDir::homePath();
-            if (path.startsWith("$HOME"))
-                return path.replace("$HOME", home);
-            if (path.startsWith('~'))
-                return path.replace(0, 1, home);
-        }
-        return path;
-    };
-
-    program = expandHome(program);
+    program = Helpers::expandPath(program);
     if (!QFileInfo(program).isAbsolute()) {
         program = QStandardPaths::findExecutable(program);
         if (program.isEmpty()) {
@@ -269,7 +258,7 @@ void launchDesktopFile(const DesktopEntry &info, const QStringList &fileList) {
     }
     // ==========================================
 
-    QString workDir = expandHome(info.workDir.trimmed());
+    QString workDir = Helpers::expandPath(info.workDir.trimmed());
     if (workDir.startsWith('"') && workDir.endsWith('"'))
         workDir = workDir.mid(1, workDir.length() - 2);
     if (workDir.isEmpty() || !QDir(workDir).exists())
@@ -906,3 +895,147 @@ QString getSiblingPath(const QString &path, bool previous) {
     // Am Anfang oder Ende der Liste angekommen -> Kein Sibling verfügbar
     return QString();
 }
+
+namespace {
+
+    constexpr int kMaxInputLength = 8192;
+    constexpr int kMaxLinesChecked = 200;
+
+    // Entfernt unsichtbare/steuernde Unicode-Zeichen, die präparierte Webseiten in
+    // kopierten Text einschleusen können (Zero-Width-Chars, Bidi-Override wie bei
+    // "Trojan Source"-Angriffen, BOM). Echte RTL-Schrift (Arabisch/Hebräisch) ist
+    // davon NICHT betroffen - das sind normale Buchstaben, keine Steuerzeichen.
+    QString stripInvisibleAndControlChars(const QString &input) {
+        QString out;
+        out.reserve(input.size());
+        for (QChar c : input) {
+            const ushort u = c.unicode();
+            if (c == '\n' || c == '\r' || c == '\t') { out += c; continue; }
+            if (u < 0x20 || (u >= 0x7F && u <= 0x9F)) continue;
+            if (u == 0x200B || u == 0x200C || u == 0x200D || u == 0xFEFF ||
+                (u >= 0x202A && u <= 0x202E) || (u >= 0x2066 && u <= 0x2069))
+                continue;
+            out += c;
+        }
+        return out;
+    }
+
+    // Ein einziger Durchlauf über 'input': ersetzte Werte werden NICHT erneut gescannt,
+    // daher ist eine Verkettung ($FOO expandiert zu einem String, der wieder ${...} enthält
+    // und erneut aufgelöst wird) strukturell unmöglich, nicht nur begrenzt.
+    QString expandVariablesOnce(const QString &input, const QRegularExpression &regex,
+                                const std::function<QString(const QRegularExpressionMatch&)> &resolve) {
+        QString result;
+        result.reserve(input.size());
+        int lastEnd = 0;
+        auto it = regex.globalMatch(input);
+        while (it.hasNext()) {
+            const QRegularExpressionMatch m = it.next();
+            result += input.mid(lastEnd, m.capturedStart() - lastEnd);
+            result += resolve(m);
+            lastEnd = m.capturedEnd();
+        }
+        result += input.mid(lastEnd);
+        return result;
+    }
+
+    // Expandiert eine einzelne Zeile rein im Speicher
+    QString expandSingleLine(QString line) {
+        line = line.trimmed();
+        if (line.isEmpty()) return QString();
+
+        // 1. Anführungszeichen entfernen
+        if (line.length() >= 2 &&
+            ((line.startsWith('"') && line.endsWith('"')) ||
+             (line.startsWith('\'') && line.endsWith('\''))))
+        {
+            line = line.mid(1, line.length() - 2).trimmed();
+            if (line.isEmpty()) return QString();
+        }
+
+        // 2. file:// URLs in lokale Pfade umwandeln
+        QUrl url(line);
+        if (url.isLocalFile()) {
+            line = url.toLocalFile();
+        }
+
+#ifdef Q_OS_WIN
+        static const QRegularExpression winEnvRegex(R"(%([A-Za-z0-9_()]+)%)");
+        line = expandVariablesOnce(line, winEnvRegex, [](const QRegularExpressionMatch &m) {
+            const QByteArray name = m.captured(1).toUtf8();
+            if (!qEnvironmentVariableIsSet(name.constData())) return m.captured(0);
+            return qEnvironmentVariable(name.constData());
+        });
+#else
+        // Gilt für Linux UND macOS (POSIX-Semantik ist identisch)
+        if (line == "~") {
+            line = QDir::homePath();
+        } else if (line.startsWith("~/") || line.startsWith("~\\")) {
+            line = QDir::homePath() + line.mid(1);
+        }
+
+        static const QRegularExpression posixEnvRegex(R"(\$\{([A-Za-z0-9_]+)\}|\$([A-Za-z0-9_]+))");
+        line = expandVariablesOnce(line, posixEnvRegex, [](const QRegularExpressionMatch &m) {
+            const QString varName = m.captured(1).isEmpty() ? m.captured(2) : m.captured(1);
+            if (varName == "HOME") return QDir::homePath();
+            const QByteArray name = varName.toUtf8();
+            if (!qEnvironmentVariableIsSet(name.constData())) return m.captured(0);
+            return qEnvironmentVariable(name.constData());
+        });
+#endif
+
+        return QDir::cleanPath(line);
+    }
+
+    // Prüft reine Syntax-Kriterien ohne Dateisystem-Zugriff
+    bool isTechnicallyValidPath(const QString &path) {
+        if (path.isEmpty()) return false;
+
+        // Nach der Expansion (~ / $HOME / %APPDATA% / file://) muss ein gültiger lokaler Pfad absolut sein
+        if (!QDir::isAbsolutePath(path)) {
+            return false;
+        }
+
+        return true;
+    }
+
+} // namespace
+
+
+namespace Helpers {
+
+    QString expandPath(QString path) {
+        if (path.size() > kMaxInputLength) {
+            path.truncate(kMaxInputLength);
+        }
+        path = stripInvisibleAndControlChars(path);
+        return expandSingleLine(path);
+    }
+
+    QString getPathFromClipboard(QString text) {
+        if (text.size() > kMaxInputLength) {
+            text.truncate(kMaxInputLength);
+        }
+
+        text = stripInvisibleAndControlChars(text);
+        if (text.trimmed().isEmpty()) return QString();
+
+        // Guides/Tutorials landen oft mit Zeilenumbrüchen in der Zwischenablage.
+        // Wir nehmen die erste Zeile, die zu einem gültigen existierenden Pfad führt.
+        const QStringList lines = text.split(QRegularExpression(R"(\r\n|\r|\n)"), Qt::SkipEmptyParts);
+
+        int checked = 0;
+        for (const QString &rawLine : lines) {
+            if (checked++ >= kMaxLinesChecked) break;
+
+            const QString expanded = expandSingleLine(rawLine);
+
+            if (isTechnicallyValidPath(expanded)) {
+                return expanded;
+            }
+        }
+
+        return QString();
+    }
+
+} // namespace Helpers

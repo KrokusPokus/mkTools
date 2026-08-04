@@ -671,6 +671,23 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
             }
             directoryPath = dir.absolutePath();
         }
+
+        // Rechteprüfung (Leserechte vorhanden?)
+        QFileInfo dirInfo(directoryPath);
+        if (!dirInfo.isReadable()) {
+            QMessageBox::warning(
+                this,
+                tr("Access denied"),
+                tr("You don't have the required permissions to access this folder:<br><br>%1")
+                    .arg(QDir::toNativeSeparators(directoryPath))
+                );
+
+            if (m_currentDirectory.isEmpty()) {
+                browseFolder(QDir::homePath(), QString(), isHistoryNavigation);
+            }
+
+            return;
+        }
     }
 
     // Save history
@@ -906,10 +923,8 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         subMenuNavigate->addAction(m_actionNavigateClipboardPath);
         bool bClipboardHasPath = false;
         if (mimeData && mimeData->hasText()) {
-            QString rawText = mimeData->text().trimmed();
-            QUrl url(rawText);
-            QString localPath = url.isLocalFile() ? url.toLocalFile() : rawText;
-            bClipboardHasPath = !localPath.isEmpty() && QFile::exists(localPath);
+            QString possiblePath = Helpers::getPathFromClipboard(mimeData->text());
+            bClipboardHasPath = !possiblePath.isEmpty() && QFile::exists(possiblePath);
         }
         m_actionNavigateClipboardPath->setEnabled(bClipboardHasPath);
         subMenuNavigate->addAction(m_actionNavigateDuplicate);
@@ -2645,27 +2660,18 @@ void MainWindow::navigateToClipboardPath() {
     QClipboard *clipboard = QApplication::clipboard();
     if (!clipboard) return;
 
-    QString text = clipboard->text().trimmed();
-    if (text.isEmpty()) return;
+    QString possiblePath = Helpers::expandPath(clipboard->text());
 
-    if (text.startsWith('"') && text.endsWith('"')) {
-        text = text.mid(1, text.length() - 2);
+    if (!possiblePath.isEmpty()) {
+        QFileInfo fileInfo(possiblePath);
+        if (!fileInfo.exists()) return;
+
+        if (fileInfo.isDir()) {
+            browseFolder(fileInfo.absoluteFilePath(), QString());
+        } else {
+            browseFolder(fileInfo.absolutePath(), fileInfo.absoluteFilePath());
+        }
     }
-
-    if (text.startsWith("file:///")) {
-        text = QUrl(text).toLocalFile();
-    }
-
-    QFileInfo fileInfo(text);
-    if (!fileInfo.exists()) return;
-
-    if (fileInfo.isDir()) {
-        browseFolder(fileInfo.absoluteFilePath(), QString());
-    } else {
-        browseFolder(fileInfo.absolutePath(), fileInfo.absoluteFilePath());
-    }
-
-    return;
 }
 
 void MainWindow::duplicateInstance() {

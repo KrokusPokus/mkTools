@@ -1634,26 +1634,16 @@ void MainWindow::launchAction() {
             }
         }
 
-#ifdef Q_OS_WIN
+        QString possiblePath = Helpers::expandPath(input1);
 
-#elif defined(Q_OS_LINUX)
-        QString possiblePath = input1;
-
-        if (possiblePath.startsWith("~/")) {
-            possiblePath = QDir::homePath() + possiblePath.mid(1);
-        } else if (possiblePath.startsWith("$HOME/")) {
-            possiblePath = QDir::homePath() + possiblePath.mid(5);
+        if (!possiblePath.isEmpty()) {
+            QFileInfo checkFile(possiblePath);
+            if (checkFile.exists()) {
+                browseToFile(possiblePath, m_settings.fileManager);
+                guiHideConditional();
+                return;
+            }
         }
-
-        possiblePath = QDir::cleanPath(possiblePath);
-
-        QFileInfo checkFile(possiblePath);
-        if (checkFile.exists()) {
-            browseToFile(possiblePath, m_settings.fileManager);
-            guiHideConditional();
-            return;
-        }
-#endif
     } else {
         // --- Case 3: search modifiers (m_LineEdit2 not empty) ---
 

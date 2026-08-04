@@ -1,4 +1,5 @@
 #include "settingsmanager.h"
+#include "helpers.h"
 
 #include <QCoreApplication>
 #include <QDir>
@@ -113,7 +114,7 @@ void SettingsManager::getDefaults() {
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::MusicLocation);
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
-    searchPaths << QProcessEnvironment::systemEnvironment().value("APPDATA") + "/Microsoft/Windows/Start Menu";    //"$HOME/AppData/Roaming/Microsoft/Windows/Start Menu";
+    searchPaths << QProcessEnvironment::systemEnvironment().value("APPDATA") + "/Microsoft/Windows/Start Menu";    // "Username/AppData/Roaming/Microsoft/Windows/Start Menu"
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
     searchPaths << (QProcessEnvironment::systemEnvironment().value("PROGRAMDATA") + "/Microsoft/Windows/Start Menu");
     searchPaths << (QProcessEnvironment::systemEnvironment().value("PUBLIC") + "/Desktop");    // "C:/Users/Public/Desktop"
@@ -223,18 +224,10 @@ void SettingsManager::saveHistory() {
 QStringList SettingsManager::importSearchFolders(const QString &input) {
     QString rawInput = input;
 
-    QString homePath = QDir::homePath();
-    rawInput.replace("$HOME", homePath);
-
     QStringList searchFolders = rawInput.split(u'|', Qt::SkipEmptyParts);
 
     for (QString &path : searchFolders) {
-        path = path.trimmed();
-
-        if (path.startsWith("~")) {
-            path.replace(0, 1, homePath);
-        }
-
+        path = Helpers::expandPath(path);
         QDir dir(path);
         path = QDir::cleanPath(dir.absolutePath());
     }
@@ -249,6 +242,7 @@ QString SettingsManager::exportSearchFolders(const QStringList &folders) {
 
     workingCopy.removeDuplicates();
 
+#ifdef Q_OS_LINUX
     QString homePath = QDir::homePath();
 
     for (QString &path : workingCopy) {
@@ -256,6 +250,7 @@ QString SettingsManager::exportSearchFolders(const QStringList &folders) {
             path.replace(0, homePath.length(), "$HOME");
         }
     }
+#endif
 
     return workingCopy.join(u'|');
 }

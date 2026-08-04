@@ -558,49 +558,49 @@
         <translation>%1 Dateien, %2 Ordner</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="885"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="888"/>
         <source>SymLink</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="889"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="892"/>
         <source>Junction</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="892"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="895"/>
         <source>Shortcut</source>
         <translation>Verknüpfung</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="896"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="899"/>
         <source>Folder</source>
         <translation>Ordner</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="899"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="902"/>
         <source>File</source>
         <translation>Datei</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="899"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="902"/>
         <source>-File</source>
         <translation>-Datei</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="927"/>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="968"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="930"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="971"/>
         <source>Error</source>
         <translation>Fehler</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="928"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="931"/>
         <source>Failed to apply file attributes.
 Do you have permission to modify this file?</source>
         <translation>Datei-Attribute konnten nicht gesetzt werden. Hast du die notwendigen Rechte, diese Datei zu modifizieren?</translation>
     </message>
     <message>
-        <location filename="../shared/src/filepropertiesdialog.cpp" line="969"/>
+        <location filename="../shared/src/filepropertiesdialog.cpp" line="972"/>
         <source>Failed to set permissions for:
 %1
 
@@ -683,7 +683,7 @@ Do you have sufficient rights?</source>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="356"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2085"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="290"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2019"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2036"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="334"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2000"/>
         <source>Delete</source>
@@ -793,28 +793,28 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="967"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="858"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="875"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="704"/>
         <source>View</source>
         <translation>Ansichtsmodus</translation>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="988"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="883"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="900"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="727"/>
         <source>Sort by</source>
         <translation>Sortieren nach</translation>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="1037"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="953"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="970"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="776"/>
         <source>Send to</source>
         <translation>Senden an</translation>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="1084"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1000"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1017"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="823"/>
         <source>Open with</source>
         <translation>Öffnen mit</translation>
@@ -822,8 +822,8 @@ Do you have sufficient rights?</source>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2002"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2012"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1936"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1946"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1953"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1963"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="1917"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="1927"/>
         <source>Delete File</source>
@@ -831,7 +831,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2003"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1937"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1954"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="1918"/>
         <source>Do you really want to move this file into the recycle bin?</source>
         <translation>Möchtest du diese Datei wirklich in den Papierkorb verschieben?</translation>
@@ -839,8 +839,8 @@ Do you have sufficient rights?</source>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2005"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2015"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1939"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1949"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1956"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1966"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="1920"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="1930"/>
         <source>Delete multiple elements</source>
@@ -848,35 +848,35 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2006"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1940"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1957"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="1921"/>
         <source>Do you really want to move these %1 files into the recycle bin?</source>
         <translation>Möchtest du diese %1 Dateien wirklich in den Papierkorb verschieben?</translation>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2010"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1944"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1961"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="1925"/>
         <source>This process cannot be undone.</source>
         <translation>Dieser Vorgang kann nicht rückgängig gemacht werden.</translation>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2013"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1947"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1964"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="1928"/>
         <source>Are you sure you want to delete this file permanently?</source>
         <translation>Möchtest du diese Datei wirklich unwiderruflich löschen?</translation>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2016"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1950"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1967"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="1931"/>
         <source>Are you sure you want to delete these %1 files permanently?</source>
         <translation>Möchtest du diese %1 Dateien wirklich unwiderruflich löschen?</translation>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2072"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2006"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2023"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="1987"/>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="119"/>
         <source>Name:</source>
@@ -884,21 +884,21 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2074"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2008"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2025"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="1989"/>
         <source>Size:</source>
         <translation>Größe:</translation>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2076"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2010"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2027"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="1991"/>
         <source>Date:</source>
         <translation>Datum:</translation>
     </message>
     <message>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2086"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2020"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2037"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2001"/>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="203"/>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="493"/>
@@ -972,27 +972,43 @@ Do you have sufficient rights?</source>
         <translation>Fenster duplizieren</translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="794"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="680"/>
+        <source>Access denied</source>
+        <translation>Zugriff verweigert</translation>
+    </message>
+    <message>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="681"/>
+        <source>You don&apos;t have the required permissions to access this folder:&lt;br&gt;&lt;br&gt;%1</source>
+        <translation type="unfinished">Sie besitzen nicht die erforderlichen Rechte, um auf diesen Ordner zuzugreifen:&lt;br&gt;&lt;br&gt;%1</translation>
+    </message>
+    <message>
+        <source>You don&apos;t have the required permissions to access this folder:
+
+%1</source>
+        <translation type="vanished">Sie besitzen nicht die erforderlichen Rechte, um auf diesen Ordner zuzugreifen:\n%1</translation>
+    </message>
+    <message>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="811"/>
         <source>This Computer</source>
         <translation>Dieser Computer</translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="897"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="914"/>
         <source>Navigate</source>
         <translation>Navigieren</translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="925"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="942"/>
         <source>New</source>
         <translation>Neu</translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2539"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2556"/>
         <source>New Folder</source>
         <translation>Neuer Ordner</translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2591"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2608"/>
         <source>New Text Document</source>
         <translation>Neue Text Datei</translation>
     </message>
