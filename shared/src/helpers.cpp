@@ -2,6 +2,7 @@
 
 #include <QCollator>
 #include <QCoreApplication>
+#include <QDesktopServices>
 #include <QDir>
 #include <QImageReader>
 #include <QFileInfo>
@@ -143,6 +144,12 @@ DesktopEntry getDesktopEntry(const QFileInfo &fileInfo) {
 
             if (line.startsWith("Name=")) iniName = line.mid(5);
             else if (line.startsWith(localKey)) iniNameLocalised = line.mid(localKey.size());
+            else if (line.startsWith("Type=")) currentEntry.type = line.mid(5);
+            // URL (fängt sowohl "URL=" als auch "URL[$e]=" ab)
+            else if (line.startsWith("URL=") || line.startsWith("URL[")) {
+                int idx = line.indexOf('=');
+                if (idx != -1) currentEntry.url = line.mid(idx + 1).trimmed();
+            }
             else if (line.startsWith("Icon=")) currentEntry.icon = line.mid(5);
             else if (line.startsWith("Exec=")) currentEntry.exec = line.mid(5);
             else if (line.startsWith("Path=")) currentEntry.workDir = line.mid(5);
@@ -187,6 +194,27 @@ void openFileListWithHandler(const QString &handlerApp, const QStringList &fileL
 }
 
 void launchDesktopFile(const DesktopEntry &info, const QStringList &fileList) {
+    if (!info.isValid) return;
+
+    // ==========================================
+    // 1. Handhabung von Type=Link oder verknüpften URLs
+    // ==========================================
+    if (info.type.compare(QLatin1String("Link"), Qt::CaseInsensitive) == 0 || !info.url.isEmpty()) {
+        QString urlStr = Helpers::expandPath(info.url.trimmed());
+        if (urlStr.isEmpty()) return;
+
+        QUrl url = QUrl::fromUserInput(urlStr);
+        if (url.isValid()) {
+            QDesktopServices::openUrl(url);
+        } else {
+            qWarning() << "launchDesktopFile(): Ungültige URL:" << urlStr;
+        }
+        return;
+    }
+
+    // ==========================================
+    // 2. Handhabung von Type=Application (Normaler Exec-Start)
+    // ==========================================
     if (info.exec.isEmpty()) return;
 
     QStringList args = QProcess::splitCommand(info.exec);
@@ -493,11 +521,10 @@ void createInternetShortcut(const QString &urlStr, const QString &targetDir, con
 #elif defined(Q_OS_LINUX)
         // Linux .desktop Format für Web-Links
         out << "[Desktop Entry]\n";
-        out << "Version=1.0\n";
-        out << "Type=Link\n";
-        out << "Name=" << finalAnzeigename << "\n"; // Das ist der Text, den Linux anzeigt
-        out << "URL=" << urlStr << "\n";
         out << "Icon=text-html\n";                  // Standard-Icon für HTML/Web-Links
+        out << "Name=" << finalAnzeigename << "\n"; // Das ist der Text, den Linux anzeigt
+        out << "Type=Link\n";
+        out << "URL=" << urlStr << "\n";
 #endif
 
         file.close();

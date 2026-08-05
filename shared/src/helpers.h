@@ -19,6 +19,8 @@ struct DesktopEntry {
     QString exec;
     QString path;
     QString workDir;
+    QString type; // "Application", "Link", etc.
+    QString url;  // Für Type=Link
     bool isValid = false;
     bool useTerminal = false;
 };
