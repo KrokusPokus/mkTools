@@ -1148,7 +1148,13 @@ void MainWindow::action_ListViewEditFiles() {
     for (const QString &fullPath : std::as_const(pathList)) {
         QFileInfo fileInfo(fullPath);
         QString fileExt = fileInfo.suffix().toLower();
+
         if (fileExt.isEmpty()) {
+            QMimeDatabase db;
+            QMimeType mime = db.mimeTypeForFile(fullPath);
+            if (mime.name() == "text/plain"){
+                pathListText << fullPath;
+            }
             continue;
         }
 
