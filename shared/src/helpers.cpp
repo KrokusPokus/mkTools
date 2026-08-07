@@ -203,6 +203,18 @@ void launchDesktopFile(const DesktopEntry &info, const QStringList &fileList) {
         QString urlStr = Helpers::expandPath(info.url.trimmed());
         if (urlStr.isEmpty()) return;
 
+        // Keine Netzwerkschemata wie http://, https://, ftp:// etc.
+        if (!urlStr.contains("://")) {
+            QFileInfo fileInfo(urlStr);
+
+            // Prüft plattformübergreifend auf relative Pfade
+            // (deckt "./", "../", "subfolder/file", etc. ab)
+            if (fileInfo.isRelative()) {
+                QDir desktopFileDir = QFileInfo(info.path).absoluteDir();
+                urlStr = desktopFileDir.absoluteFilePath(urlStr);
+            }
+        }
+
         QUrl url = QUrl::fromUserInput(urlStr);
         if (url.isValid()) {
             QDesktopServices::openUrl(url);
