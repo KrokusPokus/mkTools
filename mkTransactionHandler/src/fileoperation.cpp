@@ -676,10 +676,10 @@ FileOpResult FileOperation::deleteDirRecursively(const QString &dirPath) {
     for (const QFileInfo &entry : entries) {
         if (!checkInterruption()) return FileOpResult::Cancelled;
 
-        const bool isLink = entry.isSymbolicLink() || entry.isJunction();
+        const bool isSymLink = entry.isSymbolicLink() || entry.isJunction();
 
         // Rekursion NUR wenn es ein echtes Verzeichnis ist, KEIN Symlink!
-        if (entry.isDir() && !isLink) {
+        if (entry.isDir() && !isSymLink && !entry.isShortcut()) {
             FileOpResult r = deleteDirRecursively(entry.filePath());
             if (r == FileOpResult::Cancelled) return FileOpResult::Cancelled;
             if (r == FileOpResult::Error)     anyErrors = true;
@@ -687,10 +687,12 @@ FileOpResult FileOperation::deleteDirRecursively(const QString &dirPath) {
             // Symlinks (egal ob Datei oder Ordner) und normale Dateien hier löschen
             m_stats.currentName = calculateRelativeDisplayPath(entry);
 
-            removeReadOnlyAttribute(entry.filePath());
+            if (!isSymLink) {
+                removeReadOnlyAttribute(entry.filePath());
+            }
 
             if (QFile::remove(entry.filePath())) {
-                if (!isLink) {
+                if (!isSymLink) {
                     m_stats.bytesWritten += entry.size();
                 }
                 m_stats.filesWritten++;
@@ -706,6 +708,8 @@ FileOpResult FileOperation::deleteDirRecursively(const QString &dirPath) {
     // Wenn der Inhalt des Ordners erfolgreich geleert wurde,
     // löschen wir jetzt den (nun leeren) Ordner selbst
     if (!anyErrors) {
+        removeReadOnlyAttribute(dirPath);
+
         if (QDir().rmdir(dirPath)) {
             m_stats.filesWritten++; // Auch der Ordner zählt als verarbeitetes Element
             updateProgress();
@@ -1047,6 +1051,19 @@ ConflictResolution FileOperation::askUserForResolution(const Conflict &conflict)
 }
 
 bool FileOperation::removeReadOnlyAttribute(const QString &path) {
+    // QFile::exists prüft die Datei selbst (auch kaputte .lnk-Dateien),
+    // während QFileInfo::exists() dem Ziel der Verknüpfung folgen würde!
+    if (!QFile::exists(path)) return true;
+
+#ifdef Q_OS_WIN
+    const wchar_t *wPath = reinterpret_cast<const wchar_t *>(path.utf16());
+    DWORD dwAttrs = GetFileAttributesW(wPath);
+
+    if (dwAttrs != INVALID_FILE_ATTRIBUTES && (dwAttrs & FILE_ATTRIBUTE_READONLY)) {
+        return SetFileAttributesW(wPath, dwAttrs & ~FILE_ATTRIBUTE_READONLY) != 0;
+    }
+    return true;
+#else
     QFileInfo info(path);
     if (!info.exists()) return true;
 
@@ -1057,6 +1074,7 @@ bool FileOperation::removeReadOnlyAttribute(const QString &path) {
         return QFile::setPermissions(path, permissions);
     }
     return true;
+#endif
 }
 
 void FileOperation::doPause() {

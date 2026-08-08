@@ -114,10 +114,10 @@ void SettingsManager::getDefaults() {
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::MusicLocation);
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
-    searchPaths << QProcessEnvironment::systemEnvironment().value("APPDATA") + "/Microsoft/Windows/Start Menu";    // "Username/AppData/Roaming/Microsoft/Windows/Start Menu"
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-    searchPaths << (QProcessEnvironment::systemEnvironment().value("PROGRAMDATA") + "/Microsoft/Windows/Start Menu");
-    searchPaths << (QProcessEnvironment::systemEnvironment().value("PUBLIC") + "/Desktop");    // "C:/Users/Public/Desktop"
+    searchPaths << "%APPDATA%/Microsoft/Windows/Start Menu";
+    searchPaths << "%ALLUSERSPROFILE%/Microsoft/Windows/Start Menu";
+    searchPaths << "%PUBLIC%/Desktop";    // "C:/Users/Public/Desktop"
 #endif
 
     // Die Liste mit dem Pipe-Symbol | zusammenfügen
@@ -157,7 +157,7 @@ void SettingsManager::saveSettings() {
     safeSetValue(s, "Interface/ShowFileExtensions", showFileExtensions);
 
     // mkLauncher specific
-    safeSetValue(s, "mkLauncher/UserFolders", exportSearchFolders(searchFolders));
+    //safeSetValue(s, "mkLauncher/UserFolders", exportSearchFolders(searchFolders));    // searchFolders contains the expanded paths. Since we don't change this value in the gui, no reason to overwrite it in the ini file.
 
     // Because we used safeSetValue(), the file will only get written if there were changes in values.
 	s.sync();
