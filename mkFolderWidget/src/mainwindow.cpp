@@ -354,11 +354,13 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     viewModeGroup->setExclusive(true);
 
     m_actionViewModeShowHidden = new QAction(tr("Show hidden"),this);
+    m_actionViewModeShowHidden->setIcon(QIcon::fromTheme("view-hidden-symbolic"));
     m_actionViewModeShowHidden->setCheckable(true);
     m_actionViewModeShowHidden->setShortcut(QKeySequence("Ctrl+H"));
     connect(m_actionViewModeShowHidden, &QAction::triggered, this, &MainWindow::action_toggleShowHidden);
 
     m_actionViewModeRefresh = new QAction(tr("Refresh"),this);
+    m_actionViewModeRefresh->setIcon(QIcon::fromTheme("view-refresh-symbolic"));
     m_actionViewModeRefresh->setShortcut(QKeySequence("F5"));
     connect(m_actionViewModeRefresh, &QAction::triggered, this, &MainWindow::reloadDirectory);
 
@@ -399,6 +401,16 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     sortOrderGroup->addAction(m_actionSortAscending);
     sortOrderGroup->addAction(m_actionSortDescending);
     sortOrderGroup->setExclusive(true);
+
+    //-----------------------------------------------------------
+
+    m_actionCompressTarGz = new QAction(tr("Compress as TAR.GZ"),this);
+    m_actionCompressTarGz->setIcon(QIcon::fromTheme("add-files-to-archive-symbolic"));
+    connect(m_actionCompressTarGz, &QAction::triggered, this, [this]() { action_CompressFileList("tar.gz"); });
+
+    m_actionCompressZip = new QAction(tr("Compress as ZIP"),this);
+    m_actionCompressZip->setIcon(QIcon::fromTheme("add-files-to-archive-symbolic"));
+    connect(m_actionCompressZip, &QAction::triggered, this, [this]() { action_CompressFileList("zip"); });
 
     //-----------------------------------------------------------
 //QKeySequence(Qt::Key_Up)
@@ -449,6 +461,10 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
         m_actionViewModeList->setIconVisibleInMenu(false);
         m_actionViewModeDetails->setIconVisibleInMenu(false);
         m_actionViewModeThumbs->setIconVisibleInMenu(false);
+        m_actionViewModeShowHidden->setIconVisibleInMenu(false);
+        m_actionViewModeRefresh->setIconVisibleInMenu(false);
+        m_actionCompressTarGz->setIconVisibleInMenu(false);
+        m_actionCompressZip->setIconVisibleInMenu(false);
     }
 
     if (m_settings.showShortcutsInMenu == false) {
@@ -1026,6 +1042,16 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
                 }
             }
         }
+
+        mainMenu.addSeparator(); //-----------------------------------------
+
+        QMenu *subMenuCompress = mainMenu.addMenu(tr("Compress"));
+        if (m_settings.showIconsInMenu) {
+            subMenuCompress->setIcon(QIcon::fromTheme("add-files-to-archive-symbolic"));
+        }
+        subMenuCompress->addAction(m_actionCompressTarGz);
+        subMenuCompress->addAction(m_actionCompressZip);
+
 #endif
         mainMenu.addSeparator(); //-----------------------------------------
         //mainMenu.addAction(m_actionListViewBrowseToFile);
@@ -2117,6 +2143,47 @@ QImage MainWindow::generateThumbnailAsync(const QFileInfo &fileInfo) {
 void MainWindow::action_toggleShowHidden() {
     m_bShowHiddenFiles = !m_bShowHiddenFiles;
     m_proxyModel->setShowHiddenFiles(m_bShowHiddenFiles);
+}
+
+void MainWindow::action_CompressFileList(const QString &archiveExt) {
+    if (m_currentDirectory == "drives://") return;
+
+    QStringList pathList = getActiveViewPathList();
+    if (pathList.isEmpty()) return;
+
+    QString timeStamp = QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
+
+    QString archiveName;
+    if (pathList.size() == 1) {
+        QFileInfo fileInfo(pathList.first());
+        archiveName = QString("%1_%2.%3").arg(fileInfo.fileName(), timeStamp, archiveExt);
+    } else {
+        archiveName = QString("%1.%2").arg(timeStamp, archiveExt);
+    }
+
+    // Ark-Argumente aufbauen:
+    // -f tar.gz : Automatischen Dateinamen basierend auf der ersten Datei mit Endung .tar.gz erzeugen
+    // -p        : Arbeitsverzeichnis auf den Ordner der ersten Datei setzen (relative Pfade im Archiv)
+    QStringList arguments;
+    arguments << "-t" << QDir(m_currentDirectory).filePath(archiveName);
+    arguments << pathList;
+
+    // QProcess asynchron starten, um das Hauptfenster nicht zu blockieren
+    QProcess *process = new QProcess(this);
+
+    // Automatische Speicherbereinigung nach Beendigung des Prozesses
+    connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+            process, &QObject::deleteLater);
+
+    // Fehlerbehandlung (z. B. wenn 'ark' nicht installiert ist)
+    connect(process, &QProcess::errorOccurred, this, [process](QProcess::ProcessError error) {
+        if (error == QProcess::FailedToStart) {
+            qWarning() << "Fehler: Ark konnte nicht gestartet werden. Ist es installiert?";
+        }
+        process->deleteLater();
+    });
+
+    process->start("ark", arguments);
 }
 
 //######################################################################################

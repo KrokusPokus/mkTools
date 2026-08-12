@@ -74,6 +74,8 @@ private:
     void action_SortAscending();
     void action_SortDescending();
     void action_toggleShowHidden();
+    void action_CompressTarGz();
+    void action_CompressFileList(const QString &archiveExt);
 
     bool showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly);
     void browseFolder(QString directoryPath, const QString &focusPath = QString(), bool isHistoryNavigation = false);
@@ -144,6 +146,8 @@ private:
     QAction *m_actionNavigateSiblingNext = nullptr;
     QAction *m_actionNavigateClipboardPath = nullptr;
     QAction *m_actionNavigateDuplicate = nullptr;
+    QAction *m_actionCompressTarGz = nullptr;
+    QAction *m_actionCompressZip = nullptr;
 
     QTimer *m_timerUpdateIcons = nullptr;
     QTimer *m_scrollToDebounceTimer = nullptr;
