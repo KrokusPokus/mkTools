@@ -42,18 +42,25 @@ function layoutManagedWindows(desktopKey) {
 
 	var area = workspace.clientArea(KWin.MaximizeArea, managedWindows[0]);
 	var xPos = area.x + area.width - COLUMN_WIDTH;
-	var heightPerWindow = area.height / managedWindows.length;
 
-	for (var j = 0; j < managedWindows.length; j++) {
-		var d = managedWindows[j];
-		d.frameGeometry = {
+	var count = managedWindows.length;
+	var currentY = area.y;
+
+	for (var j = 0; j < count; j++) {
+		var windowBottom = area.y + Math.round(((j + 1) * area.height) / count);
+		var windowHeight = windowBottom - currentY;
+
+		managedWindows[j].frameGeometry = {
 			x: xPos,
-			y: area.y + (j * heightPerWindow),
+			y: currentY,
 			width: COLUMN_WIDTH,
-			height: heightPerWindow
+			height: windowHeight
 		};
+
+		currentY += windowHeight;
 	}
 }
+
 
 workspace.windowAdded.connect(function(w) {
 	if (!isWindowMatch(w)) return;
