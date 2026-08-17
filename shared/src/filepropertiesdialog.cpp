@@ -1125,3 +1125,4 @@ bool FilePropertiesDialog::isNetworkDrive(const QStorageInfo &storage) {
     return (fsType == "nfs" || fsType == "cifs" || fsType == "smb" || fsType == "smb2" || fsType == "afs" || storage.rootPath().startsWith("//"));
 #endif
 }
+

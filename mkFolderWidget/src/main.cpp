@@ -6,6 +6,8 @@
 #include <QCommandLineParser>
 #include <QDir>
 #include <QFont>
+#include <QProcess>
+#include <QStandardPaths>
 #include <QString>
 #include <QTranslator>
 #include <QWindow>
@@ -15,6 +17,26 @@
 #ifdef Q_OS_WIN
 #include <qt_windows.h>
 #endif
+
+bool delegateNonLocalToDolphin(const QString &inputArg) {
+    if (inputArg.isEmpty()) return false;
+
+    // Pfad/URL parsen
+    QUrl url = QUrl::fromUserInput(inputArg);
+
+    // Prüfen, ob es KEIN lokaler Pfad ist (z. B. smb://, nfs://, sftp://, trash://, etc.)
+    bool isRemoteOrVirtual = !url.isLocalFile() && !url.scheme().isEmpty() && url.scheme() != QLatin1String("file");
+
+    if (isRemoteOrVirtual) {
+        QString dolphin = QStandardPaths::findExecutable(QStringLiteral("dolphin"));
+        if (!dolphin.isEmpty()) {
+            // An Dolphin übergeben und mkFolderWidget-Start abbrechen
+            QProcess::startDetached(dolphin, { inputArg });
+            return true;
+        }
+    }
+    return false;
+}
 
 int main(int argc, char *argv[])
 {
@@ -94,6 +116,10 @@ int main(int argc, char *argv[])
     // .value(0) gibt das erste Argument zurück oder einen leeren QString(),
     // falls kein Argument übergeben wurde (ohne Out-of-bounds Absturz)
     QString targetDir = positionalArgs.value(0);
+
+    if (delegateNonLocalToDolphin(targetDir)) {
+        return 0; // Sofort beenden, Dolphin übernimmt
+    }
 
     // Falls der Windows-Parser den Backslash geschluckt und ein " an den String gehängt hat:
     if (targetDir.endsWith('"')) {

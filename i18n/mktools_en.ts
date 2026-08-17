@@ -600,423 +600,428 @@ Do you have sufficient rights?</source>
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="96"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="617"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="101"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="622"/>
         <source>(filename search terms)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="97"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="627"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="102"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="632"/>
         <source>(content search terms)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="120"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="124"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="125"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="129"/>
         <source>CaseSense</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="134"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="139"/>
         <source>Directories</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="139"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="144"/>
         <source>CRC</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="329"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="268"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="307"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="334"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="276"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="312"/>
         <source>Open</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="332"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="271"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="310"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="337"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="279"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="315"/>
         <source>Edit</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="336"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="314"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="341"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="319"/>
         <source>Show in folder</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="341"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="275"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="319"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="346"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="283"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="324"/>
         <source>Copy Path</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="346"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="280"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="324"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="351"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="288"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="329"/>
         <source>Cut</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="351"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="285"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="329"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="356"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="293"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="334"/>
         <source>Copy</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="356"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2085"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="290"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2066"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="334"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1990"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="361"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2119"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="298"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2213"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="339"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="2024"/>
         <source>Delete</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="361"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="295"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="339"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="366"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="303"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="344"/>
         <source>Rename</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="366"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="300"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="344"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="371"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="308"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="349"/>
         <source>Properties</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="371"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="332"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="349"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="376"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="340"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="354"/>
         <source>List</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="377"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="338"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="355"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="382"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="346"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="360"/>
         <source>Details</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="383"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="344"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="361"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="388"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="352"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="366"/>
         <source>Thumbnails</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="395"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="369"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="379"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="400"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="377"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="384"/>
         <source>Name</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="399"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="373"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="383"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="404"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="381"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="388"/>
         <source>Size</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="403"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="377"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="387"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="408"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="385"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="392"/>
         <source>Date</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="407"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="381"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="391"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="412"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="389"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="396"/>
         <source>Type</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="418"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="392"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="402"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="423"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="400"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="407"/>
         <source>A-Z</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="422"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="396"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="406"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="427"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="404"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="411"/>
         <source>Z-A</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="619"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="624"/>
         <source>(filename regex expression)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="629"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="634"/>
         <source>(content regex expression)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="890"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="895"/>
         <source>Search aborted...</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="892"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="897"/>
         <source>%1 (%2 hits in %3 items)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="894"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="899"/>
         <source>%1 (%2 matches spread across %3 files of %4 searched)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="967"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="891"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="704"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="972"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="955"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="709"/>
         <source>View</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="988"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="916"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="727"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="993"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="980"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="732"/>
         <source>Sort by</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1037"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="984"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="776"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1042"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1050"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="781"/>
         <source>Send to</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1084"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1031"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="823"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1089"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1118"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="828"/>
         <source>Open with</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2002"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2012"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1983"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1993"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1907"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1917"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2036"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2046"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2130"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2140"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1941"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1951"/>
         <source>Delete File</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2003"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1984"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1908"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2037"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2131"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1942"/>
         <source>Do you really want to move this file into the recycle bin?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2005"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2015"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1986"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1996"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1910"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1920"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2039"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2049"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2133"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2143"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1944"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1954"/>
         <source>Delete multiple elements</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2006"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1987"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1911"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2040"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2134"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1945"/>
         <source>Do you really want to move these %1 files into the recycle bin?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2010"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1991"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1915"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2044"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2138"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1949"/>
         <source>This process cannot be undone.</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2013"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1994"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1918"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2047"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2141"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1952"/>
         <source>Are you sure you want to delete this file permanently?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2016"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1997"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1921"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2050"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2144"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="1955"/>
         <source>Are you sure you want to delete these %1 files permanently?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2072"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2053"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1977"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2106"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2200"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="2011"/>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="119"/>
         <source>Name:</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2074"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2055"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1979"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2108"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2202"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="2013"/>
         <source>Size:</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2076"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2057"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1981"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2110"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2204"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="2015"/>
         <source>Date:</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2086"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2067"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="1991"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2120"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2214"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="2025"/>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="203"/>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="493"/>
         <source>Cancel</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="83"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="91"/>
         <source>(filter terms)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="305"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="313"/>
         <source>Paste</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="311"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="319"/>
         <source>Folder</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="321"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="329"/>
         <source>Text File</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="356"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="364"/>
         <source>Show hidden</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="362"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="373"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="370"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="378"/>
         <source>Refresh</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="407"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="415"/>
         <source>Compress as TAR.GZ</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="411"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="419"/>
         <source>Compress as ZIP</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="419"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="427"/>
         <source>Up</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="423"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="431"/>
         <source>Back</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="427"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="435"/>
         <source>Forward</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="431"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="439"/>
         <source>Previous sibling folder</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="435"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="443"/>
         <source>Next sibling folder</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="439"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="447"/>
         <source>To clipboard path</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="443"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="451"/>
         <source>Duplicate view</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="696"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="704"/>
         <source>Access denied</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="697"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="705"/>
         <source>You don&apos;t have the required permissions to access this folder:&lt;br&gt;&lt;br&gt;%1</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="827"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="891"/>
         <source>This Computer</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="930"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="994"/>
         <source>Navigate</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="956"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1020"/>
         <source>New</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1048"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1153"/>
+        <source>Other Application...</source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1177"/>
         <source>Compress</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2627"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2809"/>
         <source>New Folder</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2679"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2861"/>
         <source>New Text Document</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="107"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="112"/>
         <source>(search terms)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="108"/>
+        <location filename="../mkLauncher/src/mainwindow.cpp" line="113"/>
         <source>(action)</source>
         <translation></translation>
     </message>

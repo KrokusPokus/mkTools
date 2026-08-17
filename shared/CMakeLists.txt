@@ -10,8 +10,8 @@ add_library(shared STATIC
 target_sources(shared PRIVATE
     src/helpers.h src/helpers.cpp
     src/filepropertiesdialog.h src/filepropertiesdialog.cpp
-	src/filesortproxymodel.h src/filesortproxymodel.cpp
-	src/customtablemodel.h src/customtablemodel.cpp
+    src/filesortproxymodel.h src/filesortproxymodel.cpp
+    src/customtablemodel.h src/customtablemodel.cpp
     src/customtableview.h src/customtableview.cpp
     src/customlistview.h src/customlistview.cpp
     src/settingsmanager.h src/settingsmanager.cpp
@@ -31,6 +31,9 @@ target_link_libraries(shared
         Qt6::Core
         Qt6::Widgets
         Qt6::Concurrent
+        $<$<PLATFORM_ID:Linux>:KF6::KIOCore>
+        $<$<PLATFORM_ID:Linux>:KF6::KIOWidgets>
+        $<$<PLATFORM_ID:Linux>:KF6::KIOFileWidgets>
         $<$<PLATFORM_ID:Windows>:zlibstatic>
         $<$<PLATFORM_ID:Linux>:ZLIB::ZLIB>
 )

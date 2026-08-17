@@ -76,6 +76,9 @@ uint getRegExContentMatchCount(const QFileInfo &fileInfo, const QRegularExpressi
 namespace Helpers {
     QString expandPath(QString path);
     QString getPathFromClipboard(QString text);
+#ifdef Q_OS_LINUX
+    void showKdePropertiesDialog(const QStringList &filePaths, QWidget *parent);
+#endif
 }
 
 #endif // HELPERS_H

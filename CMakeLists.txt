@@ -34,6 +34,11 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Concurrent LinguistTools N
 qt_standard_project_setup()
 set(CMAKE_AUTORCC ON)
 
+# --- PLATFORMSPEZIFISCHE PAKETE ---
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    find_package(KF6KIO REQUIRED)
+endif()
+
 # --- 3. DRITTANBIETER (ZLIB) GLOBAL BEREITSTELLEN ---
 if(UNIX)
     find_package(ZLIB REQUIRED)

@@ -51,6 +51,14 @@
 #include <qt_windows.h>
 #include <shellapi.h>
 #include <shlobj.h>
+#elif defined(Q_OS_LINUX)
+#include <KFileItem>
+#include <KFileItemListProperties>
+#include <KFileItemActions>
+#include <KApplicationTrader>
+#include <KService>
+#include <KIO/ApplicationLauncherJob>
+#include <KOpenWithDialog>
 #endif
 
 MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath, QWidget *parent)
@@ -1024,6 +1032,8 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         mainMenu.addSeparator(); //-----------------------------------------
         mainMenu.addAction(m_actionListViewFileProperties);
     } else {
+        QStringList selectedPaths = getActiveViewPathList(); // Used by KDE SERVICE-ACTIONS
+
         mainMenu.addAction(m_actionListViewOpenFiles);
         mainMenu.setDefaultAction(m_actionListViewOpenFiles);
 
@@ -1068,6 +1078,7 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
             }
         }
 #else
+        /*
         QMimeDatabase db;
         QMimeType mime = db.mimeTypeForFile(filePath);
         QString mimeName = mime.name();
@@ -1098,24 +1109,132 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
                 }
             }
         }
-
+        */
+        // Native KDE Open with menu
         mainMenu.addSeparator(); //-----------------------------------------
 
-        QMenu *subMenuCompress = mainMenu.addMenu(tr("Compress"));
-        if (m_settings.showIconsInMenu) {
-            subMenuCompress->setIcon(QIcon::fromTheme("add-files-to-archive-symbolic"));
-        }
-        subMenuCompress->addAction(m_actionCompressTarGz);
-        subMenuCompress->addAction(m_actionCompressZip);
+        if (!selectedPaths.isEmpty()) {
+            // 1. Alle eindeutigen MIME-Typen aus den markierten Dateien ermitteln
+            QMimeDatabase db;
+            QSet<QString> uniqueMimeTypes;
+            for (const QString &path : std::as_const(selectedPaths)) {
+                uniqueMimeTypes.insert(db.mimeTypeForFile(path).name());
+            }
 
+            // 2. Schnittmenge der verfügbaren KServices berechnen
+            KService::List commonServices;
+            bool isFirstMime = true;
+
+            for (const QString &mimeName : std::as_const(uniqueMimeTypes)) {
+                KService::List servicesForMime = KApplicationTrader::queryByMimeType(mimeName);
+
+                if (isFirstMime) {
+                    commonServices = servicesForMime;
+                    isFirstMime = false;
+                } else {
+                    // Nur Services behalten, die auch den aktuellen MIME-Typ unterstützen
+                    KService::List intersected;
+                    for (const KService::Ptr &service : std::as_const(commonServices)) {
+                        bool supportsMime = std::any_of(servicesForMime.begin(), servicesForMime.end(),
+                                                        [&service](const KService::Ptr &s) {
+                                                            return s->storageId() == service->storageId();
+                                                        });
+
+                        if (supportsMime) {
+                            intersected.append(service);
+                        }
+                    }
+                    commonServices = intersected;
+                }
+
+                // Abbrechen, wenn die Schnittmenge leer wird
+                if (commonServices.isEmpty()) {
+                    break;
+                }
+            }
+
+            // 3. Untermenü "Öffnen mit" im Hauptmenü anlegen
+            QMenu *openWithMenu = mainMenu.addMenu(tr("Open with"));
+            if (m_settings.showIconsInMenu) {
+                openWithMenu->setIcon(QIcon::fromTheme("system-run"));
+            }
+
+            // 4. Gefundene Anwendungen (Schnittmenge) zum Menü hinzufügen
+            for (const KService::Ptr &service : std::as_const(commonServices)) {
+                QAction *action = openWithMenu->addAction(QIcon::fromTheme(service->icon()), service->name());
+
+                connect(action, &QAction::triggered, this, [service, selectedPaths]() {
+                    QList<QUrl> urls;
+                    urls.reserve(selectedPaths.size());
+                    for (const QString &path : selectedPaths) {
+                        urls.append(QUrl::fromLocalFile(path));
+                    }
+
+                    auto *job = new KIO::ApplicationLauncherJob(service);
+                    job->setUrls(urls);
+                    job->start();
+                });
+            }
+
+            // 5. "Other Application..." hinzufügen, wenn alle Items den gleichen MimeType haben ODER commonServices nicht leer ist
+            bool showOtherApp = (uniqueMimeTypes.size() == 1) || !commonServices.isEmpty();
+
+            if (showOtherApp) {
+                if (!commonServices.isEmpty()) {
+                    openWithMenu->addSeparator();
+                }
+
+                QAction *otherAppAction = openWithMenu->addAction(QIcon::fromTheme("system-run"), tr("Other Application..."));
+                connect(otherAppAction, &QAction::triggered, this, [selectedPaths, this]() {
+                    QList<QUrl> urls;
+                    urls.reserve(selectedPaths.size());
+                    for (const QString &path : selectedPaths) {
+                        urls.append(QUrl::fromLocalFile(path));
+                    }
+
+                    auto *dialog = new KOpenWithDialog(urls, this);
+                    dialog->show();
+                });
+            }
+        }
 #endif
         mainMenu.addSeparator(); //-----------------------------------------
         //mainMenu.addAction(m_actionListViewBrowseToFile);
         mainMenu.addAction(m_actionListViewCopyPaths);
         mainMenu.addAction(m_actionListViewCutFiles);
         mainMenu.addAction(m_actionListViewCopyFiles);
-        mainMenu.addAction(m_actionListViewDeleteFiles);
         mainMenu.addAction(m_actionListViewRenameFiles);
+        mainMenu.addSeparator(); //-----------------------------------------
+        mainMenu.addAction(m_actionListViewDeleteFiles);
+#ifdef Q_OS_WIN
+        mainMenu.addSeparator(); //-----------------------------------------
+
+        QMenu *subMenuCompress = mainMenu.addMenu(tr("Compress"));
+        if (m_settings.showIconsInMenu) {
+            subMenuCompress->setIcon(QIcon::fromTheme("add-files-to-archive-symbolic"));
+        }
+        //subMenuCompress->addAction(m_actionCompressTarGz);
+        subMenuCompress->addAction(m_actionCompressZip);
+#elif defined(Q_OS_LINUX)
+        // KDE SERVICE-ACTIONS
+        if (!selectedPaths.isEmpty()) {
+            KFileItemList fileItemList;
+            fileItemList.reserve(selectedPaths.size());
+            for (const QString &path : std::as_const(selectedPaths)) {
+                fileItemList.append(KFileItem(QUrl::fromLocalFile(path)));
+            }
+
+            KFileItemListProperties itemProperties(fileItemList);
+
+            // KFileItemActions mit &mainMenu als Parent erstellen
+            auto *serviceActions = new KFileItemActions(&mainMenu);
+            serviceActions->setParentWidget(this);
+            serviceActions->setItemListProperties(itemProperties);
+
+            mainMenu.addSeparator(); //-----------------------------------------
+            serviceActions->addActionsTo(&mainMenu);
+        }
+#endif
         mainMenu.addSeparator(); //-----------------------------------------
         mainMenu.addAction(m_actionListViewFileProperties);
     }
@@ -1455,6 +1574,13 @@ void MainWindow::action_ListViewFileProperties() {
         }
         pathList = { m_currentDirectory };
     }
+
+#ifdef Q_OS_LINUX
+    if (pathList.size() > 1) {
+        Helpers::showKdePropertiesDialog(pathList, this);
+        return;
+    }
+#endif
 
     auto *dialog = new FilePropertiesDialog(pathList);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
@@ -2217,21 +2343,27 @@ void MainWindow::action_CompressFileList(const QString &archiveExt) {
         archiveName = QString("%1.%2").arg(timeStamp, archiveExt);
     }
 
-    // Ark-Argumente aufbauen:
-    // -f tar.gz : Automatischen Dateinamen basierend auf der ersten Datei mit Endung .tar.gz erzeugen
-    // -p        : Arbeitsverzeichnis auf den Ordner der ersten Datei setzen (relative Pfade im Archiv)
-    QStringList arguments;
-    arguments << "-t" << QDir(m_currentDirectory).filePath(archiveName);
-    arguments << pathList;
+    // Pfade relativ zu m_currentDirectory umwandeln
+    QDir currentDir(m_currentDirectory);
+    QStringList relativePathList;
+    for (const QString &path : std::as_const(pathList)) {
+        relativePathList << currentDir.relativeFilePath(path);
+    }
 
-    // QProcess asynchron starten, um das Hauptfenster nicht zu blockieren
+    QStringList arguments;
+    arguments << "-t" << archiveName;
+    arguments << relativePathList;
+
     QProcess *process = new QProcess(this);
 
-    // Automatische Speicherbereinigung nach Beendigung des Prozesses
+    // Arbeitsverzeichnis explizit setzen
+    process->setWorkingDirectory(m_currentDirectory);
+
+    // Speicherbereinigung nach Beendigung
     connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
             process, &QObject::deleteLater);
 
-    // Fehlerbehandlung (z. B. wenn 'ark' nicht installiert ist)
+    // Fehlerbehandlung
     connect(process, &QProcess::errorOccurred, this, [process](QProcess::ProcessError error) {
         if (error == QProcess::FailedToStart) {
             qWarning() << "Fehler: Ark konnte nicht gestartet werden. Ist es installiert?";
@@ -2240,6 +2372,14 @@ void MainWindow::action_CompressFileList(const QString &archiveExt) {
     });
 
     process->start("ark", arguments);
+}
+
+void MainWindow::action_LaunchRenameTool() {
+    if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") return;
+
+    if (!m_settings.renameTool.isEmpty()) {
+        openFileListWithHandler(m_settings.renameTool, { m_currentDirectory });
+    }
 }
 
 //######################################################################################
@@ -2394,6 +2534,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                 return false;
             }
             else if (mouseEvent->button() == Qt::MiddleButton) {
+                if (!m_topControlsContainerWidget->isHidden()) {
+                    m_LineEdit1->clear();
+                    m_topControlsContainerWidget->hide();
+                }
                 navigateUp();
                 return true;
             }
@@ -2433,7 +2577,9 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
         // Window-wide hotkeys
         if (keyEvent->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) {
             if (keyEvent->key() == Qt::Key_F) {
-                openFileListWithHandler(m_settings.searchTool, { m_currentDirectory });
+                if (!m_currentDirectory.isEmpty() && m_currentDirectory != "drives://" && !m_settings.searchTool.isEmpty()) {
+                    openFileListWithHandler(m_settings.searchTool, { m_currentDirectory });
+                }
                 return true;
             }
         }
@@ -2489,10 +2635,24 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
         // Wenn in der View gerade ein Editor offen ist (z.B. Dateiname umbenennen),
         // dürfen wir Tasten wie "Entf", "Backspace" oder "Enter" NICHT abfangen!
         if (qobject_cast<QLineEdit*>(targetWidget)) {
-            if (targetWidget == m_LineEdit1 && keyEvent->key() == Qt::Key_Escape) {
-                m_LineEdit1->clear();
-                m_topControlsContainerWidget->hide();
-                return true;
+            if (targetWidget == m_LineEdit1) {
+                if (keyEvent->key() == Qt::Key_Escape) {
+                    m_LineEdit1->clear();
+                    m_topControlsContainerWidget->hide();
+                    return true;
+                }
+                else if (keyEvent->key() == Qt::Key_Backspace) {
+                    if (keyEvent->modifiers() == Qt::ControlModifier) {
+                        if (m_LineEdit1->text().isEmpty()) {
+                            m_topControlsContainerWidget->hide();
+                        } else {
+                            m_LineEdit1->clear();
+                        }
+                        return true;
+                    } else {
+                        return QObject::eventFilter(obj, event);
+                    }
+                }
             }
             //if (keyEvent->key() == Qt::Key_Enter || keyEvent->key() == Qt::Key_Return) qDebug() << "[KeyPress pos 2a] key:" << keyEvent->key() << "isAutoRepeat:" << keyEvent->isAutoRepeat() << "obj:" << obj << "targetWidget:" << targetWidget << "targetWidget->parent():" << targetWidget->parent();
 
@@ -2554,6 +2714,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                     navigateToClipboardPath();
                     return true;
                 }
+                else if (keyEvent->key() == Qt::Key_R) {
+                    action_LaunchRenameTool();
+                    return true;
+                }
                 else if (keyEvent->key() == Qt::Key_V) {
                     action_ListViewPasteFiles();
                     return true;
@@ -2568,6 +2732,13 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                 }
                 else if (keyEvent->key() == Qt::Key_Down) {
                     navigateSiblingNext();
+                    return true;
+                }
+                else if (keyEvent->key() == Qt::Key_Backspace) {
+                    if (!m_topControlsContainerWidget->isHidden()) {
+                        m_LineEdit1->setFocus();
+                        m_LineEdit1->selectAll();
+                    }
                     return true;
                 }
             }
@@ -2588,7 +2759,11 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                     }
                 }
                 else if (keyEvent->key() == Qt::Key_Backspace) {
-                    navigateUp();
+                    if (!m_topControlsContainerWidget->isHidden()) {
+                         m_LineEdit1->setFocus();
+                    } else {
+                        navigateUp();
+                    }
                     return true;
                 }
                 else if (keyEvent->key() == Qt::Key_Delete) {

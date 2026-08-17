@@ -51,6 +51,14 @@
 #include <qt_windows.h>
 #include <shellapi.h>
 #include <shlobj.h>
+#elif defined(Q_OS_LINUX)
+#include <KFileItem>
+#include <KFileItemListProperties>
+#include <KFileItemActions>
+#include <KApplicationTrader>
+#include <KService>
+#include <KIO/ApplicationLauncherJob>
+#include <KOpenWithDialog>
 #endif
 
 MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
@@ -1021,6 +1029,8 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         mainMenu.addSeparator(); //-----------------------------------------
         mainMenu.addAction(m_actionListViewFileProperties);
     } else {
+        QStringList selectedPaths = getActiveViewPathList(); // Used by KDE SERVICE-ACTIONS
+
         mainMenu.addAction(m_actionListViewOpenFiles);
         mainMenu.setDefaultAction(m_actionListViewOpenFiles);
 
@@ -1065,6 +1075,7 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
             }
         }
 #else
+        /*
         QMimeDatabase db;
         QMimeType mime = db.mimeTypeForFile(filePath);
         QString mimeName = mime.name();
@@ -1095,14 +1106,123 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
                 }
             }
         }
+        */
+        // Native KDE Open with menu
+        mainMenu.addSeparator(); //-----------------------------------------
+
+        if (!selectedPaths.isEmpty()) {
+            // 1. Alle eindeutigen MIME-Typen aus den markierten Dateien ermitteln
+            QMimeDatabase db;
+            QSet<QString> uniqueMimeTypes;
+            for (const QString &path : selectedPaths) {
+                uniqueMimeTypes.insert(db.mimeTypeForFile(path).name());
+            }
+
+            // 2. Schnittmenge der verfügbaren KServices berechnen
+            KService::List commonServices;
+            bool isFirstMime = true;
+
+            for (const QString &mimeName : std::as_const(uniqueMimeTypes)) {
+                KService::List servicesForMime = KApplicationTrader::queryByMimeType(mimeName);
+
+                if (isFirstMime) {
+                    commonServices = servicesForMime;
+                    isFirstMime = false;
+                } else {
+                    // Nur Services behalten, die auch den aktuellen MIME-Typ unterstützen
+                    KService::List intersected;
+                    for (const KService::Ptr &service : std::as_const(commonServices)) {
+                        bool supportsMime = std::any_of(servicesForMime.begin(), servicesForMime.end(),
+                                                        [&service](const KService::Ptr &s) {
+                                                            return s->storageId() == service->storageId();
+                                                        });
+
+                        if (supportsMime) {
+                            intersected.append(service);
+                        }
+                    }
+                    commonServices = intersected;
+                }
+
+                // Abbrechen, wenn die Schnittmenge leer wird
+                if (commonServices.isEmpty()) {
+                    break;
+                }
+            }
+
+            // 3. Untermenü "Öffnen mit" im Hauptmenü anlegen
+            QMenu *openWithMenu = mainMenu.addMenu(tr("Open with"));
+            if (m_settings.showIconsInMenu) {
+                openWithMenu->setIcon(QIcon::fromTheme("system-run"));
+            }
+
+            // 4. Gefundene Anwendungen (Schnittmenge) zum Menü hinzufügen
+            for (const KService::Ptr &service : std::as_const(commonServices)) {
+                QAction *action = openWithMenu->addAction(QIcon::fromTheme(service->icon()), service->name());
+
+                connect(action, &QAction::triggered, this, [service, selectedPaths]() {
+                    QList<QUrl> urls;
+                    urls.reserve(selectedPaths.size());
+                    for (const QString &path : selectedPaths) {
+                        urls.append(QUrl::fromLocalFile(path));
+                    }
+
+                    auto *job = new KIO::ApplicationLauncherJob(service);
+                    job->setUrls(urls);
+                    job->start();
+                });
+            }
+
+            // 5. "Other Application..." hinzufügen, wenn alle Items den gleichen MimeType haben ODER commonServices nicht leer ist
+            bool showOtherApp = (uniqueMimeTypes.size() == 1) || !commonServices.isEmpty();
+
+            if (showOtherApp) {
+                if (!commonServices.isEmpty()) {
+                    openWithMenu->addSeparator();
+                }
+
+                QAction *otherAppAction = openWithMenu->addAction(QIcon::fromTheme("system-run"), tr("Other Application..."));
+                connect(otherAppAction, &QAction::triggered, this, [selectedPaths, this]() {
+                    QList<QUrl> urls;
+                    urls.reserve(selectedPaths.size());
+                    for (const QString &path : selectedPaths) {
+                        urls.append(QUrl::fromLocalFile(path));
+                    }
+
+                    auto *dialog = new KOpenWithDialog(urls, this);
+                    dialog->show();
+                });
+            }
+        }
 #endif
         mainMenu.addSeparator(); //-----------------------------------------
         mainMenu.addAction(m_actionListViewBrowseToFile);
         mainMenu.addAction(m_actionListViewCopyPaths);
         mainMenu.addAction(m_actionListViewCutFiles);
         mainMenu.addAction(m_actionListViewCopyFiles);
-        mainMenu.addAction(m_actionListViewDeleteFiles);
         mainMenu.addAction(m_actionListViewRenameFiles);
+        mainMenu.addSeparator(); //-----------------------------------------
+        mainMenu.addAction(m_actionListViewDeleteFiles);
+#ifdef Q_OS_LINUX
+        // KDE SERVICE-ACTIONS
+        if (!selectedPaths.isEmpty()) {
+            KFileItemList fileItemList;
+            fileItemList.reserve(selectedPaths.size());
+            for (const QString &path : std::as_const(selectedPaths)) {
+                fileItemList.append(KFileItem(QUrl::fromLocalFile(path)));
+            }
+
+            KFileItemListProperties itemProperties(fileItemList);
+
+            // KFileItemActions mit &mainMenu als Parent erstellen
+            auto *serviceActions = new KFileItemActions(&mainMenu);
+            serviceActions->setParentWidget(this);
+            serviceActions->setItemListProperties(itemProperties);
+
+            mainMenu.addSeparator(); //-----------------------------------------
+            serviceActions->addActionsTo(&mainMenu);
+        }
+#endif
         mainMenu.addSeparator(); //-----------------------------------------
         mainMenu.addAction(m_actionListViewFileProperties);
     }
@@ -1419,6 +1539,13 @@ void MainWindow::action_ListViewFileProperties() {
         }
         pathList = { m_currentDirectory };
     }
+
+#ifdef Q_OS_LINUX
+    if (pathList.size() > 1) {
+        Helpers::showKdePropertiesDialog(pathList, this);
+        return;
+    }
+#endif
 
     auto *dialog = new FilePropertiesDialog(pathList);
     dialog->setAttribute(Qt::WA_DeleteOnClose);

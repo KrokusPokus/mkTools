@@ -1,11 +1,13 @@
 #include "helpers.h"
 
+#include <KPropertiesDialog>
 #include <QCollator>
 #include <QCoreApplication>
 #include <QDesktopServices>
 #include <QDir>
 #include <QImageReader>
 #include <QFileInfo>
+#include <QMenu>
 #include <QMimeType>
 #include <QMimeDatabase>
 #include <QProcess>
@@ -200,22 +202,31 @@ void launchDesktopFile(const DesktopEntry &info, const QStringList &fileList) {
     // 1. Handhabung von Type=Link oder verknüpften URLs
     // ==========================================
     if (info.type.compare(QLatin1String("Link"), Qt::CaseInsensitive) == 0 || !info.url.isEmpty()) {
-        QString urlStr = Helpers::expandPath(info.url.trimmed());
-        if (urlStr.isEmpty()) return;
+        QString rawUrl = info.url.trimmed();
+        if (rawUrl.isEmpty()) return;
 
-        // Keine Netzwerkschemata wie http://, https://, ftp:// etc.
-        if (!urlStr.contains("://")) {
-            QFileInfo fileInfo(urlStr);
-
-            // Prüft plattformübergreifend auf relative Pfade
-            // (deckt "./", "../", "subfolder/file", etc. ab)
-            if (fileInfo.isRelative()) {
-                QDir desktopFileDir = QFileInfo(info.path).absoluteDir();
-                urlStr = desktopFileDir.absoluteFilePath(urlStr);
-            }
+        // 1. Direkt testen, ob es bereits eine valide Netzwerk-URL mit Schema ist (http, https, ftp, etc.)
+        QUrl url(rawUrl);
+        if (!url.scheme().isEmpty() && url.isValid()) {
+            QDesktopServices::openUrl(url);
+            return;
         }
 
-        QUrl url = QUrl::fromUserInput(urlStr);
+        // 2. Erst wenn kein Schema vorliegt, Pfade auflösen (~/, $HOME, relative Pfade)
+        QString urlStr = Helpers::expandPath(rawUrl);
+
+        QFileInfo fileInfo(urlStr);
+        if (fileInfo.isRelative()) {
+            QDir desktopFileDir = QFileInfo(info.path).absoluteDir();
+            urlStr = desktopFileDir.absoluteFilePath(urlStr);
+        }
+
+        // Lokale Pfade explizit als File-URL konvertieren
+        url = QUrl::fromLocalFile(urlStr);
+        if (!url.isValid()) {
+            url = QUrl::fromUserInput(urlStr);
+        }
+
         if (url.isValid()) {
             QDesktopServices::openUrl(url);
         } else {
@@ -1076,5 +1087,24 @@ namespace Helpers {
 
         return QString();
     }
+
+#ifdef Q_OS_LINUX
+    void showKdePropertiesDialog(const QStringList &filePaths, QWidget *parent = nullptr) {
+        if (filePaths.isEmpty()) {
+            return;
+        }
+
+        // Pfade in QUrl umwandeln
+        QList<QUrl> urls;
+        urls.reserve(filePaths.size());
+        for (const QString &path : filePaths) {
+            urls.append(QUrl::fromLocalFile(path));
+        }
+
+        // Öffnet den nativen KDE/Dolphin-Eigenschaften-Dialog
+        // Kümmert sich automatisch um Einzel- und Mehrfachauswahl!
+        KPropertiesDialog::showDialog(urls, parent);
+    }
+#endif
 
 } // namespace Helpers

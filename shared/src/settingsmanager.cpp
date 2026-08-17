@@ -30,7 +30,7 @@ void SettingsManager::load() {
     imageEditor      = QDir::toNativeSeparators(s.value("Handlers/EditorImage", DEFAULT_IMAGE_EDITOR).toString());
     textEditor       = QDir::toNativeSeparators(s.value("Handlers/EditorText", DEFAULT_TEXT_EDITOR).toString());
     videoEditor      = QDir::toNativeSeparators(s.value("Handlers/EditorVideo", DEFAULT_VIDEO_EDITOR).toString());
-	diffTool         = QDir::toNativeSeparators(s.value("Handlers/DiffTool", DEFAULT_DIFF_TOOL).toString());
+	mergeTool        = QDir::toNativeSeparators(s.value("Handlers/MergeTool", DEFAULT_MERGE_TOOL).toString());
     fileManager      = QDir::toNativeSeparators(s.value("Handlers/FileManager", DEFAULT_FILE_MANAGER).toString());
     renameTool       = QDir::toNativeSeparators(s.value("Handlers/RenameTool", DEFAULT_RENAME_TOOL).toString());
     searchTool       = QDir::toNativeSeparators(s.value("Handlers/SearchTool", DEFAULT_SEARCH_TOOL).toString());
@@ -65,7 +65,7 @@ void SettingsManager::getDefaults() {
     DEFAULT_IMAGE_EDITOR = "gimp.desktop";
     DEFAULT_TEXT_EDITOR = "org.kde.kate.desktop";
     DEFAULT_VIDEO_EDITOR = "org.kde.kdenlive.desktop";
-    DEFAULT_DIFF_TOOL = "";
+    DEFAULT_MERGE_TOOL = "";
     DEFAULT_FILE_MANAGER = "mkFolderWidget";
     DEFAULT_RENAME_TOOL = "";
     DEFAULT_SEARCH_TOOL = "mkFileSearch";
@@ -93,7 +93,7 @@ void SettingsManager::getDefaults() {
     DEFAULT_IMAGE_EDITOR = "";
     DEFAULT_TEXT_EDITOR = "";
     DEFAULT_VIDEO_EDITOR = "";
-    DEFAULT_DIFF_TOOL = "";
+    DEFAULT_MERGE_TOOL = "";
     DEFAULT_FILE_MANAGER = "mkFolderWidget";
     DEFAULT_RENAME_TOOL = "";
     DEFAULT_SEARCH_TOOL = "mkFileSearch";
@@ -139,7 +139,7 @@ void SettingsManager::saveSettings() {
     safeSetValue(s, "Handlers/EditorImage", imageEditor);
     safeSetValue(s, "Handlers/EditorText", textEditor);
     safeSetValue(s, "Handlers/EditorVideo", videoEditor);
-	safeSetValue(s, "Handlers/DiffTool", diffTool);
+	safeSetValue(s, "Handlers/MergeTool", mergeTool);
     safeSetValue(s, "Handlers/FileManager", fileManager);
     safeSetValue(s, "Handlers/RenameTool", renameTool);
     safeSetValue(s, "Handlers/SearchTool", searchTool);

@@ -76,6 +76,7 @@ private:
     void action_toggleShowHidden();
     void action_CompressTarGz();
     void action_CompressFileList(const QString &archiveExt);
+    void action_LaunchRenameTool();
 
     bool showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly);
     void browseFolder(QString directoryPath, const QString &focusPath = QString(), bool isHistoryNavigation = false);

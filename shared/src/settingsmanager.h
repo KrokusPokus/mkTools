@@ -24,7 +24,7 @@ public:
 	QString imageEditor;
 	QString textEditor;
 	QString videoEditor;
-    QString diffTool;
+    QString mergeTool;
 	QString fileManager;
     QString renameTool;
     QString searchTool;
@@ -66,7 +66,7 @@ private:
     QString DEFAULT_IMAGE_EDITOR;
     QString DEFAULT_TEXT_EDITOR;
     QString DEFAULT_VIDEO_EDITOR;
-    QString DEFAULT_DIFF_TOOL;
+    QString DEFAULT_MERGE_TOOL;
     QString DEFAULT_FILE_MANAGER;
     QString DEFAULT_SEARCH_TOOL;
     QString DEFAULT_RENAME_TOOL;
