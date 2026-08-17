@@ -86,7 +86,32 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     topControlsHBoxLayout->setSpacing(0);
 
     m_LineEdit1 = new QLineEdit();
-    m_LineEdit1->setStyleSheet("QLineEdit { border: 1px solid #a09beb; padding: 0px; padding-left: 4px; background-color: #1a1a1a; color: #ffffff;}");
+    m_LineEdit1->setStyleSheet(
+        /* 1. Normalzustand (unfokussiert) */
+        "QLineEdit {"
+        "  border: 1px solid #555555;"          // Dezent definierter Rahmen für den Ruhezustand
+        "  padding: 0px;"
+        "  padding-left: 4px;"
+        "  background-color: #1a1a1a;"
+        "  color: #ffffff;"
+        "}"
+
+        /* 2. Hover-Zustand (Maus bewegt sich darüber) */
+        "QLineEdit:hover {"
+        "  border: 1px solid #666666;"          // Etwas hellerer Rahmen beim Drüberfahren
+        "}"
+
+        /* 3. Aktiver Fokus-Zustand (Control ist ausgewählt / Tastatureingabe) */
+        "QLineEdit:focus {"
+        "  border: 1px solid palette(Accent);"  // Akzentfarbe greift nur, wenn das Feld aktiv ist
+        "}"
+
+        /* 4. Inaktiv / Deaktiviert (optional) */
+        "QLineEdit:disabled {"
+        "  border: 1px solid #222222;"
+        "  color: #666666;"
+        "}"
+        );
     if (m_settings.showPlaceholderText) {
         m_LineEdit1->setPlaceholderText(tr("(filter terms)"));
     }
@@ -2464,6 +2489,27 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     // nicht auf ausstehende Aufgaben zu warten (Vorsicht: Laufende Threads werden trotzdem beendet):
     QThreadPool::globalInstance()->clear();
     event->accept();
+}
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    QMainWindow::changeEvent(event);
+
+    // Reagiert auf System-Palette-Änderungen (z. B. Wechsel der Akzentfarbe in KDE)
+    if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
+        // Zwingt das QSS-System dazu, palette(...) neu einzulesen
+        m_LineEdit1->style()->unpolish(m_LineEdit1);
+        m_LineEdit1->style()->polish(m_LineEdit1);
+
+        m_tableView->style()->unpolish(m_tableView);
+        m_tableView->style()->polish(m_tableView);
+
+        m_listView->style()->unpolish(m_listView);
+        m_listView->style()->polish(m_listView);
+
+        m_thumbnailView->style()->unpolish(m_thumbnailView);
+        m_thumbnailView->style()->polish(m_thumbnailView);
+    }
 }
 
 // Installed on qApp

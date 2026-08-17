@@ -3,6 +3,7 @@
 
 #include <QApplication>
 #include <QDirIterator>
+#include <QElapsedTimer>
 #include <QMimeData>
 #include <QPainter>
 #include <QRegularExpression>
@@ -795,6 +796,10 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
     int nameMatchQuality = -1;
     int contentMatchCount = -1;
 
+    // Timer zur Zeitmessung für periodische Updates (1000 ms)
+    QElapsedTimer progressTimer;
+    progressTimer.start();
+
     QDirIterator it(searchDir, searchFlags, QDirIterator::Subdirectories);
     while (it.hasNext()) {
         it.next();
@@ -818,10 +823,14 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
             }
 
             if (nameMatchQuality == 0) {
+                // Bei Verwerfen vor dem continue prüfen, ob 1000 ms vergangen sind
+                if (progressTimer.elapsed() >= 1000) {
+                    emit searchProgress(iItemsFound, iNameMatched, iContentMatched);
+                    progressTimer.restart();
+                }
                 continue;
             }
         }
-
 
         if (!bsearchStringContentEmpty) {
             if (bRegExContent) {
@@ -831,6 +840,11 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
             }
 
             if (contentMatchCount == 0) {
+                // Bei Verwerfen vor dem continue prüfen, ob 1000 ms vergangen sind
+                if (progressTimer.elapsed() >= 1000) {
+                    emit searchProgress(iItemsFound, iNameMatched, iContentMatched);
+                    progressTimer.restart();
+                }
                 continue;
             }
 
@@ -844,6 +858,12 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
         info.contentMatchCount = contentMatchCount;
 
         newFiles.push_back(info);
+
+        // Prüfen, ob seit dem letzten Signal 1000 ms vergangen sind
+        if (progressTimer.elapsed() >= 1000) {
+            emit searchProgress(iItemsFound, iNameMatched, iContentMatched);
+            progressTimer.restart();
+        }
     }
 
     beginResetModel();

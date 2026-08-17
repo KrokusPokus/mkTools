@@ -58,6 +58,7 @@ class CustomTableModel : public QAbstractTableModel {
 
 signals:
     void filesDropped(const QList<QUrl> &urls, const QString &targetDirectory, Qt::DropAction action);
+    void searchProgress(uint itemsFound, uint nameMatched, uint contentMatched);
     void searchFinished(uint itemsFound, uint nameMatched, uint contentMatched, bool searchInterrupted);
 
 public:

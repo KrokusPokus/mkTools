@@ -34,6 +34,7 @@ private slots:
     void onHorizontalBarScrollChange();
     void onListItemDoubleClicked(const QModelIndex &index);
     void onListViewHeaderClicked();
+    void onSearchProgress(uint itemsFound, uint nameMatched, uint contentMatched);
     void onSearchFinished(uint iItemsFound, uint iNameMatched, uint iContentMatched, bool bSearchInterrupted);
     void onTableCurrentChanged(const QModelIndex &current, const QModelIndex &previous);
     void onTimedUpdateIcons();
@@ -171,6 +172,7 @@ private:
 #endif
 
 protected:
+    void changeEvent(QEvent *event) override;
     bool eventFilter(QObject *watched, QEvent *event) override;
 };
 #endif // MAINWINDOW_H

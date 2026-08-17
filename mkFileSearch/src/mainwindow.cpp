@@ -602,6 +602,7 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     // part of mitigation for Shift+Pos1 / Shift+End not working in tableView
     connect(m_tableView->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::onTableCurrentChanged);
 
+    connect(m_abstractModel, &CustomTableModel::searchProgress, this, &MainWindow::onSearchProgress);
     connect(m_abstractModel, &CustomTableModel::searchFinished, this, &MainWindow::onSearchFinished);
 
     qDebug() << "Unterstützte Formate:" << QImageReader::supportedImageFormats();
@@ -853,7 +854,7 @@ void MainWindow::startSearch() {
 
     QGuiApplication::setOverrideCursor(Qt::WaitCursor);
 
-    setWindowTitle(QDir::toNativeSeparators(m_currentDirectory) + "   (Searching)");
+    setWindowTitle(QDir::toNativeSeparators(m_currentDirectory) + tr("   (Searching...)"));
     m_currentSearchGeneration++; // Make old crc calc threads invalid to prevent seg faults from Use-After-Free
 
     if (m_selectionModel) {
@@ -861,6 +862,17 @@ void MainWindow::startSearch() {
     }
 
     m_abstractModel->populateModel_mkFileSearch(m_currentDirectory, InputBox1Text, InputBox2Text, bRegExFilename, bRegExContent, m_CheckboxNameCaseSense->isChecked(), m_CheckboxContentCaseSense->isChecked(), m_CheckboxDirectories->checkState(), m_settings.textExts);
+}
+
+void MainWindow::onSearchProgress(uint iItemsFound, uint iNameMatched, uint iContentMatched) {
+    QString newTitle;
+    QString InputBox2Text = m_LineEdit2->text();
+    if (InputBox2Text.trimmed().isEmpty()) {
+        newTitle = QString(tr("%1   (Searching... %2 hits in %3 items)")).arg(QDir::toNativeSeparators(m_currentDirectory), QLocale::system().toString(iNameMatched), QLocale::system().toString(iItemsFound));
+    } else {
+        newTitle = QString(tr("%1   (Searching... %2 matches spread across %3 files of %4 searched)")).arg(QDir::toNativeSeparators(m_currentDirectory), QLocale::system().toString(iContentMatched), QLocale::system().toString(iNameMatched), QLocale::system().toString(iItemsFound));
+    }
+    setWindowTitle(newTitle);
 }
 
 void MainWindow::onSearchFinished(uint iItemsFound, uint iNameMatched, uint iContentMatched, bool bSearchInterrupted) {
@@ -2288,6 +2300,31 @@ QImage MainWindow::generateThumbnailAsync(const QFileInfo &fileInfo) {
 
 //######################################################################################
 // Protected Overrides
+
+
+void MainWindow::changeEvent(QEvent *event)
+{
+    QMainWindow::changeEvent(event);
+
+    // Reagiert auf System-Palette-Änderungen (z. B. Wechsel der Akzentfarbe in KDE)
+    if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
+        // Zwingt das QSS-System dazu, palette(...) neu einzulesen
+        m_LineEdit1->style()->unpolish(m_LineEdit1);
+        m_LineEdit1->style()->polish(m_LineEdit1);
+
+        m_LineEdit2->style()->unpolish(m_LineEdit2);
+        m_LineEdit2->style()->polish(m_LineEdit2);
+
+        m_tableView->style()->unpolish(m_tableView);
+        m_tableView->style()->polish(m_tableView);
+
+        m_listView->style()->unpolish(m_listView);
+        m_listView->style()->polish(m_listView);
+
+        m_thumbnailView->style()->unpolish(m_thumbnailView);
+        m_thumbnailView->style()->polish(m_thumbnailView);
+    }
+}
 
 // Installed on qApp
 bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
