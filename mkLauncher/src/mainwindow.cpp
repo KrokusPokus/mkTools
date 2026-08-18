@@ -2350,8 +2350,8 @@ void MainWindow::updateWidgetStyles() {
         } else {
             m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewLinux.data(), Styles::listViewLinux.size()));
         }
-    }
 #endif
+    }
     else if (currentPalette != m_StyleLastPalette) {
         m_currentStyleState = targetState;
         m_StyleLastPalette = currentPalette;

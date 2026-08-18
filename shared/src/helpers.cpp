@@ -1,6 +1,5 @@
 #include "helpers.h"
 
-#include <KPropertiesDialog>
 #include <QCollator>
 #include <QCoreApplication>
 #include <QDesktopServices>
@@ -20,6 +19,8 @@
 
 #ifdef Q_OS_WIN
 #include <shellapi.h>   // needed for ShellExecuteEx in startProcessElevatedWin()
+#elif defined(Q_OS_LINUX)
+#include <KPropertiesDialog>
 #endif
 
 bool isTextFile(const QString &filePath) {
