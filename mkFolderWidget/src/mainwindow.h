@@ -98,6 +98,7 @@ private:
     void selectAllItems();
     void setupClipboardForCopyOrCut(const QStringList &cutFilePaths, bool isCut);
     void updateColumns();
+    void updateWidgetStyles();
     QPixmap generateThumbnailIcon(const QFileInfo &fileInfo);
     static QImage generateThumbnailAsync(const QFileInfo &fileInfo);
 
@@ -152,7 +153,8 @@ private:
 
     QTimer *m_timerUpdateIcons = nullptr;
     QTimer *m_scrollToDebounceTimer = nullptr;
-    
+    QTimer *m_themeUpdateDebounceTimer = nullptr;
+
     QFileSystemWatcher* m_fileSystemWatcher = nullptr;
     QTimer *m_watcherDebounceTimer = nullptr;
     bool m_ignoreNextWatcherSignal = false; // Flag für eigene Datei-Aktionen
@@ -175,6 +177,17 @@ private:
     qint64 m_lastActivationTime = 0;
     bool m_activationClickActive = false;
     QSet<QString> m_loadingThumbnails;
+
+    bool m_processIsElevated{false};
+    QPalette m_StyleLastPalette;
+    enum class StyleState {
+        Uninitialized,
+        Light,
+        Dark,
+        Elevated
+    };
+
+    StyleState m_currentStyleState{StyleState::Uninitialized};
 
 #ifdef Q_OS_WIN
     QString getSendToPath();

@@ -94,6 +94,7 @@ private:
     void setupClipboardForCopyOrCut(const QStringList &cutFilePaths, bool isCut);
     void updateColumns();
     void updateSearch();
+    void updateWidgetStyles();
     QPixmap generateThumbnailIcon(const QFileInfo &fileInfo);
     static QImage generateThumbnailAsync(const QFileInfo &fileInfo);
 
@@ -138,7 +139,7 @@ private:
 
     QTimer *m_timerUpdateIcons = nullptr;
     QTimer *m_scrollToDebounceTimer = nullptr;
-    
+    QTimer *m_themeUpdateDebounceTimer = nullptr;
 
     bool m_bShowHiddenFiles = false;
     bool m_bHeaderVisible = true;
@@ -172,6 +173,17 @@ private:
     int m_tableLineHeight;
     std::atomic<bool> m_bAbortRequested{false};
     std::atomic<bool> m_bRestartPendingSearch{false};
+
+    bool m_processIsElevated{false};
+    QPalette m_StyleLastPalette;
+    enum class StyleState {
+        Uninitialized,
+        Light,
+        Dark,
+        Elevated
+    };
+
+    StyleState m_currentStyleState{StyleState::Uninitialized};
 
 #ifdef Q_OS_WIN
     QString getSendToPath();

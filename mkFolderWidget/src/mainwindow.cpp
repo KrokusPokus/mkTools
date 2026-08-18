@@ -40,6 +40,7 @@
 #include <QStandardPaths>
 #include <QStringList>
 #include <QStringView>
+#include <QStyleHints>
 #include <QThread>
 #include <QUrl>
 #include <QUuid>
@@ -69,6 +70,8 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     setWindowIcon(QIcon(":/icons/app.ico"));
     resize(728, 545);
 
+    m_processIsElevated = isCurrentProcessElevated();
+
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
 
@@ -86,32 +89,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     topControlsHBoxLayout->setSpacing(0);
 
     m_LineEdit1 = new QLineEdit();
-    m_LineEdit1->setStyleSheet(
-        /* 1. Normalzustand (unfokussiert) */
-        "QLineEdit {"
-        "  border: 1px solid #555555;"          // Dezent definierter Rahmen für den Ruhezustand
-        "  padding: 0px;"
-        "  padding-left: 4px;"
-        "  background-color: #1a1a1a;"
-        "  color: #ffffff;"
-        "}"
-
-        /* 2. Hover-Zustand (Maus bewegt sich darüber) */
-        "QLineEdit:hover {"
-        "  border: 1px solid #666666;"          // Etwas hellerer Rahmen beim Drüberfahren
-        "}"
-
-        /* 3. Aktiver Fokus-Zustand (Control ist ausgewählt / Tastatureingabe) */
-        "QLineEdit:focus {"
-        "  border: 1px solid palette(Accent);"  // Akzentfarbe greift nur, wenn das Feld aktiv ist
-        "}"
-
-        /* 4. Inaktiv / Deaktiviert (optional) */
-        "QLineEdit:disabled {"
-        "  border: 1px solid #222222;"
-        "  color: #666666;"
-        "}"
-        );
     if (m_settings.showPlaceholderText) {
         m_LineEdit1->setPlaceholderText(tr("(filter terms)"));
     }
@@ -169,21 +146,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     m_tableView->setDragDropMode(QAbstractItemView::DragDrop);
     m_tableView->setDefaultDropAction(Qt::MoveAction);
 
-#ifdef Q_OS_WIN
-    if (isCurrentProcessElevated()) {
-        m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevated.data(), Styles::tableViewElevated.size()));
-    } else {
-        m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewDark.data(), Styles::tableViewDark.size()));
-    }
-
-    m_tableView->verticalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::verticalScrollBarDark.data(), Styles::verticalScrollBarDark.size()));
-    m_tableView->horizontalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::horizontalScrollBarDark.data(), Styles::horizontalScrollBarDark.size()));
-#elif defined(Q_OS_LINUX)
-    if (isCurrentProcessElevated()) {
-        m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevatedLinux.data(), Styles::tableViewElevatedLinux.size()));
-    }
-#endif
-
     // --------------------------------------------------------------------
 
     m_listView = new CustomListView(this);
@@ -217,23 +179,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     m_selectionModel = m_tableView->selectionModel();
     m_listView->setSelectionModel(m_selectionModel);
 
-#ifdef Q_OS_WIN
-    if (isCurrentProcessElevated()) {
-        m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevated.data(), Styles::listViewElevated.size()));
-    } else {
-        m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewDark.data(), Styles::listViewDark.size()));
-    }
-
-    m_listView->verticalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::verticalScrollBarDark.data(), Styles::verticalScrollBarDark.size()));
-    m_listView->horizontalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::horizontalScrollBarDark.data(), Styles::horizontalScrollBarDark.size()));
-#elif defined(Q_OS_LINUX)
-    if (isCurrentProcessElevated()) {
-        m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevatedLinux.data(), Styles::listViewElevatedLinux.size()));
-    } else {
-        m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewLinux.data(), Styles::listViewLinux.size()));
-    }
-#endif
-
     // --------------------------------------------------------------------
 
     m_thumbnailView = new CustomListView(this);
@@ -262,21 +207,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     m_thumbnailView->setDragDropMode(QAbstractItemView::DragDrop);
     m_thumbnailView->setDefaultDropAction(Qt::MoveAction);
 
-#ifdef Q_OS_WIN
-    if (isCurrentProcessElevated()) {
-        m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevated.data(), Styles::thumbnailViewElevated.size()));
-    } else {
-        m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewDark.data(), Styles::thumbnailViewDark.size()));
-    }
-
-    m_thumbnailView->verticalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::verticalScrollBarDark.data(), Styles::verticalScrollBarDark.size()));
-    m_thumbnailView->horizontalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::horizontalScrollBarDark.data(), Styles::horizontalScrollBarDark.size()));
-#elif defined(Q_OS_LINUX)
-    if (isCurrentProcessElevated()) {
-        m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevatedLinux.data(), Styles::thumbnailViewElevatedLinux.size()));
-    }
-#endif
-
     // --------------------------------------------------------------------
 
     m_viewStack = new QStackedWidget(this);
@@ -287,6 +217,10 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
 
     m_viewStack->setCurrentIndex(0);
     m_abstractModel->setModelViewMode(ViewMode::List);
+
+    // --------------------------------------------------------------------
+
+    updateWidgetStyles();
 
     // --------------------------------------------------------------------
     // Shortcuts: Whole Window
@@ -562,6 +496,10 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     m_scrollToDebounceTimer = new QTimer(this);
     m_scrollToDebounceTimer->setSingleShot(true);
     connect(m_scrollToDebounceTimer, &QTimer::timeout, this, &MainWindow::scrollToCurrentItem);
+
+    m_themeUpdateDebounceTimer = new QTimer(this);
+    m_themeUpdateDebounceTimer->setSingleShot(true);
+    connect(m_themeUpdateDebounceTimer, &QTimer::timeout, this, &MainWindow::updateWidgetStyles);
 
     // --------------------------------------------------------------------
 
@@ -2407,6 +2345,148 @@ void MainWindow::action_LaunchRenameTool() {
     }
 }
 
+void MainWindow::updateWidgetStyles() {
+
+        static const QString lineEditStyleDark = QStringLiteral(
+        /* 1. Normalzustand (unfokussiert) */
+        "QLineEdit {"
+        "  border: 1px solid #555555;"
+        "  padding: 0px;"
+        "  padding-left: 4px;"
+        "  background-color: #1a1a1a;"
+        "  color: #ffffff;"
+        "}"
+
+        /* 2. Hover-Zustand (Maus bewegt sich darüber) */
+        "QLineEdit:hover {"
+        "  border: 1px solid #666666;"
+        "}"
+
+        /* 3. Aktiver Fokus-Zustand (Control ist ausgewählt / Tastatureingabe) */
+        "QLineEdit:focus {"
+        "  border: 1px solid palette(Accent);"
+        "}"
+
+        /* 4. Inaktiv / Deaktiviert (optional) */
+        "QLineEdit:disabled {"
+        "  border: 1px solid #222222;"
+        "  color: #666666;"
+        "}"
+        );
+
+    static const QString lineEditStyleLight = QStringLiteral(
+        /* 1. Normalzustand (unfokussiert) */
+        "QLineEdit {"
+        "  border: 1px solid palette(mid);"
+        "  padding: 0px;"
+        "  padding-left: 4px;"
+        "  background-color: palette(window);"
+        "  color: palette(window-text);"
+        "}"
+
+        /* 2. Hover-Zustand (Maus bewegt sich darüber) */
+        "QLineEdit:hover {"
+        "  border: 1px solid palette(Accent);"
+        "}"
+
+        /* 3. Aktiver Fokus-Zustand (Control ist ausgewählt / Tastatureingabe) */
+        "QLineEdit:focus {"
+        "  border: 1px solid #ff0000;"
+        "}"
+
+        /* 4. Inaktiv / Deaktiviert (optional) */
+        "QLineEdit:disabled {"
+        "  border: 1px solid #222222;"
+        "  color: #666666;"
+        "}"
+        );
+
+#ifdef Q_OS_WIN
+    bool isDark = true;
+#elif defined(Q_OS_LINUX)
+    bool isDark = (QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark);
+#endif
+
+    StyleState targetState;
+    if (m_processIsElevated) {
+        targetState = StyleState::Elevated;
+    } else {
+        targetState = isDark ? StyleState::Dark : StyleState::Light;
+    }
+
+    QPalette currentPalette = QGuiApplication::palette();
+
+    if (m_currentStyleState == targetState && m_StyleLastPalette == currentPalette) {
+        return;
+    }
+
+    if (m_currentStyleState != targetState) {
+        m_currentStyleState = targetState;
+        m_StyleLastPalette = currentPalette;
+
+#ifdef Q_OS_WIN
+        m_LineEdit1->setStyleSheet(lineEditStyleDark);
+
+        if (targetState == StyleState::Elevated) {
+            m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevated.data(), Styles::tableViewElevated.size()));
+            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevated.data(), Styles::listViewElevated.size()));
+            m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevated.data(), Styles::thumbnailViewElevated.size()));
+        } else {
+            m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewDark.data(), Styles::tableViewDark.size()));
+            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewDark.data(), Styles::listViewDark.size()));
+            m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewDark.data(), Styles::thumbnailViewDark.size()));
+        }
+
+        m_tableView->verticalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::verticalScrollBarDark.data(), Styles::verticalScrollBarDark.size()));
+        m_tableView->horizontalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::horizontalScrollBarDark.data(), Styles::horizontalScrollBarDark.size()));
+
+        m_listView->verticalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::verticalScrollBarDark.data(), Styles::verticalScrollBarDark.size()));
+        m_listView->horizontalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::horizontalScrollBarDark.data(), Styles::horizontalScrollBarDark.size()));
+
+        m_thumbnailView->verticalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::verticalScrollBarDark.data(), Styles::verticalScrollBarDark.size()));
+        m_thumbnailView->horizontalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::horizontalScrollBarDark.data(), Styles::horizontalScrollBarDark.size()));
+#elif defined(Q_OS_LINUX)
+        if (targetState == StyleState::Dark) {
+            m_LineEdit1->setStyleSheet(lineEditStyleDark);
+        } else {
+            m_LineEdit1->setStyleSheet(lineEditStyleLight);
+        }
+
+        if (targetState == StyleState::Elevated) {
+            m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevatedLinux.data(), Styles::tableViewElevatedLinux.size()));
+            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevatedLinux.data(), Styles::listViewElevatedLinux.size()));
+            m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevatedLinux.data(), Styles::thumbnailViewElevatedLinux.size()));
+        } else {
+            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewLinux.data(), Styles::listViewLinux.size()));
+        }
+    }
+#endif
+    else if (currentPalette != m_StyleLastPalette) {
+        m_currentStyleState = targetState;
+        m_StyleLastPalette = currentPalette;
+
+        if (m_LineEdit1) {
+            m_LineEdit1->style()->unpolish(m_LineEdit1);
+            m_LineEdit1->style()->polish(m_LineEdit1);
+        }
+
+        if (m_tableView) {
+            m_tableView->style()->unpolish(m_tableView);
+            m_tableView->style()->polish(m_tableView);
+        }
+
+        if (m_listView) {
+            m_listView->style()->unpolish(m_listView);
+            m_listView->style()->polish(m_listView);
+        }
+
+        if (m_thumbnailView) {
+            m_thumbnailView->style()->unpolish(m_thumbnailView);
+            m_thumbnailView->style()->polish(m_thumbnailView);
+        }
+    }
+}
+
 //######################################################################################
 // Functions to receive data from other applications
 
@@ -2491,24 +2571,22 @@ void MainWindow::closeEvent(QCloseEvent *event) {
     event->accept();
 }
 
-void MainWindow::changeEvent(QEvent *event)
-{
+void MainWindow::changeEvent(QEvent *event) {
     QMainWindow::changeEvent(event);
 
     // Reagiert auf System-Palette-Änderungen (z. B. Wechsel der Akzentfarbe in KDE)
-    if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
-        // Zwingt das QSS-System dazu, palette(...) neu einzulesen
-        m_LineEdit1->style()->unpolish(m_LineEdit1);
-        m_LineEdit1->style()->polish(m_LineEdit1);
+    switch (event->type()) {
+        case QEvent::ApplicationPaletteChange:
+        case QEvent::PaletteChange:
+        case QEvent::StyleChange:
+        case QEvent::ThemeChange:
+            if (m_themeUpdateDebounceTimer) {
+                m_themeUpdateDebounceTimer->start(50);
+            }
+            break;
 
-        m_tableView->style()->unpolish(m_tableView);
-        m_tableView->style()->polish(m_tableView);
-
-        m_listView->style()->unpolish(m_listView);
-        m_listView->style()->polish(m_listView);
-
-        m_thumbnailView->style()->unpolish(m_thumbnailView);
-        m_thumbnailView->style()->polish(m_thumbnailView);
+        default:
+            break;
     }
 }
 
@@ -3042,7 +3120,7 @@ void MainWindow::duplicateInstance() {
 }
 
 void MainWindow::elevateInstance() {
-    if (isCurrentProcessElevated()) return;
+    if (m_processIsElevated) return;
 
     QString appPath = QCoreApplication::applicationFilePath();
     QStringList arguments;

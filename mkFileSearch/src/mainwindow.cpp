@@ -68,15 +68,7 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     setWindowIcon(QIcon(":/icons/app.ico"));
     resize(728, 545);
 
-#ifdef Q_OS_LINUX
-    Qt::ColorScheme globalColorScheme = QGuiApplication::styleHints()->colorScheme();
-    if (globalColorScheme == Qt::ColorScheme::Dark) {
-        this->setStyleSheet(
-            "QMainWindow { background-color: #222222; }"
-            "QHeaderView::section { background-color: #222222; color: #ffffff; }"
-            );
-    }
-#endif
+    m_processIsElevated = isCurrentProcessElevated();
 
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
@@ -93,11 +85,9 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     topControlsVBoxLayout1->setContentsMargins(5, 5, 5, 5);
 
     m_LineEdit1 = new QLineEdit();
-    m_LineEdit1->setStyleSheet(m_styleLineEditNormal);
     topControlsVBoxLayout1->addWidget(m_LineEdit1);
 
     m_LineEdit2 = new QLineEdit();
-    m_LineEdit1->setStyleSheet(m_styleLineEditNormal);
     topControlsVBoxLayout1->addWidget(m_LineEdit2);
 
     if (m_settings.showPlaceholderText == true) {
@@ -213,18 +203,6 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_tableView->setDragDropMode(QAbstractItemView::DragDrop);
     m_tableView->setDefaultDropAction(Qt::MoveAction);
 
-#ifdef Q_OS_WIN
-    if (isCurrentProcessElevated()) {
-        m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevated.data(), Styles::tableViewElevated.size()));
-    } else {
-        m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewLight.data(), Styles::tableViewLight.size()));
-    }
-#elif defined(Q_OS_LINUX)
-    if (isCurrentProcessElevated()) {
-        m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevatedLinux.data(), Styles::tableViewElevatedLinux.size()));
-    }
-#endif
-
     // --------------------------------------------------------------------
 
     m_listView = new CustomListView(this);
@@ -258,20 +236,6 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_selectionModel = m_tableView->selectionModel();
     m_listView->setSelectionModel(m_selectionModel);
 
-#ifdef Q_OS_WIN
-    if (isCurrentProcessElevated()) {
-        m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevated.data(), Styles::listViewElevated.size()));
-    } else {
-        m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewLight.data(), Styles::listViewLight.size()));
-    }
-#elif defined(Q_OS_LINUX)
-    if (isCurrentProcessElevated()) {
-        m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevatedLinux.data(), Styles::listViewElevatedLinux.size()));
-    } else {
-        m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewLinux.data(), Styles::listViewLinux.size()));
-    }
-#endif
-
     // --------------------------------------------------------------------
 
     m_thumbnailView = new CustomListView(this);
@@ -300,18 +264,6 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_thumbnailView->setDragDropMode(QAbstractItemView::DragDrop);
     m_thumbnailView->setDefaultDropAction(Qt::MoveAction);
 
-#ifdef Q_OS_WIN
-    if (isCurrentProcessElevated()) {
-        m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevated.data(), Styles::thumbnailViewElevated.size()));
-    } else {
-        m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewLight.data(), Styles::thumbnailViewLight.size()));
-    }
-#elif defined(Q_OS_LINUX)
-    if (isCurrentProcessElevated()) {
-        m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevatedLinux.data(), Styles::thumbnailViewElevatedLinux.size()));
-    }
-#endif
-
     // --------------------------------------------------------------------
 
     updateColumns();
@@ -323,6 +275,10 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
 
     m_viewStack->setCurrentIndex(1);
     m_abstractModel->setModelViewMode(ViewMode::Detail);
+
+    // --------------------------------------------------------------------
+
+    updateWidgetStyles();
 
     // --------------------------------------------------------------------
     // Shortcuts: Whole Window
@@ -574,6 +530,10 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_scrollToDebounceTimer = new QTimer(this);
     m_scrollToDebounceTimer->setSingleShot(true);
     connect(m_scrollToDebounceTimer, &QTimer::timeout, this, &MainWindow::scrollToCurrentItem);
+
+    m_themeUpdateDebounceTimer = new QTimer(this);
+    m_themeUpdateDebounceTimer->setSingleShot(true);
+    connect(m_themeUpdateDebounceTimer, &QTimer::timeout, this, &MainWindow::updateWidgetStyles);
 
     // --------------------------------------------------------------------
 
@@ -2298,31 +2258,114 @@ QImage MainWindow::generateThumbnailAsync(const QFileInfo &fileInfo) {
     return QImage();
 }
 
+void MainWindow::updateWidgetStyles() {
+    m_LineEdit1->setStyleSheet(m_styleLineEditNormal);
+    m_LineEdit1->setStyleSheet(m_styleLineEditNormal);
+
+#ifdef Q_OS_WIN
+    bool isDark = true;
+#elif defined(Q_OS_LINUX)
+    bool isDark = (QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark);
+#endif
+
+    StyleState targetState;
+    if (m_processIsElevated) {
+        targetState = StyleState::Elevated;
+    } else {
+        targetState = isDark ? StyleState::Dark : StyleState::Light;
+    }
+
+    QPalette currentPalette = QGuiApplication::palette();
+
+    if (m_currentStyleState == targetState && m_StyleLastPalette == currentPalette) {
+        return;
+    }
+
+    if (m_currentStyleState != targetState) {
+        m_currentStyleState = targetState;
+        m_StyleLastPalette = currentPalette;
+
+#ifdef Q_OS_WIN
+        if (targetState == StyleState::Elevated) {
+            m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevated.data(), Styles::tableViewElevated.size()));
+            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevated.data(), Styles::listViewElevated.size()));
+            m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevated.data(), Styles::thumbnailViewElevated.size()));
+        } else {
+            m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewLight.data(), Styles::tableViewLight.size()));
+            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewLight.data(), Styles::listViewLight.size()));
+            m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewLight.data(), Styles::thumbnailViewLight.size()));
+        }
+#elif defined(Q_OS_LINUX)
+        if (targetState == StyleState::Dark) {
+            this->setStyleSheet(
+                "QMainWindow { background-color: #222222; }"
+                "QHeaderView::section { background-color: #222222; color: #ffffff; }"
+                );
+        } else {
+            // WICHTIG: Stylesheet leeren, wenn das System auf Light Mode wechselt!
+            // Dadurch schaltet Qt wieder auf das helle Breeze-Standarddesign um.
+            this->setStyleSheet("");
+        }
+
+        if (targetState == StyleState::Elevated) {
+            m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevatedLinux.data(), Styles::tableViewElevatedLinux.size()));
+            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevatedLinux.data(), Styles::listViewElevatedLinux.size()));
+            m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevatedLinux.data(), Styles::thumbnailViewElevatedLinux.size()));
+        } else {
+            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewLinux.data(), Styles::listViewLinux.size()));
+        }
+    }
+#endif
+    else if (currentPalette != m_StyleLastPalette) {
+        m_currentStyleState = targetState;
+        m_StyleLastPalette = currentPalette;
+
+        if (m_LineEdit1) {
+            m_LineEdit1->style()->unpolish(m_LineEdit1);
+            m_LineEdit1->style()->polish(m_LineEdit1);
+        }
+
+        if (m_LineEdit2) {
+            m_LineEdit2->style()->unpolish(m_LineEdit2);
+            m_LineEdit2->style()->polish(m_LineEdit2);
+        }
+
+        if (m_tableView) {
+            m_tableView->style()->unpolish(m_tableView);
+            m_tableView->style()->polish(m_tableView);
+        }
+
+        if (m_listView) {
+            m_listView->style()->unpolish(m_listView);
+            m_listView->style()->polish(m_listView);
+        }
+
+        if (m_thumbnailView) {
+            m_thumbnailView->style()->unpolish(m_thumbnailView);
+            m_thumbnailView->style()->polish(m_thumbnailView);
+        }
+    }
+}
+
 //######################################################################################
 // Protected Overrides
 
-
-void MainWindow::changeEvent(QEvent *event)
-{
+void MainWindow::changeEvent(QEvent *event) {
     QMainWindow::changeEvent(event);
 
     // Reagiert auf System-Palette-Änderungen (z. B. Wechsel der Akzentfarbe in KDE)
-    if (event->type() == QEvent::PaletteChange || event->type() == QEvent::ApplicationPaletteChange) {
-        // Zwingt das QSS-System dazu, palette(...) neu einzulesen
-        m_LineEdit1->style()->unpolish(m_LineEdit1);
-        m_LineEdit1->style()->polish(m_LineEdit1);
+    switch (event->type()) {
+        case QEvent::ApplicationPaletteChange:
+        case QEvent::PaletteChange:
+        case QEvent::StyleChange:
+        case QEvent::ThemeChange:
+            if (m_themeUpdateDebounceTimer) {
+                m_themeUpdateDebounceTimer->start(50);
+            }
+            break;
 
-        m_LineEdit2->style()->unpolish(m_LineEdit2);
-        m_LineEdit2->style()->polish(m_LineEdit2);
-
-        m_tableView->style()->unpolish(m_tableView);
-        m_tableView->style()->polish(m_tableView);
-
-        m_listView->style()->unpolish(m_listView);
-        m_listView->style()->polish(m_listView);
-
-        m_thumbnailView->style()->unpolish(m_thumbnailView);
-        m_thumbnailView->style()->polish(m_thumbnailView);
+        default:
+            break;
     }
 }
 
@@ -2843,7 +2886,7 @@ void MainWindow::duplicateInstance() {
 }
 
 void MainWindow::elevateInstance() {
-    if (isCurrentProcessElevated()) return;
+    if (m_processIsElevated) return;
 
     QString appPath = QCoreApplication::applicationFilePath();
     QStringList arguments;

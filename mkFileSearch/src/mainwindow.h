@@ -93,6 +93,7 @@ private:
     void selectAllItems();
     void setupClipboardForCopyOrCut(const QStringList &cutFilePaths, bool isCut);
     void updateColumns();
+    void updateWidgetStyles();
     QPixmap generateThumbnailIcon(const QFileInfo &fileInfo);
     static QImage generateThumbnailAsync(const QFileInfo &fileInfo);
 
@@ -136,6 +137,7 @@ private:
 
     QTimer *m_timerUpdateIcons = nullptr;
     QTimer *m_scrollToDebounceTimer = nullptr;
+    QTimer *m_themeUpdateDebounceTimer = nullptr;
 
     bool m_bShowHiddenFiles = true;
     bool m_bHeaderVisible = true;
@@ -166,6 +168,17 @@ private:
     QCheckBox *m_CheckboxDirectories = nullptr;
     QCheckBox *m_CheckboxCRC = nullptr;
     QTimer *m_timerCalcCrc = nullptr;
+
+    bool m_processIsElevated{false};
+    QPalette m_StyleLastPalette;
+    enum class StyleState {
+        Uninitialized,
+        Light,
+        Dark,
+        Elevated
+    };
+
+    StyleState m_currentStyleState{StyleState::Uninitialized};
 
 #ifdef Q_OS_WIN
     QString getSendToPath();
