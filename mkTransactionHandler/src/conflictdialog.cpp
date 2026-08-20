@@ -78,15 +78,6 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     QLabel *pathDstLabel = new QLabel(QDir::toNativeSeparators(conflict.targetPath), this);
     pathDstLabel->setWordWrap(true);
 
-    /*
-    // "Newer" Logik
-    if (srcInfo.lastModified() > dstInfo.lastModified()) {
-        lblSrcTime->setText(lblSrcTime->text() + " <b>" + tr("(newer)") + "</b>");
-    } else if (srcInfo.lastModified() < dstInfo.lastModified()) {
-        lblDstTime->setText(lblDstTime->text() + " <b>" + tr("(newer)") + "</b>");
-    }
-    */
-
     // Grid befüllen
     int iCol = 0;
     gridLayout->addWidget(lblSrcIcon,  0, iCol);
@@ -95,10 +86,10 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     gridLayout->addWidget(lblDstIcon,  3, iCol);
     iCol++;
 
-    gridLayout->addWidget(pathSrcLabel, 0, iCol, 1, 4);
+    int pathStartCol = iCol;
+
     gridLayout->addWidget(lblSrcTime,   1, iCol);
     gridLayout->addWidget(lblDstTime,   2, iCol);
-    gridLayout->addWidget(pathDstLabel, 3, iCol, 1, 4);
     iCol++;
 
     if (srcInfo.size() >= 1024 || dstInfo.size() >= 1024) {
@@ -121,13 +112,28 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     gridLayout->addWidget(lblDstType,  2, iCol);
     iCol++;
 
+    QLabel *warningLabel = new QLabel(this);
+    if (srcInfo.lastModified() > dstInfo.lastModified()) {
+        //warningLabel->setText("<font color='#00ff00'>" + tr("Newer") + "</font>");
+        //gridLayout->addWidget(warningLabel, 1, iCol);
+    } else if (srcInfo.lastModified() < dstInfo.lastModified()) {
+        warningLabel->setText("<font color='#ff4040'>" + tr("Newer!") + "</font>");
+        gridLayout->addWidget(warningLabel, 2, iCol, Qt::AlignLeft | Qt::AlignVCenter);
+    }
+
+    // 1. Pfad-Labels dynamisch über restlichen Spalten spannen
+    int totalPathSpan = iCol - pathStartCol + 1;
+    gridLayout->addWidget(pathSrcLabel, 0, pathStartCol, 1, totalPathSpan);
+    gridLayout->addWidget(pathDstLabel, 3, pathStartCol, 1, totalPathSpan);
+
     // 0 = Spalte wächst nicht (bleibt so kompakt wie möglich)
     // 1 = Spalte teilt sich den restlichen Platz des Fensters
-    gridLayout->setColumnStretch(0, 0);
-    gridLayout->setColumnStretch(1, 0);
-    gridLayout->setColumnStretch(2, 0);
-    gridLayout->setColumnStretch(3, 0);
-    gridLayout->setColumnStretch(4, 1);
+    // Alle vorderen Spalten (0 bis iCol-1) bleiben kompakt (0)
+    for (int c = 0; c < iCol; ++c) {
+        gridLayout->setColumnStretch(c, 0);
+    }
+    // Die allerletzte Spalte bekommt Stretch 1
+    gridLayout->setColumnStretch(iCol, 1);
 
     mainLayout->addLayout(gridLayout);
 
