@@ -19,65 +19,69 @@
         <translation>Ersetzen</translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="45"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="46"/>
         <source>Source</source>
         <translation>Quelle</translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="52"/>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="66"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="53"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="71"/>
         <source>%1 Bytes</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="59"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="60"/>
         <source>Target</source>
         <translation>Ziel</translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="122"/>
         <source>Newer!</source>
-        <translation>Neuer!</translation>
+        <translation type="vanished">Neuer!</translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="148"/>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="150"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="122"/>
+        <source>&amp;larr; destination is newer!</source>
+        <translation>&amp;larr; Ziel ist neuer!</translation>
+    </message>
+    <message>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="153"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="155"/>
         <source> all</source>
         <translation> (alle)</translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="149"/>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="150"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="154"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="155"/>
         <source>Skip</source>
         <translation>Überspringen</translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="151"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="156"/>
         <source>Cancel</source>
         <translation>Abbrechen</translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="181"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="186"/>
         <source>Junction</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="182"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="187"/>
         <source>SymLink</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="183"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="188"/>
         <source>Directory</source>
         <translation>Verzeichnis</translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="185"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="190"/>
         <source>File</source>
         <translation>Datei</translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="190"/>
+        <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="195"/>
         <source> Bytes</source>
         <translation></translation>
     </message>

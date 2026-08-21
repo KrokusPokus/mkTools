@@ -21,6 +21,7 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
 
     bool isDirConflict = srcInfo.isDir() && dstInfo.isDir();
     QString actionWord = isDirConflict ? tr("Merge") : tr("Replace");
+    bool isDestinationNewer = dstInfo.lastModified() > srcInfo.lastModified();
 
     // Layouts
     auto *mainLayout = new QVBoxLayout(this);
@@ -60,8 +61,12 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     //lblDstTitle->setStyleSheet("color: #d32f2f;");
     lblDstTitle->setAlignment(Qt::AlignCenter);
 
-    auto *lblDstTime  = new QLabel(dstInfo.lastModified().toString("yyyy-MM-dd  HH:mm:ss"), this);
+    UnderlinedLabel *lblDstTime = new UnderlinedLabel(this);
+    lblDstTime->setText(dstInfo.lastModified().toString("yyyy-MM-dd  HH:mm:ss"));
     lblDstTime->setAlignment(Qt::AlignCenter);
+    if (isDestinationNewer) {
+        lblDstTime->setUnderlineVisible(isDestinationNewer);
+    }
 
     auto *lblDstSizeB = new QLabel(tr("%1 Bytes").arg(m_locale.toString(dstInfo.size())), this);
     lblDstSizeB->setAlignment(Qt::AlignRight);
@@ -113,12 +118,9 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     iCol++;
 
     QLabel *warningLabel = new QLabel(this);
-    if (srcInfo.lastModified() > dstInfo.lastModified()) {
-        //warningLabel->setText("<font color='#00ff00'>" + tr("Newer") + "</font>");
-        //gridLayout->addWidget(warningLabel, 1, iCol);
-    } else if (srcInfo.lastModified() < dstInfo.lastModified()) {
-        warningLabel->setText("<font color='#ff4040'>" + tr("Newer!") + "</font>");
-        gridLayout->addWidget(warningLabel, 2, iCol, Qt::AlignLeft | Qt::AlignVCenter);
+    if (isDestinationNewer) {
+        warningLabel->setText("<b><font color='#ff4040'>" + tr("&larr; destination is newer!") + "</font></b>");
+        gridLayout->addWidget(warningLabel, 2, iCol);
     }
 
     // 1. Pfad-Labels dynamisch über restlichen Spalten spannen
