@@ -195,15 +195,15 @@
     </message>
     <message>
         <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="151"/>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="620"/>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="1168"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="622"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="1170"/>
         <source>Symlink target does not exist</source>
         <translation></translation>
     </message>
     <message>
         <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="168"/>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="636"/>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="1183"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="638"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="1185"/>
         <source>Could not remove source symlink after move</source>
         <translation></translation>
     </message>
@@ -214,7 +214,7 @@
     </message>
     <message>
         <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="215"/>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="702"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="704"/>
         <source>File deletion failed</source>
         <translation></translation>
     </message>
@@ -244,57 +244,57 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="396"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="397"/>
         <source>CRC-Twin source deletion during move failed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="430"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="432"/>
         <source>Destination deletion failed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="483"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="485"/>
         <source>CopyOrMove failed.</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="487"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="489"/>
         <source>Source deletion after successful move failed.</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="547"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="549"/>
         <source>Failed to remove blocking file for directory creation</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="555"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="557"/>
         <source>Failed to create directory</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="591"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="593"/>
         <source>Failed to create target directory</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="720"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="722"/>
         <source>Empty folder deletion failed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="767"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="769"/>
         <source> (Copy)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="767"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="769"/>
         <source> (Copy %1)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="1121"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="1123"/>
         <source>Scanning files for retry...</source>
         <translation></translation>
     </message>
@@ -910,7 +910,7 @@ Do you have sufficient rights?</source>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2212"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2075"/>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="203"/>
-        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="493"/>
+        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="497"/>
         <source>Cancel</source>
         <translation></translation>
     </message>
@@ -1146,7 +1146,7 @@ Do you have sufficient rights?</source>
     <message>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="199"/>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="379"/>
-        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="455"/>
+        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="459"/>
         <source>Pause</source>
         <translation></translation>
     </message>
@@ -1296,12 +1296,20 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="421"/>
-        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="457"/>
+        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="461"/>
         <source>Close</source>
         <translation></translation>
     </message>
     <message numerus="yes">
-        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="451"/>
+        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="428"/>
+        <source>%n of the transferred files already had bit-identical versions at their target location.</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message numerus="yes">
+        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="455"/>
         <source>Canceled. %n error occurred before.</source>
         <translation>
             <numerusform></numerusform>
@@ -1309,7 +1317,7 @@ Do you have sufficient rights?</source>
         </translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="504"/>
+        <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="508"/>
         <source>Cancelling...</source>
         <translation></translation>
     </message>

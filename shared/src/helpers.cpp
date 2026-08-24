@@ -2,6 +2,8 @@
 
 #include <QCollator>
 #include <QCoreApplication>
+#include <QDBusConnection>
+#include <QDBusMessage>
 #include <QDesktopServices>
 #include <QDir>
 #include <QImageReader>
@@ -1087,6 +1089,45 @@ namespace Helpers {
         }
 
         return QString();
+    }
+
+
+    void showPopup(const QString &appName, const QString &title, const QString &body) {
+#ifdef Q_OS_WIN
+        static QSystemTrayIcon *trayIcon = nullptr;
+        if (!trayIcon) {
+            trayIcon = new QSystemTrayIcon();
+            // WICHTIG: Windows benötigt zwingend ein Icon, sonst wird kein Toast angezeigt
+            trayIcon->setIcon(QIcon(":/icons/app.ico"));
+            trayIcon->show();
+        }
+
+        if title.isEmpty() {
+            title = appName;
+        }
+
+        trayIcon->showMessage(title, body, QSystemTrayIcon::Information, 5000);
+#else
+        QDBusMessage msg = QDBusMessage::createMethodCall(
+            "org.freedesktop.Notifications",
+            "/org/freedesktop/Notifications",
+            "org.freedesktop.Notifications",
+            "Notify"
+            );
+
+        QVariantList args;
+        args << appName                        // App-Name
+             << uint(0)                        // Replaces ID (0 = neu)
+             << "dialog-information"           // Icon-Name
+             << title                          // Titel
+             << body                           // Inhalt
+             << QStringList()                  // Aktionen (leer)
+             << QVariantMap()                  // Hints (leer)
+             << int(5000);                     // Timeout in ms (-1 = standard)
+
+        msg.setArguments(args);
+        QDBusConnection::sessionBus().send(msg);
+#endif
     }
 
 #ifdef Q_OS_LINUX

@@ -24,6 +24,7 @@ struct CopyStats {
     int filesWritten = 0;
     int filesSkipped = 0;
     int filesError = 0;
+    int filesDuplicate = 0;
     qint64 elapsedMs = 0;
     QString currentName;       // %relativer_Pfad%
     QString currentSourceDir;  // %source_Ordner%
@@ -62,7 +63,7 @@ signals:
     void conflictDetected(const Conflict &conflict);  // blockierend via Qt::BlockingQueuedConnection
     void wasContinued();
     void wasPaused();
-    void wasFinished(int filesError);
+    void wasFinished(const CopyStats &stats);
     void wasCanceled(int filesError);
 
 public slots:

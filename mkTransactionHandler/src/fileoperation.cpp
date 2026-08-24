@@ -262,7 +262,7 @@ void FileOperation::run() {
     if (!checkInterruption()) {
         emit wasCanceled(m_stats.filesError);
     } else {
-        emit wasFinished(m_stats.filesError);
+        emit wasFinished(m_stats);
     }
 
     // <- Hier wird 'priorityGuard' zerstört und der Thread-Modus automatisch zurückgesetzt
@@ -384,6 +384,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                             if (QFile::remove(src)) {
                                 qDebug() << "Move-source with identical CRC deleted:" << src;
 
+                                m_stats.filesDuplicate++;
                                 m_stats.filesWritten++; // Zählt als erfolgreich verarbeitete Datei
                                 m_stats.bytesWritten += fileSizeSource; // Fortschrittsbalken auffüllen
                                 updateProgress();
@@ -400,6 +401,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                             // COPY-MODUS: skip since same file content
                             qDebug() << "Copy target with same context already exists. Skipping:" << src;
 
+                            m_stats.filesDuplicate++;
                             m_stats.filesSkipped++;
                             m_stats.bytesWritten += fileSizeSource;
                             updateProgress();
@@ -919,7 +921,7 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
 #if defined(Q_OS_WIN)
         FlushFileBuffers(reinterpret_cast<HANDLE>(dstFile.handle()));
 #else
-        // fdatasync ist unter Linux tick schneller als fsync, da es nur Daten
+        // fdatasync ist unter Linux einen Tick schneller als fsync, da es nur Daten
         // und keine irrelevanten Metadaten/Timestamps pro Chunk synchronisiert!
         ::fdatasync(dstFile.handle());
 #endif
@@ -1247,7 +1249,7 @@ void FileOperation::runRetryList(const QList<FailedItem> &itemsToRetry) {
     if (!checkInterruption()) {
         emit wasCanceled(m_stats.filesError);
     } else {
-        emit wasFinished(m_stats.filesError);
+        emit wasFinished(m_stats);
     }
 }
 

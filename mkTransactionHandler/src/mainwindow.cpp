@@ -393,14 +393,14 @@ void MainWindow::onOperationPaused() {
     m_pauseButton->setEnabled(true);
 }
 
-void MainWindow::onOperationFinished(int errorCount) {
+void MainWindow::onOperationFinished(const CopyStats &stats) {
     m_isFinished = true;
 
 #ifdef Q_OS_WIN
     if (m_taskbarList) {
         HWND hwnd = reinterpret_cast<HWND>(this->winId());
 
-        if (errorCount > 0) {
+        if (stats.filesError > 0) {
             m_taskbarList->SetProgressState(hwnd, TBPF_ERROR);      // Bei Fehlern: Balken rot einfärben
         } else {
             m_taskbarList->SetProgressState(hwnd, TBPF_NOPROGRESS); // Bei Erfolg: Fortschrittsanzeige ausblenden
@@ -408,10 +408,10 @@ void MainWindow::onOperationFinished(int errorCount) {
     }
 #endif
 
-    if (errorCount > 0) {
+    if (stats.filesError > 0) {
         if (!isVisible()) show();
 
-        m_headerLabel->setText(tr("Finished with %n error.", nullptr, errorCount));
+        m_headerLabel->setText(tr("Finished with %n error.", nullptr, stats.filesError));
 
         m_pauseButton->setText(tr("Retry"));
         disconnect(m_pauseButton, &QPushButton::clicked, this, nullptr);
@@ -424,6 +424,10 @@ void MainWindow::onOperationFinished(int errorCount) {
         m_cancelButton->setEnabled(true);
 
     } else {
+        if (stats.filesDuplicate > 0) {
+            Helpers::showPopup("mkFolderWidget", "", tr("%n of the transferred files already had bit-identical versions at their target location.", nullptr, stats.filesDuplicate));
+        }
+
         if (isVisible()) {
             // Das Fenster war schon offen (Aktion dauerte länger als 2 Sek) -> normal schließen
             close();

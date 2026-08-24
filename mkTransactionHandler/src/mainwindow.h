@@ -104,7 +104,7 @@ private slots:
 
     void onOperationPaused();
     void onOperationContinued();
-    void onOperationFinished(int errorCount);
+    void onOperationFinished(const CopyStats &stats);
     void onOperationCanceled(int errorCount);
 
     void onPauseRequested();
