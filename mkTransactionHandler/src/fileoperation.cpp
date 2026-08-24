@@ -113,7 +113,7 @@ void FileOperation::run() {
     m_stats.totalFiles = totalFiles;
 
     if (!checkInterruption()) {
-        emit wasCanceled(m_stats.filesError);
+        emit wasCanceled(m_stats.filesError, m_failedItems);
         return;
     }
 
@@ -260,9 +260,9 @@ void FileOperation::run() {
     updateProgress(true);
 
     if (!checkInterruption()) {
-        emit wasCanceled(m_stats.filesError);
+        emit wasCanceled(m_stats.filesError, m_failedItems);
     } else {
-        emit wasFinished(m_stats);
+        emit wasFinished(m_stats, m_failedItems);
     }
 
     // <- Hier wird 'priorityGuard' zerstört und der Thread-Modus automatisch zurückgesetzt
@@ -482,11 +482,11 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
         updateProgress();
 
         if (!ok) {
-            m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("CopyOrMove failed.")});
+            m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("CopyOrMove failed")});
         }
 
         if (sourceDeleteFailed) {
-            m_failedItems.append({src, dst, m_operationType, tr("Source deletion after successful move failed.")});
+            m_failedItems.append({src, dst, m_operationType, tr("Source deletion after successful move failed")});
         }
 
         return FileOpResult::Error;
@@ -1139,7 +1139,7 @@ void FileOperation::runRetryList(const QList<FailedItem> &itemsToRetry) {
     }
 
     if (!checkInterruption()) {
-        emit wasCanceled(m_stats.filesError);
+        emit wasCanceled(m_stats.filesError, m_failedItems);
         return;
     }
 
@@ -1247,9 +1247,9 @@ void FileOperation::runRetryList(const QList<FailedItem> &itemsToRetry) {
     updateProgress(true);
 
     if (!checkInterruption()) {
-        emit wasCanceled(m_stats.filesError);
+        emit wasCanceled(m_stats.filesError, m_failedItems);
     } else {
-        emit wasFinished(m_stats);
+        emit wasFinished(m_stats, m_failedItems);
     }
 }
 

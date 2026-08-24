@@ -9,6 +9,7 @@
 #include <QMainWindow>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QPlainTextEdit>
 #include <QResizeEvent>
 #include <QThread>
 #include <QUrl>
@@ -104,8 +105,8 @@ private slots:
 
     void onOperationPaused();
     void onOperationContinued();
-    void onOperationFinished(const CopyStats &stats);
-    void onOperationCanceled(int errorCount);
+    void onOperationFinished(const CopyStats &stats, const QList<FailedItem> &failedItems);
+    void onOperationCanceled(int errorCount, const QList<FailedItem> &failedItems);
 
     void onPauseRequested();
     void onContinueRequested();
@@ -115,6 +116,7 @@ private slots:
 private:
     void setupUi();
     QString formatAdaptiveSize(quint64 bytes);
+    void setTaskbarProgress(double progressValue, bool visible);
 
     QLocale m_locale;
     bool m_isFinished;
@@ -136,6 +138,8 @@ private:
     CleanLabel *m_driveModeLabel = nullptr;
     QPushButton *m_pauseButton = nullptr;
     QPushButton *m_cancelButton = nullptr;
+    QWidget *m_errorContainer = nullptr;
+    QPlainTextEdit *m_errorTextEdit = nullptr;
 
     // Threading
     QThread *m_workerThread;

@@ -4,6 +4,8 @@
 
 #include <QApplication>
 #include <QBuffer>
+#include <QDBusConnection>
+#include <QDBusMessage>
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
@@ -27,6 +29,9 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
     // COM-Schnittstelle für die Windows-Taskleiste instanziieren
     CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_taskbarList));
 #endif
+    qRegisterMetaType<FailedItem>("FailedItem");
+    qRegisterMetaType<QList<FailedItem>>("QList<FailedItem>");
+
     m_isFinished = false;
 
     // 1. UI aufbauen
@@ -211,6 +216,20 @@ void MainWindow::setupUi() {
     connect(m_pauseButton,  &QPushButton::clicked, this, &MainWindow::onPauseRequested);
     connect(m_cancelButton, &QPushButton::clicked, this, &MainWindow::onCancelRequested);
 
+    m_errorContainer = new QWidget(this);
+    auto *errorLogLayout = new QHBoxLayout(m_errorContainer);
+    errorLogLayout->setContentsMargins(0, 20, 0, 0);
+
+    m_errorTextEdit = new QPlainTextEdit(this);
+    m_errorTextEdit->setReadOnly(true);
+    m_errorTextEdit->setLineWrapMode(QPlainTextEdit::NoWrap);
+    m_errorTextEdit->setStyleSheet("QPlainTextEdit { background-color: #aa0000; color: #ffffff; }");
+
+    errorLogLayout->addWidget(m_errorTextEdit);
+
+    mainLayout->addWidget(m_errorContainer);
+    m_errorContainer->hide();
+
     setCentralWidget(centralWidget);
 }
 
@@ -293,9 +312,16 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
     }
 
     int byteProgressPercent = 0;
+    double  byteProgressFloat = 0.0;
     if (stats.totalBytes > 0) {
-        double doneRate = static_cast<double>(stats.bytesWritten) / stats.totalBytes;
-        byteProgressPercent = qBound(0, int(doneRate * 100), 100);
+        byteProgressFloat = static_cast<double>(stats.bytesWritten) / stats.totalBytes;
+        if (byteProgressFloat < 0.0) {
+            byteProgressFloat = 0.0;
+        } else if (byteProgressFloat > 1.0) {
+            byteProgressFloat = 1.0;
+        }
+        byteProgressPercent = int(byteProgressFloat * 100);
+
     } else {
         byteProgressPercent = 0;
     }
@@ -338,22 +364,7 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
             break;
     }
 
-
-#ifdef Q_OS_WIN
-    if (m_taskbarList) {
-        // Native Windows-ID (HWND) des Fensters holen
-        HWND hwnd = reinterpret_cast<HWND>(this->winId());
-
-        if (stats.totalBytes > 0) {
-            // Modus auf "Normal" (Grün) setzen und Werte übergeben
-            m_taskbarList->SetProgressState(hwnd, TBPF_NORMAL);
-            m_taskbarList->SetProgressValue(hwnd, byteProgressPercent, 100);
-        } else {
-            // Wenn totalBytes noch 0 ist (z.B. beim Scannen), "Dauer-Animation" zeigen
-            m_taskbarList->SetProgressState(hwnd, TBPF_INDETERMINATE);
-        }
-    }
-#endif
+    setTaskbarProgress(byteProgressFloat, true);
 }
 
 void MainWindow::onConflictDetected(const Conflict &conflict) {
@@ -393,20 +404,9 @@ void MainWindow::onOperationPaused() {
     m_pauseButton->setEnabled(true);
 }
 
-void MainWindow::onOperationFinished(const CopyStats &stats) {
+void MainWindow::onOperationFinished(const CopyStats &stats, const QList<FailedItem> &failedItems) {
     m_isFinished = true;
-
-#ifdef Q_OS_WIN
-    if (m_taskbarList) {
-        HWND hwnd = reinterpret_cast<HWND>(this->winId());
-
-        if (stats.filesError > 0) {
-            m_taskbarList->SetProgressState(hwnd, TBPF_ERROR);      // Bei Fehlern: Balken rot einfärben
-        } else {
-            m_taskbarList->SetProgressState(hwnd, TBPF_NOPROGRESS); // Bei Erfolg: Fortschrittsanzeige ausblenden
-        }
-    }
-#endif
+    setTaskbarProgress(0.0, false);
 
     if (stats.filesError > 0) {
         if (!isVisible()) show();
@@ -423,6 +423,19 @@ void MainWindow::onOperationFinished(const CopyStats &stats) {
         connect(m_cancelButton, &QPushButton::clicked, this, &QWidget::close);
         m_cancelButton->setEnabled(true);
 
+        if (failedItems.isEmpty()) {
+            m_errorContainer->hide();
+            return;
+        }
+
+        // Fehler-Pfade und Gründe für das einzeilige LineEdit zusammenfassen
+        QStringList errorLines;
+        for (const auto &item : failedItems) {
+            errorLines << QString("%1: %2").arg(item.errorReason, item.sourcePath);
+        }
+        // Bei mehreren Fehlern mit Trennzeichen zusammenfügen
+        m_errorTextEdit->setPlainText(errorLines.join("\n"));
+        m_errorContainer->show();
     } else {
         if (stats.filesDuplicate > 0) {
             Helpers::showPopup("mkFolderWidget", "", tr("%n of the transferred files already had bit-identical versions at their target location.", nullptr, stats.filesDuplicate));
@@ -439,15 +452,9 @@ void MainWindow::onOperationFinished(const CopyStats &stats) {
     }
 }
 
-void MainWindow::onOperationCanceled(int errorCount) {
+void MainWindow::onOperationCanceled(int errorCount, const QList<FailedItem> &failedItems) {
     m_isFinished = true;
-
-#ifdef Q_OS_WIN
-    if (m_taskbarList) {
-        HWND hwnd = reinterpret_cast<HWND>(this->winId());
-        m_taskbarList->SetProgressState(hwnd, TBPF_NOPROGRESS);
-    }
-#endif
+    setTaskbarProgress(0.0, false);
 
     if (errorCount > 0) {
         if (!isVisible()) show();
@@ -463,6 +470,19 @@ void MainWindow::onOperationCanceled(int errorCount) {
         connect(m_cancelButton, &QPushButton::clicked, this, &QWidget::close);
         m_cancelButton->setEnabled(true);
 
+        if (failedItems.isEmpty()) {
+            m_errorContainer->hide();
+            return;
+        }
+
+        // Fehler-Pfade und Gründe für das einzeilige LineEdit zusammenfassen
+        QStringList errorLines;
+        for (const auto &item : failedItems) {
+            errorLines << QString("%1: %2").arg(item.errorReason, item.sourcePath);
+        }
+        // Bei mehreren Fehlern mit Trennzeichen zusammenfügen
+        m_errorTextEdit->setPlainText(errorLines.join("\n"));
+        m_errorContainer->show();
     } else {
         if (isVisible()) {
             // Das Fenster war schon offen (Aktion dauerte länger als 2 Sek) -> normal schließen
@@ -492,6 +512,7 @@ void MainWindow::onPauseRequested() {
 }
 
 void MainWindow::onRetryRequested() {
+    m_errorContainer->hide();
     m_pauseButton->setEnabled(false);
 
     m_cancelButton->setText(tr("Cancel"));
@@ -537,4 +558,35 @@ QString MainWindow::formatAdaptiveSize(quint64 bytes) {
     }
 
     return m_locale.toString(size, 'f', precision) + " " + units[unitIndex];
+}
+
+
+void MainWindow::setTaskbarProgress(double progressValue, bool visible) {
+#ifdef Q_OS_WIN
+    if (m_taskbarList) {
+        HWND hwnd = reinterpret_cast<HWND>(this->winId());
+        if (visible) {
+            m_taskbarList->SetProgressState(hwnd, TBPF_NORMAL);
+            m_taskbarList->SetProgressValue(hwnd, int(progressValue * 100), 100);
+        } else {
+            m_taskbarList->SetProgressState(hwnd, TBPF_NOPROGRESS);
+        }
+    }
+#elif defined(Q_OS_LINUX)
+    QString desktopId = "application://" + QCoreApplication::applicationName() + ".desktop";
+
+    QVariantMap properties;
+    properties["progress"] = progressValue;
+    properties["progress-visible"] = visible;
+
+    // Erzeugen des Unity-D-Bus-Signals
+    QDBusMessage signal = QDBusMessage::createSignal(
+        "/com/canonical/unity/launcherentry/my_app_progress",
+        "com.canonical.Unity.LauncherEntry",
+        "Update"
+        );
+
+    signal << desktopId << properties;
+    QDBusConnection::sessionBus().send(signal);
+#endif
 }

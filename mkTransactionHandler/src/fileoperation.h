@@ -44,6 +44,9 @@ struct FailedItem {
     QString errorReason;
 };
 
+Q_DECLARE_METATYPE(FailedItem)
+Q_DECLARE_METATYPE(QList<FailedItem>)
+
 enum class FileOpResult { Success, Skipped, Error, Cancelled};
 
 enum class ConflictResolution { Overwrite, Skip, Cancel };
@@ -56,15 +59,13 @@ public:
                            QString targetDir = QString(),
                            QObject *parent = nullptr);
 
-    QList<FailedItem> failedItems() const { return m_failedItems; }
-
 signals:
     void progress(const CopyStats &stats);
     void conflictDetected(const Conflict &conflict);  // blockierend via Qt::BlockingQueuedConnection
     void wasContinued();
     void wasPaused();
-    void wasFinished(const CopyStats &stats);
-    void wasCanceled(int filesError);
+    void wasFinished(const CopyStats &stats, const QList<FailedItem> &failedItems);
+    void wasCanceled(int filesError, const QList<FailedItem> &failedItems);
 
 public slots:
     void run();

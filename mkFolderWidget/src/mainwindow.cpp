@@ -1170,6 +1170,7 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         mainMenu.addSeparator(); //-----------------------------------------
         mainMenu.addAction(m_actionListViewDeleteFiles);
 #ifdef Q_OS_WIN
+        /*
         mainMenu.addSeparator(); //-----------------------------------------
 
         QMenu *subMenuCompress = mainMenu.addMenu(tr("Compress"));
@@ -1178,6 +1179,7 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         }
         //subMenuCompress->addAction(m_actionCompressTarGz);
         subMenuCompress->addAction(m_actionCompressZip);
+        */
 #elif defined(Q_OS_LINUX)
         // KDE SERVICE-ACTIONS
         if (!selectedPaths.isEmpty()) {
