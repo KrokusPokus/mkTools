@@ -37,15 +37,8 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
     // 1. UI aufbauen
     setupUi();
 
-    // 2. Worker und Thread initialisieren
-    m_workerThread = new QThread(this);
     m_fileOp = new FileOperation(m_operationType, m_urls, m_targetDir);
-    m_fileOp->moveToThread(m_workerThread);
 
-    connect(m_workerThread, &QThread::started,                m_fileOp,  &FileOperation::run);
-
-    // 3. Signal-Slot-Verbindungen (Wichtig: Conflict via QueuedConnection!)
-    connect(m_workerThread, &QThread::started,                this,     &MainWindow::onThreadStarted);
     connect(m_fileOp,       &FileOperation::progress,         this,     &MainWindow::onProgressUpdated);
     connect(m_fileOp,       &FileOperation::conflictDetected, this,     &MainWindow::onConflictDetected, Qt::QueuedConnection);
     connect(m_fileOp,       &FileOperation::wasContinued,     this,     &MainWindow::onOperationContinued);
@@ -54,7 +47,29 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
     connect(m_fileOp,       &FileOperation::wasFinished,      this,     &MainWindow::onOperationFinished);
     connect(m_fileOp,       &FileOperation::wasCanceled,      this,     &MainWindow::onOperationCanceled);
 
-    m_workerThread->start();
+    bool isKioOperation = false;
+
+#if defined(Q_OS_LINUX)
+    isKioOperation = std::any_of(m_urls.begin(), m_urls.end(), [](const QUrl &u) {
+        return !u.isLocalFile();
+    });
+#endif
+
+    if (isKioOperation) {
+        m_pauseButton->setEnabled(false);
+
+        // KIO arbeitet asynchron out-of-process -> Direkt auf dem Main-Thread starten
+        m_fileOp->startKioAsync();
+    } else {
+        // Lokale Dateien -> Worker-Thread initialisieren
+        m_workerThread = new QThread(this);
+        m_fileOp->moveToThread(m_workerThread);
+
+        connect(m_workerThread, &QThread::started, m_fileOp,  &FileOperation::run);
+        connect(m_workerThread, &QThread::started, this,      &MainWindow::onThreadStarted);
+
+        m_workerThread->start();
+    }
 
     QTimer::singleShot(2000, this, [this]() {
         if (!m_isFinished) {

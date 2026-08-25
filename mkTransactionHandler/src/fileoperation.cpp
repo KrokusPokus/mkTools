@@ -15,6 +15,7 @@
 #include <sys/resource.h> // Für getpriority/setpriority (CPU)
 #include <sys/syscall.h>
 #include <unistd.h>
+#include <kio/jobuidelegatefactory.h>
 
 // Da glibc keine Header dafür hat, definieren wir die Kernel-Konstanten selbst
 #ifndef IOPRIO_WHO_PROCESS
@@ -269,9 +270,22 @@ void FileOperation::run() {
 }
 
 void FileOperation::doCancel() {
-    QMutexLocker locker(&m_mutex);
-
     m_isCancelled.store(true);
+
+#if defined(Q_OS_LINUX)
+    KJob* jobToKill = nullptr;
+    {
+        // Mutex NUR für das Auslesen des Zeigers sperren
+        QMutexLocker locker(&m_mutex);
+        jobToKill = m_currentKioJob;
+    } // <-- Mutex wird HIER sofort wieder freigegeben!
+
+    if (jobToKill) {
+        // Triggert jetzt gefahrlos synchron das result-Signal,
+        // welches im Lambda m_mutex wieder ohne Deadlock sperren kann.
+        jobToKill->kill(KJob::EmitResult);
+    }
+#endif
 
     // Falls der Thread in der Pause-Bedingung schläft -> Aufwecken!
     {
@@ -1081,11 +1095,36 @@ bool FileOperation::removeReadOnlyAttribute(const QString &path) {
 
 void FileOperation::doPause() {
     m_isPaused.store(true);
+
+#if defined(Q_OS_LINUX)
+    if (m_currentKioJob) {
+        // Pausiert den asynchronen KIO-Job direkt
+        if (m_currentKioJob->doSuspend()) {
+            emit wasPaused();
+        }
+        return;
+    }
+#endif
+
+    // Bei non-KIO (Worker-Thread) sendet checkInterruption()
+    // das wasPaused()-Signal, sobald der Thread schlafen geht.
 }
 
 void FileOperation::doContinue() {
     m_isPaused.store(false);
-    m_pauseCond.wakeAll(); // Weckt den wartenden Thread auf
+
+#if defined(Q_OS_LINUX)
+    if (m_currentKioJob) {
+        // Setzt den KIO-Job fort
+        if (m_currentKioJob->doResume()) {
+            emit wasContinued();
+        }
+        return;
+    }
+#endif
+
+    // Bei non-KIO: Worker-Thread aus dem m_pauseCond.wait() aufwecken
+    m_pauseCond.wakeAll();
 }
 
 void FileOperation::doRetry() {
@@ -1326,3 +1365,80 @@ bool FileOperation::targetSupportsSymlinks() {
     }
     return m_targetSupportsSymlinks.value();
 }
+
+#if defined(Q_OS_LINUX)
+void FileOperation::startKioAsync() {
+    if (m_isCancelled.load()) {
+        emit wasCanceled(0, m_failedItems);
+        return;
+    }
+
+    QUrl destUrl = QUrl::fromLocalFile(m_targetDir);
+    KIO::CopyJob *job = nullptr;
+
+    if (m_operationType == OperationType::Copy) job = KIO::copy(m_urls, destUrl);
+    else if (m_operationType == OperationType::Move) job = KIO::move(m_urls, destUrl);
+    else if (m_operationType == OperationType::Link) job = KIO::link(m_urls, destUrl);
+
+    if (!job) {
+        emit wasFinished(m_stats, m_failedItems);
+        return;
+    }
+
+    job->setWriteIntoExistingDirectories(true);
+
+    m_currentKioJob = job;
+    job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
+
+    m_stats = CopyStats();
+    m_stats.currentTargetDir = QDir::toNativeSeparators(m_targetDir);
+    m_stats.totalFiles = m_urls.size();
+    m_timer.start();
+
+    connect(job, &KJob::description, this, [this](KJob *, const QString &, const QPair<QString, QString> &field1, const QPair<QString, QString> &field2) {
+        m_stats.currentName = field1.second;    // field1.second enthält den Pfad der Quelldatei
+        updateProgress();
+    });
+
+    connect(job, &KJob::totalSize, this, [this](KJob *, qulonglong size) {
+        m_stats.totalBytes = size;
+        updateProgress();
+    });
+
+    connect(job, &KJob::processedSize, this, [this](KJob *, qulonglong size) {
+        m_stats.bytesWritten = size;
+        updateProgress();
+    });
+
+    connect(job, &KJob::result, this, [this](KJob *kjob) {
+        bool cancelled = m_isCancelled.load() || (kjob && kjob->error() == KJob::KilledJobError);
+
+        if (cancelled) {
+            // Falls KIO die Datei bereits umbenannt hat oder die .part-Datei noch existiert: Löschen!
+            for (const QUrl &srcUrl : std::as_const(m_urls)) {
+                QString targetFilePath = QDir(m_targetDir).filePath(srcUrl.fileName());
+                QString partFilePath = targetFilePath + ".part";
+
+                if (QFile::exists(partFilePath)) {
+                    QFile::remove(partFilePath);
+                }
+                if (QFile::exists(targetFilePath)) {
+                    QFile::remove(targetFilePath);
+                }
+            }
+        } else if (kjob && kjob->error()) {
+            m_stats.filesError++;
+            m_failedItems.append({m_urls.first().toString(), m_targetDir, m_operationType, kjob->errorString()});
+        }
+
+        m_currentKioJob = nullptr;
+
+        if (m_isCancelled.load()) {
+            emit wasCanceled(m_stats.filesError, m_failedItems);
+        } else {
+            emit wasFinished(m_stats, m_failedItems);
+        }
+    });
+}
+
+#endif
