@@ -1310,15 +1310,15 @@ void MainWindow::action_ListViewEditFiles() {
     QStringList pathListImage;
     QStringList pathListText;
     QStringList pathListVideo;
+    QMimeDatabase db;
 
     for (const QString &fullPath : std::as_const(pathList)) {
         QFileInfo fileInfo(fullPath);
         QString fileExt = fileInfo.suffix().toLower();
 
         if (fileExt.isEmpty()) {
-            QMimeDatabase db;
             QMimeType mime = db.mimeTypeForFile(fullPath);
-            if (mime.name() == "text/plain"){
+            if (mime.inherits("text/plain")){
                 pathListText << fullPath;
             }
             continue;
