@@ -79,6 +79,7 @@ namespace Helpers {
     void showPopup(const QString &appName, const QString &title, const QString &body);
 #ifdef Q_OS_LINUX
     void showKdePropertiesDialog(const QStringList &filePaths, QWidget *parent);
+    void openUrlsWithKIO(const QList<QUrl> &urls);
 #endif
 }
 

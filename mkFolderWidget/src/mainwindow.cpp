@@ -645,7 +645,7 @@ void MainWindow::reloadDirectory() {
 }
 
 void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, bool isHistoryNavigation) {
-    qDebug() << "browseFolder(" << directoryPath << "," << focusPath << "," << isHistoryNavigation << ")";
+    //qDebug() << "browseFolder(" << directoryPath << "," << focusPath << "," << isHistoryNavigation << ")";
     m_BenchmarkTimer.start();
 
     if (directoryPath != "drives://") {
@@ -735,11 +735,11 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
             }
         }
     }
-
+/*
     qDebug() << "browseFolder() focused:" << focusedPathToRestore
              << " Selected:" << selectedPathsToRestore
              << " Path below:" << pathBelowLastSelectedToRestore;
-
+*/
     if (!isSameDirectory && focusPath.isEmpty()) {
         if (m_selectionModel) m_selectionModel->clear();
     }
@@ -755,7 +755,7 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
     m_currentDirectory = directoryPath;
     m_ignoreNextWatcherSignal = false;
 
-    qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed till loadDirectory() finished";
+    //qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed till loadDirectory() finished";
 
     // --- UPDATE FILE SYSTEM WATCHER ---
     QStringList watchedPaths = m_fileSystemWatcher->directories();
@@ -765,7 +765,7 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
     if (!directoryPath.isEmpty() && QFileInfo(directoryPath).isDir() && (directoryPath != "drives://")) {
         m_fileSystemWatcher->addPath(directoryPath);
     }
-    qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed till m_fileSystemWatcher updated";
+    //qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed till m_fileSystemWatcher updated";
 
     // --- DISABLE SIGNALS FOR SPEEDUP ---
     if (m_selectionModel) {
@@ -861,9 +861,9 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
 
     // --- Update columns of tableView ---
     if (m_viewStack->currentWidget() == m_tableView) {
-        qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed till before updateColumns()";
+        //qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed till before updateColumns()";
         updateColumns();
-        qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed till end of updateColumns()";
+        //qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed till end of updateColumns()";
     }
 
     if (activeView) {
@@ -873,7 +873,7 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
         }
     }
 
-    qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed total";
+    //qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed total";
 
     m_timerUpdateIcons->start(20);
 }
@@ -1261,42 +1261,68 @@ void MainWindow::onListItemDoubleClicked(const QModelIndex &proxyIndex) {
 }
 
 void MainWindow::action_ListViewOpenFiles() {
-    QString path = getActiveViewCurrentItemPath();
-    if (path.isEmpty()) return;
+    if (m_currentDirectory == "drives://") return;
 
-    QFileInfo fileInfo(path);
-    if (!fileInfo.exists()) {
-        return;
-    }
+    QStringList pathList = getActiveViewPathList();
+    if (pathList.isEmpty()) return;
 
-    QString fileExt = fileInfo.suffix().toLower();
-
-    if (fileInfo.isDir()) {
-        if (QGuiApplication::keyboardModifiers() & Qt::ControlModifier) {
-            // Launch in new instance
-            QString appPath = QCoreApplication::applicationFilePath();
-            QStringList arguments;
-            arguments << "-X" << QString::number(this->x() + 40)
-                      << "-Y" << QString::number(this->y() + 40)
-                      << "-W" << QString::number(this->width())
-                      << "-H" << QString::number(this->height())
-                      << fileInfo.absoluteFilePath();
-            QProcess::startDetached(appPath, arguments);
-        } else {
-            browseFolder(fileInfo.absoluteFilePath());
-        }
-        return;
-    }
-
-    if (fileExt == "desktop") {
-        launchDesktopFile(getDesktopEntry(fileInfo));
-#ifdef Q_OS_LINUX
-    } else if (fileInfo.isExecutable() && !fileInfo.isDir() && !m_settings.audioExts.contains(fileExt) && !m_settings.imageExts.contains(fileExt) && !m_settings.videoExts.contains(fileExt)) {
-        // Workaround on linux where executible files are not neccessarily executed when opened via QDesktopServices::openUrl().
-        QProcess::startDetached(path, QStringList(), fileInfo.absolutePath());
+#ifdef Q_OS_WIN
+    pathList = QStringList{ pathList.first() };
 #endif
-    } else {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+
+    if (pathList.size() == 1) {
+        QFileInfo singleFileInfo(pathList.first());
+        if (singleFileInfo.isDir()) {
+            if (QGuiApplication::keyboardModifiers() & Qt::ControlModifier) {
+                // Launch in new instance
+                QString appPath = QCoreApplication::applicationFilePath();
+                QStringList arguments;
+                arguments << "-X" << QString::number(this->x() + 40)
+                          << "-Y" << QString::number(this->y() + 40)
+                          << "-W" << QString::number(this->width())
+                          << "-H" << QString::number(this->height())
+                          << singleFileInfo.absoluteFilePath();
+                QProcess::startDetached(appPath, arguments);
+            } else {
+                browseFolder(singleFileInfo.absoluteFilePath());
+            }
+            return;
+        }
+    }
+
+    QList<QUrl> urlsToOpen;
+
+    for (const QString &path : std::as_const(pathList)) {
+        QFileInfo fileInfo(path);
+        if (!fileInfo.exists()) continue;
+
+        QString fileExt = fileInfo.suffix().toLower();
+
+        if (fileExt == "desktop") {
+            launchDesktopFile(getDesktopEntry(fileInfo));
+        }
+#ifdef Q_OS_LINUX
+        else if (fileInfo.isExecutable()
+                   && !fileInfo.isDir()
+                   && !m_settings.audioExts.contains(fileExt)
+                   && !m_settings.imageExts.contains(fileExt)
+                   && !m_settings.videoExts.contains(fileExt)) {
+            // Workaround on linux where executable files are not neccessarily executed when opened via QDesktopServices::openUrl().
+            QProcess::startDetached(path, QStringList(), fileInfo.absolutePath());
+        }
+#endif
+        else {
+            urlsToOpen.append(QUrl::fromLocalFile(fileInfo.absoluteFilePath()));
+        }
+    }
+
+    if (!urlsToOpen.isEmpty()) {
+#ifdef Q_OS_LINUX
+        Helpers::openUrlsWithKIO(urlsToOpen);
+#else
+        // Windows Fallback: Öffnet nur das erste Element via QDesktopServices
+        QDesktopServices::openUrl(urlsToOpen.first());
+#endif
     }
 }
 

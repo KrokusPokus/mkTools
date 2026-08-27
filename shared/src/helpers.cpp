@@ -22,7 +22,11 @@
 #ifdef Q_OS_WIN
 #include <shellapi.h>   // needed for ShellExecuteEx in startProcessElevatedWin()
 #elif defined(Q_OS_LINUX)
+#include <KApplicationTrader>
+#include <KIO/ApplicationLauncherJob>
+#include <KIO/OpenUrlJob>
 #include <KPropertiesDialog>
+#include <KService>
 #endif
 
 bool isTextFile(const QString &filePath) {
@@ -1146,6 +1150,55 @@ namespace Helpers {
         // Öffnet den nativen KDE/Dolphin-Eigenschaften-Dialog
         // Kümmert sich automatisch um Einzel- und Mehrfachauswahl!
         KPropertiesDialog::showDialog(urls, parent);
+    }
+
+    void openUrlsWithKIO(const QList<QUrl> &urls) {
+        if (urls.isEmpty()) return;
+
+        QMimeDatabase mimeDb;
+
+        // Hilfsstruktur für die Gruppierung
+        struct AppGroup {
+            KService::Ptr service;
+            QList<QUrl> urls;
+        };
+
+        // Schlüssel ist jetzt QString (storageId, z.B. "org.kde.kate.desktop")
+        QHash<QString, AppGroup> appGroups;
+
+        for (const QUrl &url : urls) {
+            QMimeType mime = mimeDb.mimeTypeForUrl(url);
+            KService::Ptr service = KApplicationTrader::preferredService(mime.name());
+
+            if (service) {
+                QString appId = service->storageId(); // Eindeutige App-ID
+
+                if (!appGroups.contains(appId)) {
+                    appGroups[appId] = { service, {} };
+                }
+                appGroups[appId].urls.append(url);
+            } else {
+                // Fallback für Dateien ohne zugewiesene App
+                auto *job = new KIO::OpenUrlJob(url);
+                job->start();
+            }
+        }
+
+        // Jetzt wird genau EIN Aufruf pro Anwendung getätigt
+        for (auto it = appGroups.constBegin(); it != appGroups.constEnd(); ++it) {
+            KService::Ptr service = it.value().service;
+            const QList<QUrl> &groupUrls = it.value().urls;
+
+            qDebug() << "openUrlsWithKIO():";
+            qDebug() << "  App-ID:      " << it.key();                    // "org.kde.kate.desktop"
+            qDebug() << "  App-Name:    " << service->name();              // "Kate"
+            qDebug() << "  Exec-Command: " << service->exec();              // "kate --new %U"
+            qDebug() << "  URLs:        " << groupUrls;                     // Enthält jetzt ALLE 3 URLs!
+
+            auto *job = new KIO::ApplicationLauncherJob(service);
+            job->setUrls(groupUrls);
+            job->start();
+        }
     }
 #endif
 

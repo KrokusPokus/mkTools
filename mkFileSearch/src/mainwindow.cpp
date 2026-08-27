@@ -1256,25 +1256,46 @@ void MainWindow::onListItemDoubleClicked(const QModelIndex &proxyIndex) {
 }
 
 void MainWindow::action_ListViewOpenFiles() {
-    QString path = getActiveViewCurrentItemPath();
-    if (path.isEmpty()) return;
+    QStringList pathList = getActiveViewPathList();
+    if (pathList.isEmpty()) return;
 
-    QFileInfo fileInfo(path);
-    if (!fileInfo.exists()) {
-        return;
+#ifdef Q_OS_WIN
+    pathList = QStringList{ pathList.first() };
+#endif
+
+    QList<QUrl> urlsToOpen;
+
+    for (const QString &path : std::as_const(pathList)) {
+        QFileInfo fileInfo(path);
+        if (!fileInfo.exists()) continue;
+
+        QString fileExt = fileInfo.suffix().toLower();
+
+        if (fileExt == "desktop") {
+            launchDesktopFile(getDesktopEntry(fileInfo));
+        }
+#ifdef Q_OS_LINUX
+        else if (fileInfo.isExecutable()
+                 && !fileInfo.isDir()
+                 && !m_settings.audioExts.contains(fileExt)
+                 && !m_settings.imageExts.contains(fileExt)
+                 && !m_settings.videoExts.contains(fileExt)) {
+            // Workaround on linux where executable files are not neccessarily executed when opened via QDesktopServices::openUrl().
+            QProcess::startDetached(path, QStringList(), fileInfo.absolutePath());
+        }
+#endif
+        else {
+            urlsToOpen.append(QUrl::fromLocalFile(fileInfo.absoluteFilePath()));
+        }
     }
 
-    QString fileExt = fileInfo.suffix().toLower();
-
-    if (fileExt == "desktop") {
-        launchDesktopFile(getDesktopEntry(fileInfo));
+    if (!urlsToOpen.isEmpty()) {
 #ifdef Q_OS_LINUX
-    } else if (fileInfo.isExecutable() && !fileInfo.isDir() && !m_settings.audioExts.contains(fileExt) && !m_settings.imageExts.contains(fileExt) && !m_settings.videoExts.contains(fileExt)) {
-        // Workaround on linux where executible files are not neccessarily executed when opened via QDesktopServices::openUrl().
-        QProcess::startDetached(path, QStringList(), fileInfo.absolutePath());
+        Helpers::openUrlsWithKIO(urlsToOpen);
+#else
+        // Windows Fallback: Öffnet nur das erste Element via QDesktopServices
+        QDesktopServices::openUrl(urlsToOpen.first());
 #endif
-    } else {
-        QDesktopServices::openUrl(QUrl::fromLocalFile(path));
     }
 }
 
