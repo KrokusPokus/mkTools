@@ -949,6 +949,8 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
         QFileInfo srcInfo(src);
         dstFile.flush();
 
+        dstFile.setPermissions(srcInfo.permissions());
+
         dstFile.setFileTime(srcInfo.fileTime(QFileDevice::FileBirthTime), QFileDevice::FileBirthTime);
         dstFile.setFileTime(srcInfo.fileTime(QFileDevice::FileModificationTime), QFileDevice::FileModificationTime);
         dstFile.setFileTime(srcInfo.fileTime(QFileDevice::FileAccessTime), QFileDevice::FileAccessTime);
