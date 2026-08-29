@@ -20,6 +20,7 @@
 #include <zlib.h>
 
 #ifdef Q_OS_WIN
+#include <shlwapi.h>
 #include <shellapi.h>   // needed for ShellExecuteEx in startProcessElevatedWin()
 #elif defined(Q_OS_LINUX)
 #include <KApplicationTrader>
@@ -980,19 +981,26 @@ namespace {
     // Ein einziger Durchlauf über 'input': ersetzte Werte werden NICHT erneut gescannt,
     // daher ist eine Verkettung ($FOO expandiert zu einem String, der wieder ${...} enthält
     // und erneut aufgelöst wird) strukturell unmöglich, nicht nur begrenzt.
-    QString expandVariablesOnce(const QString &input, const QRegularExpression &regex,
+    QString expandVariablesOnce(const QString &input,
+                                const QRegularExpression &regex,
                                 const std::function<QString(const QRegularExpressionMatch&)> &resolve) {
+
+        auto it = regex.globalMatch(input);
+
+        if (!it.hasNext()) {
+            return input;
+        }
+
         QString result;
         result.reserve(input.size());
-        int lastEnd = 0;
-        auto it = regex.globalMatch(input);
+        qsizetype lastEnd = 0;
         while (it.hasNext()) {
             const QRegularExpressionMatch m = it.next();
-            result += input.mid(lastEnd, m.capturedStart() - lastEnd);
+            result += input.sliced(lastEnd, m.capturedStart() - lastEnd);
             result += resolve(m);
             lastEnd = m.capturedEnd();
         }
-        result += input.mid(lastEnd);
+        result += input.sliced(lastEnd);
         return result;
     }
 
@@ -1133,6 +1141,115 @@ namespace Helpers {
         QDBusConnection::sessionBus().send(msg);
 #endif
     }
+
+#ifdef Q_OS_WIN
+    // Ermittelt den Pfad zur Standard-Executable für eine Dateiendung oder ein Protokoll-Schema
+    QString getAssociatedExecutable(const QString &extensionOrScheme) {
+        if (extensionOrScheme.isEmpty()) return QString();
+
+        // Formatierung anpassen: Endungen brauchen ein führendes "." (z. B. ".txt")
+        QString key = extensionOrScheme;
+        if (!key.contains('/') && !key.startsWith('.')) {
+            key.prepend('.');
+        }
+
+        std::wstring wKey = key.toStdWString();
+        DWORD bufferSize = 0;
+
+        // 1. Aufruf: Erforderliche Puffergröße ermitteln
+        HRESULT hr = AssocQueryStringW(
+            ASSOCF_NOTRUNCATE | ASSOCF_INIT_IGNOREUNKNOWN,
+            ASSOCSTR_EXECUTABLE,
+            wKey.c_str(),
+            L"open",
+            nullptr,
+            &bufferSize
+            );
+
+        if (FAILED(hr) || bufferSize == 0) return QString();
+
+        // 2. Aufruf: Pfad in den Puffer schreiben
+        std::wstring buffer(bufferSize, L'\0');
+        hr = AssocQueryStringW(
+            ASSOCF_NOTRUNCATE | ASSOCF_INIT_IGNOREUNKNOWN,
+            ASSOCSTR_EXECUTABLE,
+            wKey.c_str(),
+            L"open",
+            &buffer[0],
+            &bufferSize
+            );
+
+        if (SUCCEEDED(hr)) {
+            return QString::fromStdWString(std::wstring(buffer.c_str()));
+        }
+
+        return QString();
+    }
+
+    void openUrlsWithWin32(const QList<QUrl> &urls) {
+        if (urls.isEmpty()) return;
+
+        struct AppGroup {
+            QString exePath;
+            QStringList filePaths;
+            QList<QUrl> remoteUrls;
+        };
+
+        // Schlüssel ist der Kleingeschriebene Executable-Pfad (Windows ist Case-Insensitive)
+        QHash<QString, AppGroup> appGroups;
+        QList<QUrl> unmappedUrls;
+
+        for (const QUrl &url : urls) {
+            QString keyLookup;
+            if (url.isLocalFile()) {
+                keyLookup = QFileInfo(url.toLocalFile()).suffix();
+            } else {
+                keyLookup = url.scheme();
+            }
+
+            QString exePath = WinUtils::getAssociatedExecutable(keyLookup);
+
+            if (!exePath.isEmpty()) {
+                QString groupKey = exePath.toLower();
+                if (!appGroups.contains(groupKey)) {
+                    appGroups[groupKey] = { exePath, {}, {} };
+                }
+
+                if (url.isLocalFile()) {
+                    appGroups[groupKey].filePaths.append(url.toLocalFile());
+                } else {
+                    appGroups[groupKey].remoteUrls.append(url);
+                }
+            } else {
+                unmappedUrls.append(url);
+            }
+        }
+
+        // 1. Gebündelte Starts pro Anwendung durchführen
+        for (auto it = appGroups.constBegin(); it != appGroups.constEnd(); ++it) {
+            const AppGroup &group = it.value();
+
+            qDebug() << "openUrlsWithWin32():";
+            qDebug() << "  App Executable:" << group.exePath;
+            qDebug() << "  Files gebündelt:" << group.filePaths;
+
+            // QProcess::startDetached kümmert sich automatisch um das korrekte Escaping von Leerzeichen
+            if (!group.filePaths.isEmpty()) {
+                QProcess::startDetached(group.exePath, group.filePaths);
+            }
+
+            // Falls es sich um Remote-URLs (z.B. http://) handelt, einzeln aufrufen
+            for (const QUrl &remoteUrl : group.remoteUrls) {
+                QDesktopServices::openUrl(remoteUrl);
+            }
+        }
+
+        // 2. Fallback für Dateien/Schemas ohne zugewiesene Executable
+        for (const QUrl &url : unmappedUrls) {
+            QDesktopServices::openUrl(url);
+        }
+    }
+#endif
 
 #ifdef Q_OS_LINUX
     void showKdePropertiesDialog(const QStringList &filePaths, QWidget *parent = nullptr) {
