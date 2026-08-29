@@ -79,8 +79,8 @@ namespace Helpers {
     void showPopup(const QString &appName, const QString &title, const QString &body);
 
 #ifdef Q_OS_WIN
-    QString getAssociatedExecutable(const QString &extensionOrScheme);
-    void openUrlsWithWin32(const QList<QUrl> &urls)
+    QString getAssociatedExecutableWin32(const QString &extensionOrScheme);
+    void openUrlsWithWin32(const QList<QUrl> &urls);
 #endif
 
 #ifdef Q_OS_LINUX

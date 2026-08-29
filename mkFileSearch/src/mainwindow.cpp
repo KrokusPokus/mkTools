@@ -1259,10 +1259,6 @@ void MainWindow::action_ListViewOpenFiles() {
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) return;
 
-#ifdef Q_OS_WIN
-    pathList = QStringList{ pathList.first() };
-#endif
-
     QList<QUrl> urlsToOpen;
 
     for (const QString &path : std::as_const(pathList)) {
@@ -1293,8 +1289,7 @@ void MainWindow::action_ListViewOpenFiles() {
 #ifdef Q_OS_LINUX
         Helpers::openUrlsWithKIO(urlsToOpen);
 #else
-        // Windows Fallback: Öffnet nur das erste Element via QDesktopServices
-        QDesktopServices::openUrl(urlsToOpen.first());
+        Helpers::openUrlsWithWin32(urlsToOpen);
 #endif
     }
 }
@@ -1309,11 +1304,21 @@ void MainWindow::action_ListViewEditFiles() {
     QStringList pathListImage;
     QStringList pathListText;
     QStringList pathListVideo;
+#ifdef Q_OS_LINUX
+    QMimeDatabase db;
+#endif
 
     for (const QString &fullPath : std::as_const(pathList)) {
         QFileInfo fileInfo(fullPath);
         QString fileExt = fileInfo.suffix().toLower();
+
         if (fileExt.isEmpty()) {
+#ifdef Q_OS_LINUX
+            QMimeType mime = db.mimeTypeForFile(fullPath);
+            if (mime.inherits("text/plain")) {
+                pathListText << fullPath;
+            }
+#endif
             continue;
         }
 

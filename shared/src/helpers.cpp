@@ -2,8 +2,6 @@
 
 #include <QCollator>
 #include <QCoreApplication>
-#include <QDBusConnection>
-#include <QDBusMessage>
 #include <QDesktopServices>
 #include <QDir>
 #include <QImageReader>
@@ -20,6 +18,7 @@
 #include <zlib.h>
 
 #ifdef Q_OS_WIN
+#include <QSystemTrayIcon>
 #include <shlwapi.h>
 #include <shellapi.h>   // needed for ShellExecuteEx in startProcessElevatedWin()
 #elif defined(Q_OS_LINUX)
@@ -28,6 +27,8 @@
 #include <KIO/OpenUrlJob>
 #include <KPropertiesDialog>
 #include <KService>
+#include <QDBusConnection>
+#include <QDBusMessage>
 #endif
 
 bool isTextFile(const QString &filePath) {
@@ -459,7 +460,7 @@ bool hasIconExt(const QFileInfo &fileInfo) {
 
 bool hasOnlyFiles(const QStringList &pathList) {
     bool onlyFiles = true;
-    for (QString path : pathList) {
+    for (const QString &path : pathList) {
         if (!QFileInfo(path).isFile()) {
             onlyFiles = false;
             break;
@@ -921,7 +922,7 @@ QString getSiblingPath(const QString &path, bool previous) {
 
     // Nur Ordner auflisten, "." und ".." ignorieren.
     // QDir::Unsorted spart CPU-Zeit, da wir die Liste ohnehin selbst sortieren.
-    parentDir.setFilter(QDir::Dirs | QDir::NoDotAndDotDot);
+    parentDir.setFilter({QDir::Dirs, QDir::NoDotAndDotDot});
     parentDir.setSorting(QDir::Unsorted);
 
     QStringList siblings = parentDir.entryList();
@@ -1114,11 +1115,12 @@ namespace Helpers {
             trayIcon->show();
         }
 
-        if title.isEmpty() {
-            title = appName;
+        QString usedTitle = title;
+        if (usedTitle.isEmpty()) {
+            usedTitle = appName;
         }
 
-        trayIcon->showMessage(title, body, QSystemTrayIcon::Information, 5000);
+        trayIcon->showMessage(usedTitle, body, QSystemTrayIcon::Information, 5000);
 #else
         QDBusMessage msg = QDBusMessage::createMethodCall(
             "org.freedesktop.Notifications",
@@ -1143,11 +1145,9 @@ namespace Helpers {
     }
 
 #ifdef Q_OS_WIN
-    // Ermittelt den Pfad zur Standard-Executable für eine Dateiendung oder ein Protokoll-Schema
-    QString getAssociatedExecutable(const QString &extensionOrScheme) {
+    QString getAssociatedExecutableWin32(const QString &extensionOrScheme) {
         if (extensionOrScheme.isEmpty()) return QString();
 
-        // Formatierung anpassen: Endungen brauchen ein führendes "." (z. B. ".txt")
         QString key = extensionOrScheme;
         if (!key.contains('/') && !key.startsWith('.')) {
             key.prepend('.');
@@ -1156,10 +1156,10 @@ namespace Helpers {
         std::wstring wKey = key.toStdWString();
         DWORD bufferSize = 0;
 
-        // 1. Aufruf: Erforderliche Puffergröße ermitteln
+        // 1. Aufruf mit ASSOCSTR_COMMAND
         HRESULT hr = AssocQueryStringW(
             ASSOCF_NOTRUNCATE | ASSOCF_INIT_IGNOREUNKNOWN,
-            ASSOCSTR_EXECUTABLE,
+            ASSOCSTR_COMMAND, // <--- Geändert von ASSOCSTR_EXECUTABLE
             wKey.c_str(),
             L"open",
             nullptr,
@@ -1168,11 +1168,10 @@ namespace Helpers {
 
         if (FAILED(hr) || bufferSize == 0) return QString();
 
-        // 2. Aufruf: Pfad in den Puffer schreiben
         std::wstring buffer(bufferSize, L'\0');
         hr = AssocQueryStringW(
             ASSOCF_NOTRUNCATE | ASSOCF_INIT_IGNOREUNKNOWN,
-            ASSOCSTR_EXECUTABLE,
+            ASSOCSTR_COMMAND, // <--- Geändert von ASSOCSTR_EXECUTABLE
             wKey.c_str(),
             L"open",
             &buffer[0],
@@ -1180,7 +1179,13 @@ namespace Helpers {
             );
 
         if (SUCCEEDED(hr)) {
-            return QString::fromStdWString(std::wstring(buffer.c_str()));
+            QString fullCommand = QString::fromWCharArray(buffer.c_str());
+
+            // Entfernt Platzhalter wie "%1", %1, "%L", %L, "%*" etc. inklusive umgebender Anführungszeichen
+            static const QRegularExpression placeholderRegex(R"("\s*%[1Ll\*]\s*"|%[1Ll\*])");
+            fullCommand.remove(placeholderRegex);
+
+            return fullCommand.trimmed();
         }
 
         return QString();
@@ -1207,16 +1212,16 @@ namespace Helpers {
                 keyLookup = url.scheme();
             }
 
-            QString exePath = WinUtils::getAssociatedExecutable(keyLookup);
+            QString exePath = QDir::toNativeSeparators(Helpers::getAssociatedExecutableWin32(keyLookup));
 
-            if (!exePath.isEmpty()) {
+            if (!exePath.isEmpty() && (exePath != "%1")) {
                 QString groupKey = exePath.toLower();
                 if (!appGroups.contains(groupKey)) {
                     appGroups[groupKey] = { exePath, {}, {} };
                 }
 
                 if (url.isLocalFile()) {
-                    appGroups[groupKey].filePaths.append(url.toLocalFile());
+                    appGroups[groupKey].filePaths.append(QDir::toNativeSeparators(url.toLocalFile()));
                 } else {
                     appGroups[groupKey].remoteUrls.append(url);
                 }

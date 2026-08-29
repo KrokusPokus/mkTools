@@ -1261,14 +1261,10 @@ void MainWindow::onListItemDoubleClicked(const QModelIndex &proxyIndex) {
 }
 
 void MainWindow::action_ListViewOpenFiles() {
-    if (m_currentDirectory == "drives://") return;
+    //if (m_currentDirectory == "drives://") return;
 
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) return;
-
-#ifdef Q_OS_WIN
-    pathList = QStringList{ pathList.first() };
-#endif
 
     if (pathList.size() == 1) {
         QFileInfo singleFileInfo(pathList.first());
@@ -1320,8 +1316,7 @@ void MainWindow::action_ListViewOpenFiles() {
 #ifdef Q_OS_LINUX
         Helpers::openUrlsWithKIO(urlsToOpen);
 #else
-        // Windows Fallback: Öffnet nur das erste Element via QDesktopServices
-        QDesktopServices::openUrl(urlsToOpen.first());
+        Helpers::openUrlsWithWin32(urlsToOpen);
 #endif
     }
 }
@@ -1336,20 +1331,23 @@ void MainWindow::action_ListViewEditFiles() {
     QStringList pathListImage;
     QStringList pathListText;
     QStringList pathListVideo;
+#ifdef Q_OS_LINUX
     QMimeDatabase db;
+#endif
 
     for (const QString &fullPath : std::as_const(pathList)) {
         QFileInfo fileInfo(fullPath);
         QString fileExt = fileInfo.suffix().toLower();
 
         if (fileExt.isEmpty()) {
+#ifdef Q_OS_LINUX
             QMimeType mime = db.mimeTypeForFile(fullPath);
-            if (mime.inherits("text/plain")){
+            if (mime.inherits("text/plain")) {
                 pathListText << fullPath;
             }
+#endif
             continue;
         }
-
         if (m_settings.audioExts.contains(fileExt)) {
             pathListAudio << fullPath;
         } else if (m_settings.imageExts.contains(fileExt)) {

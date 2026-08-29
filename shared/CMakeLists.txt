@@ -35,6 +35,7 @@ target_link_libraries(shared
         $<$<PLATFORM_ID:Linux>:KF6::KIOWidgets>
         $<$<PLATFORM_ID:Linux>:KF6::KIOFileWidgets>
         $<$<PLATFORM_ID:Windows>:zlibstatic>
+        $<$<PLATFORM_ID:Windows>:shlwapi>
         $<$<PLATFORM_ID:Linux>:ZLIB::ZLIB>
 )
 

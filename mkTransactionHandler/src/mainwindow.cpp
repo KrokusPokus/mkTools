@@ -4,8 +4,6 @@
 
 #include <QApplication>
 #include <QBuffer>
-#include <QDBusConnection>
-#include <QDBusMessage>
 #include <QDateTime>
 #include <QDebug>
 #include <QDir>
@@ -16,6 +14,11 @@
 #include <QMessageBox>
 #include <QTimer>
 #include <QVBoxLayout>
+
+#ifdef Q_OS_LINUX
+#include <QDBusConnection>
+#include <QDBusMessage>
+#endif
 
 MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir, QWidget *parent)
     : QMainWindow(parent)
@@ -58,8 +61,10 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
     if (isKioOperation) {
         m_pauseButton->setEnabled(false);
 
+#if defined(Q_OS_LINUX)
         // KIO arbeitet asynchron out-of-process -> Direkt auf dem Main-Thread starten
         m_fileOp->startKioAsync();
+#endif
     } else {
         // Lokale Dateien -> Worker-Thread initialisieren
         m_workerThread = new QThread(this);
