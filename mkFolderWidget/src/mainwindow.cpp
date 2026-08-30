@@ -2454,23 +2454,23 @@ void MainWindow::updateWidgetStyles() {
         m_LineEdit1->setStyleSheet(lineEditStyleDark);
 
         if (targetState == StyleState::Elevated) {
-            m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevated.data(), Styles::tableViewElevated.size()));
-            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevated.data(), Styles::listViewElevated.size()));
-            m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevated.data(), Styles::thumbnailViewElevated.size()));
+            m_tableView->setStyleSheet(Styles::tableViewElevated);
+            m_listView->setStyleSheet(Styles::listViewElevated);
+            m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevated);
         } else {
-            m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewDark.data(), Styles::tableViewDark.size()));
-            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewDark.data(), Styles::listViewDark.size()));
-            m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewDark.data(), Styles::thumbnailViewDark.size()));
+            m_tableView->setStyleSheet(Styles::tableViewDark);
+            m_listView->setStyleSheet(Styles::listViewDark);
+            m_thumbnailView->setStyleSheet(Styles::thumbnailViewDark);
         }
 
-        m_tableView->verticalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::verticalScrollBarDark.data(), Styles::verticalScrollBarDark.size()));
-        m_tableView->horizontalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::horizontalScrollBarDark.data(), Styles::horizontalScrollBarDark.size()));
+        m_tableView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
+        m_tableView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
 
-        m_listView->verticalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::verticalScrollBarDark.data(), Styles::verticalScrollBarDark.size()));
-        m_listView->horizontalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::horizontalScrollBarDark.data(), Styles::horizontalScrollBarDark.size()));
+        m_listView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
+        m_listView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
 
-        m_thumbnailView->verticalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::verticalScrollBarDark.data(), Styles::verticalScrollBarDark.size()));
-        m_thumbnailView->horizontalScrollBar()->setStyleSheet(QString::fromUtf8(Styles::horizontalScrollBarDark.data(), Styles::horizontalScrollBarDark.size()));
+        m_thumbnailView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
+        m_thumbnailView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
 #elif defined(Q_OS_LINUX)
         if (targetState == StyleState::Dark) {
             m_LineEdit1->setStyleSheet(lineEditStyleDark);
@@ -2479,11 +2479,11 @@ void MainWindow::updateWidgetStyles() {
         }
 
         if (targetState == StyleState::Elevated) {
-            m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevatedLinux.data(), Styles::tableViewElevatedLinux.size()));
-            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevatedLinux.data(), Styles::listViewElevatedLinux.size()));
-            m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevatedLinux.data(), Styles::thumbnailViewElevatedLinux.size()));
+            m_tableView->setStyleSheet(Styles::tableViewElevatedLinux);
+            m_listView->setStyleSheet(Styles::listViewElevatedLinux);
+            m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevatedLinux);
         } else {
-            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewLinux.data(), Styles::listViewLinux.size()));
+            m_listView->setStyleSheet(Styles::listViewLinux);
         }
 #endif
     }

@@ -84,7 +84,7 @@ public:
 
 private:
     QString formatAdaptiveSize(quint64 bytes);
-    QString getSourceTypeString(const QFileInfo &fileInfo);
+    QString getTypeString(const QFileInfo &fileInfo);
     QPixmap generateThumbnail(const QFileInfo &fileInfo);
 
     ConflictResult m_result{ConflictResolution::Cancel, false};

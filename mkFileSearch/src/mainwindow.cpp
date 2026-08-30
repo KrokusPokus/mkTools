@@ -2313,13 +2313,13 @@ void MainWindow::updateWidgetStyles() {
 
 #ifdef Q_OS_WIN
         if (targetState == StyleState::Elevated) {
-            m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevated.data(), Styles::tableViewElevated.size()));
-            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevated.data(), Styles::listViewElevated.size()));
-            m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevated.data(), Styles::thumbnailViewElevated.size()));
+            m_tableView->setStyleSheet(Styles::tableViewElevated);
+            m_listView->setStyleSheet(Styles::listViewElevated));
+            m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevated);
         } else {
-            m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewLight.data(), Styles::tableViewLight.size()));
-            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewLight.data(), Styles::listViewLight.size()));
-            m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewLight.data(), Styles::thumbnailViewLight.size()));
+            m_tableView->setStyleSheet(Styles::tableViewLight);
+            m_listView->setStyleSheet(Styles::listViewLight);
+            m_thumbnailView->setStyleSheet(Styles::thumbnailViewLight);
         }
 #elif defined(Q_OS_LINUX)
         if (targetState == StyleState::Dark) {
@@ -2334,11 +2334,11 @@ void MainWindow::updateWidgetStyles() {
         }
 
         if (targetState == StyleState::Elevated) {
-            m_tableView->setStyleSheet(QString::fromUtf8(Styles::tableViewElevatedLinux.data(), Styles::tableViewElevatedLinux.size()));
-            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewElevatedLinux.data(), Styles::listViewElevatedLinux.size()));
-            m_thumbnailView->setStyleSheet(QString::fromUtf8(Styles::thumbnailViewElevatedLinux.data(), Styles::thumbnailViewElevatedLinux.size()));
+            m_tableView->setStyleSheet(Styles::tableViewElevatedLinux);
+            m_listView->setStyleSheet(Styles::listViewElevatedLinux);
+            m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevatedLinux);
         } else {
-            m_listView->setStyleSheet(QString::fromUtf8(Styles::listViewLinux.data(), Styles::listViewLinux.size()));
+            m_listView->setStyleSheet(Styles::listViewLinux);
         }
 #endif
     }

@@ -18,6 +18,8 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
 
     QFileInfo srcInfo(conflict.sourcePath);
     QFileInfo dstInfo(conflict.targetPath);
+    QString srcType = getTypeString(srcInfo);
+    QString dstType = getTypeString(dstInfo);
 
     bool isDirConflict = srcInfo.isDir() && dstInfo.isDir();
     QString actionWord = isDirConflict ? tr("Merge") : tr("Replace");
@@ -50,10 +52,10 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     auto *lblSrcTime  = new QLabel(srcInfo.lastModified().toString("yyyy-MM-dd  HH:mm:ss"), this);
     lblSrcTime->setAlignment(Qt::AlignCenter);
 
-    auto *lblSrcSizeB = new QLabel(tr("%1 Bytes").arg(m_locale.toString(srcInfo.size())), this);
-    lblSrcSizeB->setAlignment(Qt::AlignRight);
+    auto *lblSrcSizeBytes = new QLabel(tr("%1 Bytes").arg(m_locale.toString(srcInfo.size())), this);
+    lblSrcSizeBytes->setAlignment(Qt::AlignRight);
 
-    auto *lblSrcType  = new QLabel(getSourceTypeString(srcInfo), this);
+    auto *lblSrcType  = new QLabel(srcType, this);
     lblSrcType->setAlignment(Qt::AlignLeft);
 
     // Line 3: Destination Data
@@ -64,14 +66,12 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     UnderlinedLabel *lblDstTime = new UnderlinedLabel(this);
     lblDstTime->setText(dstInfo.lastModified().toString("yyyy-MM-dd  HH:mm:ss"));
     lblDstTime->setAlignment(Qt::AlignCenter);
-    if (isDestinationNewer) {
-        lblDstTime->setUnderlineVisible(isDestinationNewer);
-    }
+    lblDstTime->setUnderlineVisible(isDestinationNewer);
 
-    auto *lblDstSizeB = new QLabel(tr("%1 Bytes").arg(m_locale.toString(dstInfo.size())), this);
-    lblDstSizeB->setAlignment(Qt::AlignRight);
+    auto *lblDstSizeBytes = new QLabel(tr("%1 Bytes").arg(m_locale.toString(dstInfo.size())), this);
+    lblDstSizeBytes->setAlignment(Qt::AlignRight);
 
-    auto *lblDstType  = new QLabel(getSourceTypeString(dstInfo), this);
+    auto *lblDstType  = new QLabel(dstType, this);
     lblDstType->setAlignment(Qt::AlignLeft);
 
     // Line 4: Destination Header
@@ -93,28 +93,28 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
 
     int pathStartCol = iCol;
 
-    gridLayout->addWidget(lblSrcTime,   1, iCol);
-    gridLayout->addWidget(lblDstTime,   2, iCol);
+    gridLayout->addWidget(lblSrcType,  1, iCol);
+    gridLayout->addWidget(lblDstType,  2, iCol);
+    iCol++;
+
+    gridLayout->addWidget(lblSrcSizeBytes, 1, iCol);
+    gridLayout->addWidget(lblDstSizeBytes, 2, iCol);
     iCol++;
 
     if (srcInfo.size() >= 1024 || dstInfo.size() >= 1024) {
-        auto *lblSrcSizeA = new QLabel(formatAdaptiveSize(srcInfo.size()), this);
-        lblSrcSizeA->setAlignment(Qt::AlignRight);
-        gridLayout->addWidget(lblSrcSizeA, 1, iCol);
+        auto *lblSrcSizeShort = new QLabel(formatAdaptiveSize(srcInfo.size()), this);
+        lblSrcSizeShort->setAlignment(Qt::AlignRight);
+        gridLayout->addWidget(lblSrcSizeShort, 1, iCol);
 
-        auto *lblDstSizeA = new QLabel(formatAdaptiveSize(dstInfo.size()), this);
-        lblDstSizeA->setAlignment(Qt::AlignRight);
-        gridLayout->addWidget(lblDstSizeA, 2, iCol);
+        auto *lblDstSizeShort = new QLabel(formatAdaptiveSize(dstInfo.size()), this);
+        lblDstSizeShort->setAlignment(Qt::AlignRight);
+        gridLayout->addWidget(lblDstSizeShort, 2, iCol);
 
         iCol++;
     }
 
-    gridLayout->addWidget(lblSrcSizeB, 1, iCol);
-    gridLayout->addWidget(lblDstSizeB, 2, iCol);
-    iCol++;
-
-    gridLayout->addWidget(lblSrcType,  1, iCol);
-    gridLayout->addWidget(lblDstType,  2, iCol);
+    gridLayout->addWidget(lblSrcTime,   1, iCol);
+    gridLayout->addWidget(lblDstTime,   2, iCol);
     iCol++;
 
     QLabel *warningLabel = new QLabel(this);
@@ -182,7 +182,7 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     connect(btnCancel, &QPushButton::clicked, this, &QDialog::reject);
 }
 
-QString ConflictDialog::getSourceTypeString(const QFileInfo &fileInfo) {
+QString ConflictDialog::getTypeString(const QFileInfo &fileInfo) {
     if (fileInfo.isJunction())     return tr("Junction");
     if (fileInfo.isSymbolicLink()) return tr("SymLink");
     if (fileInfo.isDir())          return tr("Directory");
