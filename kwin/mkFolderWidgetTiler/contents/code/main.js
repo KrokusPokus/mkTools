@@ -74,7 +74,25 @@ workspace.windowAdded.connect(function(w) {
 	}
 
 	if (managedWindowsPerDesktop[dKey].length < MAX_WINDOWS) {
-		managedWindowsPerDesktop[dKey].push(w);
+		var arr = managedWindowsPerDesktop[dKey];
+		var targetIndex = -1;
+
+		// Rückwärts suchen, um bei mehreren gleichen Fenstern das NEUESTE/UNTERSTE zu finden
+		for (var i = arr.length - 1; i >= 0; i--) {
+			if (arr[i].caption === w.caption) {
+				targetIndex = i;
+				break;
+			}
+		}
+
+		if (targetIndex !== -1) {
+			// Fügt das neue Fenster direkt unter dem gefundenen Fenster ein
+			arr.splice(targetIndex + 1, 0, w);
+		} else {
+			// Falls kein Fenster mit gleichem Pfad/Titel existiert: normal unten anfügen
+			arr.push(w);
+		}
+
 		layoutManagedWindows(dKey);
 	} else {
 			var area = workspace.clientArea(KWin.MaximizeArea, w);
@@ -242,7 +260,22 @@ function handleDesktopChange(w) {
 		}
 
 		if (managedWindowsPerDesktop[newKey].length < MAX_WINDOWS) {
-			managedWindowsPerDesktop[newKey].push(w);
+			var arr = managedWindowsPerDesktop[newKey];
+			var targetIndex = -1;
+
+			for (var i = arr.length - 1; i >= 0; i--) {
+				if (arr[i].caption === w.caption) {
+					targetIndex = i;
+					break;
+				}
+			}
+
+			if (targetIndex !== -1) {
+				arr.splice(targetIndex + 1, 0, w);
+			} else {
+				arr.push(w);
+			}
+
 			layoutManagedWindows(newKey);
 		}
 	}
