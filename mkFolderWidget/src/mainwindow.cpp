@@ -371,13 +371,36 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
 
     //-----------------------------------------------------------
 
-    m_actionCompressTarGz = new QAction(tr("Compress as TAR.GZ"),this);
-    m_actionCompressTarGz->setIcon(QIcon::fromTheme("add-files-to-archive-symbolic"));
-    connect(m_actionCompressTarGz, &QAction::triggered, this, [this]() { action_CompressFileList("tar.gz"); });
 
-    m_actionCompressZip = new QAction(tr("Compress as ZIP"),this);
-    m_actionCompressZip->setIcon(QIcon::fromTheme("add-files-to-archive-symbolic"));
-    connect(m_actionCompressZip, &QAction::triggered, this, [this]() { action_CompressFileList("zip"); });
+#ifdef Q_OS_WIN
+    if (QFile::exists(m_winrarPath)) {
+        m_actionWinRarOpen = new QAction(tr("Open with WinRAR"),this);
+        connect(m_actionWinRarOpen, &QAction::triggered, this, &MainWindow::action_WinRarOpen);
+
+        m_actionCompressZIP = new QAction(tr("Compress as ZIP"),this);
+        connect(m_actionCompressZIP, &QAction::triggered, this, [this]() { action_WinRarCompress("zip"); });
+
+        m_actionCompressCBZ = new QAction(tr("Compress as CBZ"),this);
+        connect(m_actionCompressCBZ, &QAction::triggered, this, [this]() { action_WinRarCompress("cbz"); });
+
+        m_actionExtractHere = new QAction(tr("Extract Here"),this);
+        connect(m_actionExtractHere, &QAction::triggered, this, [this]() { action_WinRarExtract(false); });
+
+        m_actionExtractToSubfolder = new QAction(tr("Extract to Subfolder"),this);
+        connect(m_actionExtractToSubfolder, &QAction::triggered, this, [this]() { action_WinRarExtract(true); });
+
+        QFileIconProvider iconProvider;
+        m_winrarIcon = iconProvider.icon(QFileInfo(m_winrarPath));
+
+        if (!m_winrarIcon.isNull()) {
+            m_actionWinRarOpen->setIcon(m_winrarIcon);
+            m_actionCompressZIP->setIcon(m_winrarIcon);
+            m_actionCompressCBZ->setIcon(m_winrarIcon);
+            m_actionExtractHere->setIcon(m_winrarIcon);
+            m_actionExtractToSubfolder->setIcon(m_winrarIcon);
+        }
+    }
+#endif
 
     //-----------------------------------------------------------
 //QKeySequence(Qt::Key_Up)
@@ -430,8 +453,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
         m_actionViewModeThumbs->setIconVisibleInMenu(false);
         m_actionViewModeShowHidden->setIconVisibleInMenu(false);
         m_actionViewModeRefresh->setIconVisibleInMenu(false);
-        m_actionCompressTarGz->setIconVisibleInMenu(false);
-        m_actionCompressZip->setIconVisibleInMenu(false);
     }
 
     if (m_settings.showShortcutsInMenu == false) {
@@ -1007,6 +1028,44 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         }
 
 #ifdef Q_OS_WIN
+        if (QFile::exists(m_winrarPath)) {
+            if (!selectedPaths.isEmpty()) {
+                int nArchives = 0;
+                int nOther = 0;
+                for (const QString &path : std::as_const(selectedPaths)) {
+                    QFileInfo fileInfo(path);
+                    QString fileExt = fileInfo.suffix().toLower();
+                    if (fileExt == "zip" || fileExt == "rar" || fileExt == "cbz") {
+                        nArchives++;
+                    } else {
+                        nOther++;
+                    }
+                }
+
+                if (selectedPaths.size() > 1 || nArchives > 0) {
+                    QMenu *subMenuArchive = mainMenu.addMenu(tr("WinRAR"));
+                    if (!m_winrarIcon.isNull()) {
+                        subMenuArchive->setIcon(m_winrarIcon);
+                    }
+
+                    if (selectedPaths.size() == 1 && nArchives == 1) {
+                        subMenuArchive->addAction(m_actionWinRarOpen);
+                    }
+
+                    if (selectedPaths.size() > 1 || (selectedPaths.size() == 1 && nArchives == 0)) {
+                        subMenuArchive->addAction(m_actionCompressZIP);
+                        subMenuArchive->addAction(m_actionCompressCBZ);
+                    }
+
+                    if (nArchives > 0) {
+                        subMenuArchive->addSeparator();
+                        subMenuArchive->addAction(m_actionExtractHere);
+                        subMenuArchive->addAction(m_actionExtractToSubfolder);
+                    }
+                }
+            }
+        }
+
         mainMenu.addSeparator(); //-----------------------------------------
         QDir sendToDir(getSendToPath());
         if (sendToDir.exists()) {
@@ -1166,21 +1225,16 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         mainMenu.addAction(m_actionListViewCopyPaths);
         mainMenu.addAction(m_actionListViewCutFiles);
         mainMenu.addAction(m_actionListViewCopyFiles);
+#ifdef Q_OS_WIN
+        mainMenu.addAction(m_actionListViewDeleteFiles);
+        mainMenu.addAction(m_actionListViewRenameFiles);
+#elif defined(Q_OS_LINUX)
         mainMenu.addAction(m_actionListViewRenameFiles);
         mainMenu.addSeparator(); //-----------------------------------------
         mainMenu.addAction(m_actionListViewDeleteFiles);
-#ifdef Q_OS_WIN
-        /*
-        mainMenu.addSeparator(); //-----------------------------------------
+#endif
 
-        QMenu *subMenuCompress = mainMenu.addMenu(tr("Compress"));
-        if (m_settings.showIconsInMenu) {
-            subMenuCompress->setIcon(QIcon::fromTheme("add-files-to-archive-symbolic"));
-        }
-        //subMenuCompress->addAction(m_actionCompressTarGz);
-        subMenuCompress->addAction(m_actionCompressZip);
-        */
-#elif defined(Q_OS_LINUX)
+#ifdef Q_OS_LINUX
         // KDE SERVICE-ACTIONS
         if (!selectedPaths.isEmpty()) {
             KFileItemList fileItemList;
@@ -2316,14 +2370,105 @@ void MainWindow::action_toggleShowHidden() {
     m_proxyModel->setShowHiddenFiles(m_bShowHiddenFiles);
 }
 
-void MainWindow::action_CompressFileList(const QString &archiveExt) {
+#ifdef Q_OS_WIN
+void MainWindow::action_WinRarOpen() {
     if (m_currentDirectory == "drives://") return;
 
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) return;
 
-    QString timeStamp = QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
+    for (const QString &path : std::as_const(pathList)) {
+        QFileInfo fileInfo(path);
+        QString fileExt = fileInfo.suffix().toLower();
+        if (fileExt != "zip" && fileExt != "rar" && fileExt != "cbz") {
+            continue;
+        }
 
+        QStringList arguments;
+        arguments << path;
+
+        QProcess *process = new QProcess(this);
+
+        process->setWorkingDirectory(m_currentDirectory);
+
+        connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+                process, &QObject::deleteLater);
+
+        connect(process, &QProcess::errorOccurred, this, [process](QProcess::ProcessError error) {
+            if (error == QProcess::FailedToStart) {
+                qWarning() << "Error: WinRAR could not be startet.";
+            }
+            process->deleteLater();
+        });
+
+        process->start(QDir::toNativeSeparators(m_winrarPath), arguments);
+    }
+}
+
+void MainWindow::action_WinRarExtract(bool toSubFolder) {
+    if (m_currentDirectory == "drives://") return;
+
+    QStringList pathList = getActiveViewPathList();
+    if (pathList.isEmpty()) return;
+
+    for (const QString &path : std::as_const(pathList)) {
+        QFileInfo fileInfo(path);
+        QString fileExt = fileInfo.suffix().toLower();
+        if (fileExt != "zip" && fileExt != "rar" && fileExt != "cbz") {
+            continue;
+        }
+
+        QStringList arguments;
+        arguments << "x" << path;
+        if (toSubFolder) {
+            arguments << (fileInfo.completeBaseName() + "\\");
+        }
+
+        QProcess *process = new QProcess(this);
+
+        process->setWorkingDirectory(m_currentDirectory);
+
+        connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
+                process, &QObject::deleteLater);
+
+        connect(process, &QProcess::errorOccurred, this, [process](QProcess::ProcessError error) {
+            if (error == QProcess::FailedToStart) {
+                qWarning() << "Error: WinRAR could not be startet.";
+            }
+            process->deleteLater();
+        });
+
+        process->start(QDir::toNativeSeparators(m_winrarPath), arguments);
+        process->waitForFinished(-1);
+    }
+}
+
+void MainWindow::action_WinRarCompress(const QString &archiveExt) {
+    if (m_currentDirectory == "drives://") return;
+
+    QStringList pathList = getActiveViewPathList();
+    if (pathList.isEmpty()) return;
+
+    QString tempFilePath;
+    QDir currentDir(m_currentDirectory);
+
+    {
+        QTemporaryFile tempFile;
+        tempFile.setAutoRemove(false);
+
+        if (!tempFile.open()) {
+            return;
+        }
+
+        tempFilePath = QDir::toNativeSeparators(tempFile.fileName());
+
+        QTextStream stream(&tempFile);
+        for (const QString &path : std::as_const(pathList)) {
+            stream << currentDir.relativeFilePath(QDir::toNativeSeparators(path)) << "\n";
+        }
+    }
+
+    QString timeStamp = QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss");
     QString archiveName;
     if (pathList.size() == 1) {
         QFileInfo fileInfo(pathList.first());
@@ -2332,36 +2477,36 @@ void MainWindow::action_CompressFileList(const QString &archiveExt) {
         archiveName = QString("%1.%2").arg(timeStamp, archiveExt);
     }
 
-    // Pfade relativ zu m_currentDirectory umwandeln
-    QDir currentDir(m_currentDirectory);
-    QStringList relativePathList;
-    for (const QString &path : std::as_const(pathList)) {
-        relativePathList << currentDir.relativeFilePath(path);
-    }
-
     QStringList arguments;
-    arguments << "-t" << archiveName;
-    arguments << relativePathList;
+    arguments << "a";
+    arguments << "-scfl";
+    if (archiveExt == "cbz") {
+        arguments << "-afzip";
+        arguments << "-m0";
+    }
+    arguments << archiveName;
+    arguments << QString("@%1").arg(QDir::toNativeSeparators(tempFilePath));
 
     QProcess *process = new QProcess(this);
-
-    // Arbeitsverzeichnis explizit setzen
     process->setWorkingDirectory(m_currentDirectory);
 
-    // Speicherbereinigung nach Beendigung
     connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished),
-            process, &QObject::deleteLater);
+            this, [process, tempFilePath]() {
+                QFile::remove(tempFilePath);
+                process->deleteLater();
+            });
 
-    // Fehlerbehandlung
-    connect(process, &QProcess::errorOccurred, this, [process](QProcess::ProcessError error) {
+    connect(process, &QProcess::errorOccurred, this, [process, tempFilePath](QProcess::ProcessError error) {
         if (error == QProcess::FailedToStart) {
-            qWarning() << "Fehler: Ark konnte nicht gestartet werden. Ist es installiert?";
+            qWarning() << "Error: WinRAR could not be started.";
         }
+        QFile::remove(tempFilePath);
         process->deleteLater();
     });
 
-    process->start("ark", arguments);
+    process->start(QDir::toNativeSeparators(m_winrarPath), arguments);
 }
+#endif
 
 void MainWindow::action_LaunchRenameTool() {
     if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") return;

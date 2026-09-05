@@ -2314,7 +2314,7 @@ void MainWindow::updateWidgetStyles() {
 #ifdef Q_OS_WIN
         if (targetState == StyleState::Elevated) {
             m_tableView->setStyleSheet(Styles::tableViewElevated);
-            m_listView->setStyleSheet(Styles::listViewElevated));
+            m_listView->setStyleSheet(Styles::listViewElevated);
             m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevated);
         } else {
             m_tableView->setStyleSheet(Styles::tableViewLight);

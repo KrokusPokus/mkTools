@@ -74,8 +74,6 @@ private:
     void action_SortAscending();
     void action_SortDescending();
     void action_toggleShowHidden();
-    void action_CompressTarGz();
-    void action_CompressFileList(const QString &archiveExt);
     void action_LaunchRenameTool();
 
     bool showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly);
@@ -148,8 +146,7 @@ private:
     QAction *m_actionNavigateSiblingNext = nullptr;
     QAction *m_actionNavigateClipboardPath = nullptr;
     QAction *m_actionNavigateDuplicate = nullptr;
-    QAction *m_actionCompressTarGz = nullptr;
-    QAction *m_actionCompressZip = nullptr;
+
 
     QTimer *m_timerUpdateIcons = nullptr;
     QTimer *m_scrollToDebounceTimer = nullptr;
@@ -190,7 +187,19 @@ private:
     StyleState m_currentStyleState{StyleState::Uninitialized};
 
 #ifdef Q_OS_WIN
+    QAction *m_actionWinRarOpen = nullptr;
+    QAction *m_actionCompressCBZ = nullptr;
+    QAction *m_actionCompressZIP = nullptr;
+    QAction *m_actionExtractHere = nullptr;
+    QAction *m_actionExtractToSubfolder = nullptr;
+
+    void action_WinRarOpen();
+    void action_WinRarCompress(const QString &archiveExt);
+    void action_WinRarExtract(bool toSubFolder);
     QString getSendToPath();
+
+    QString m_winrarPath = "D:/A/1/WinRAR/WinRAR.exe";
+    QIcon m_winrarIcon;
 #endif
 
 protected:
