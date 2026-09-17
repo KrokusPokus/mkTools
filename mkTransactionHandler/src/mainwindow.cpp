@@ -34,6 +34,7 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
 #endif
     qRegisterMetaType<FailedItem>("FailedItem");
     qRegisterMetaType<QList<FailedItem>>("QList<FailedItem>");
+    qRegisterMetaType<CopyStats>("CopyStats");
 
     m_isFinished = false;
 
@@ -307,7 +308,7 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
         m_speedLabel->setText(tr("%1/s").arg(formatAdaptiveSize(bytesPerSecond)));
 
         // Geschätzte Restzeit (Time Remaining)
-        double secondsLeft = bytesLeft / bytesPerSecond;
+        double secondsLeft = std::min(bytesLeft / bytesPerSecond, 86400.0 * 365);
 
         // Schön formatieren (hh:mm:ss)
         int h = int(secondsLeft) / 3600;
@@ -466,8 +467,12 @@ void MainWindow::onOperationFinished(const CopyStats &stats, const QList<FailedI
             close();
         } else {
             // Das Fenster war noch unsichtbar -> beende gesamte Qt-Applikation
-            connect(m_workerThread, &QThread::finished, qApp, &QCoreApplication::quit);
-            m_workerThread->quit();
+            if (m_workerThread) {
+                connect(m_workerThread, &QThread::finished, qApp, &QCoreApplication::quit);
+                m_workerThread->quit();
+            } else {
+                qApp->quit();
+            }
         }
     }
 }
@@ -509,8 +514,12 @@ void MainWindow::onOperationCanceled(int errorCount, const QList<FailedItem> &fa
             close();
         } else {
             // Das Fenster war noch unsichtbar -> beende gesamte Qt-Applikation
-            connect(m_workerThread, &QThread::finished, qApp, &QCoreApplication::quit);
-            m_workerThread->quit();
+            if (m_workerThread) {
+                connect(m_workerThread, &QThread::finished, qApp, &QCoreApplication::quit);
+                m_workerThread->quit();
+            } else {
+                qApp->quit();
+            }
         }
     }
 }
@@ -599,9 +608,15 @@ void MainWindow::setTaskbarProgress(double progressValue, bool visible) {
     properties["progress"] = progressValue;
     properties["progress-visible"] = visible;
 
-    // Erzeugen des Unity-D-Bus-Signals
+    // 1. Fenster-ID mitsenden, damit KDE Plasma den Fortschritt dem spezifischen Icon zuordnet
+    properties["window-id"] = static_cast<qulonglong>(this->winId());
+
+    // 2. Eindeutigen D-Bus-Objektpfad pro Fenster/Instanz erzeugen
+    QString objectPath = QString("/com/canonical/unity/launcherentry/app_%1")
+                             .arg(this->winId());
+
     QDBusMessage signal = QDBusMessage::createSignal(
-        "/com/canonical/unity/launcherentry/my_app_progress",
+        objectPath,
         "com.canonical.Unity.LauncherEntry",
         "Update"
         );
