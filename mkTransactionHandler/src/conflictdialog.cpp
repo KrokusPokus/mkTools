@@ -123,6 +123,20 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
         gridLayout->addWidget(warningLabel, 2, iCol);
     }
 
+    if (!m_settings.mergeTool.isEmpty()) {
+        if (isDestinationNewer) {
+            iCol++;
+        }
+
+        auto *btnCompare = new QPushButton(tr("Compare..."), this);
+        gridLayout->addWidget(btnCompare, 1, iCol, 2, 1, Qt::AlignCenter);
+        btnCompare->setIcon(QIcon::fromTheme("document-revert"));
+
+        connect(btnCompare, &QPushButton::clicked, this, [this, conflict]() {
+            openCompareTool(conflict.sourcePath, conflict.targetPath);
+        });
+    }
+
     // 1. Pfad-Labels dynamisch über restlichen Spalten spannen
     int totalPathSpan = iCol - pathStartCol + 1;
     gridLayout->addWidget(pathSrcLabel, 0, pathStartCol, 1, totalPathSpan);
@@ -180,6 +194,10 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
         m_result = { ConflictResolution::Skip, true }; accept();
     });
     connect(btnCancel, &QPushButton::clicked, this, &QDialog::reject);
+}
+
+void ConflictDialog::openCompareTool(const QString &pathA, const QString &pathB) {
+    openFileListWithHandler(m_settings.mergeTool, { pathA, pathB});
 }
 
 QString ConflictDialog::getTypeString(const QFileInfo &fileInfo) {

@@ -2,6 +2,7 @@
 #define CONFLICTDIALOG_H
 
 #include "fileoperation.h"
+#include "settingsmanager.h"
 
 #include <QDialog>
 #include <QFileIconProvider>
@@ -86,7 +87,9 @@ private:
     QString formatAdaptiveSize(quint64 bytes);
     QString getTypeString(const QFileInfo &fileInfo);
     QPixmap generateThumbnail(const QFileInfo &fileInfo);
+    void openCompareTool(const QString &pathA, const QString &pathB);
 
+    SettingsManager m_settings;
     ConflictResult m_result{ConflictResolution::Cancel, false};
     QLocale m_locale;
     QFileIconProvider m_iconProvider;

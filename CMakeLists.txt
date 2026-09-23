@@ -62,6 +62,7 @@ endif()
 add_subdirectory(shared)
 
 # 2. Danach die Apps, die darauf zugreifen
+add_subdirectory(mkBatchRename)
 add_subdirectory(mkFileSearch)
 add_subdirectory(mkFolderWidget)
 add_subdirectory(mkLauncher)
@@ -74,6 +75,7 @@ if(TARGET shared)
     qt_add_translations(shared
         SOURCE_TARGETS
             shared
+            mkBatchRename
             mkFileSearch
             mkFolderWidget
             mkLauncher

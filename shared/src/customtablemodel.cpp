@@ -736,6 +736,32 @@ QPixmap CustomTableModel::generateDummyThumb(const QString &dummyName) const {
     return canvas;
 }
 
+void CustomTableModel::populateModel_mkBatchRename(const QString &dirPath) {
+    m_abortSearch.store(false);
+    std::vector<CustomFileInfo> newFiles;
+    m_currentDirectoryPath = dirPath;
+
+#ifdef Q_OS_WIN
+    if (m_currentDirectoryPath == "drives://") {
+    }
+    else
+#endif
+    {
+        QDir::Filters filters = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
+        QDirIterator it(dirPath, filters, QDirIterator::NoIteratorFlags);
+        while (it.hasNext()) {
+            it.next();
+            CustomFileInfo info = createCustomFileInfo(it.fileInfo());
+
+            newFiles.push_back(info);
+        }
+    }
+
+    beginResetModel();
+    m_files = std::move(newFiles);
+    endResetModel();
+}
+
 void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, const QString &searchStringFilename, const QString &searchStringContent, bool bRegExFilename, bool bRegExContent, bool bFilenameCaseSensitive, bool bContentCaseSensitive, Qt::CheckState cbDirState, const QSet<QString> &FileExtTextSet) {
     m_abortSearch.store(false);
     std::vector<CustomFileInfo> newFiles;
