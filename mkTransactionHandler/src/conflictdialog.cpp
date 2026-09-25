@@ -53,10 +53,10 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     lblSrcTime->setAlignment(Qt::AlignCenter);
 
     auto *lblSrcSizeBytes = new QLabel(tr("%1 Bytes").arg(m_locale.toString(srcInfo.size())), this);
-    lblSrcSizeBytes->setAlignment(Qt::AlignRight);
+    lblSrcSizeBytes->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
     auto *lblSrcType  = new QLabel(srcType, this);
-    lblSrcType->setAlignment(Qt::AlignLeft);
+    lblSrcType->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
     // Line 3: Destination Data
     auto *lblDstTitle = new QLabel(QString("<b>%1</b>").arg(tr("Target")), this);
@@ -69,10 +69,10 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     lblDstTime->setUnderlineVisible(isDestinationNewer);
 
     auto *lblDstSizeBytes = new QLabel(tr("%1 Bytes").arg(m_locale.toString(dstInfo.size())), this);
-    lblDstSizeBytes->setAlignment(Qt::AlignRight);
+    lblDstSizeBytes->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
 
     auto *lblDstType  = new QLabel(dstType, this);
-    lblDstType->setAlignment(Qt::AlignLeft);
+    lblDstType->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
     // Line 4: Destination Header
     QLabel *lblDstIcon = new QLabel(this);
@@ -103,11 +103,11 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
 
     if (srcInfo.size() >= 1024 || dstInfo.size() >= 1024) {
         auto *lblSrcSizeShort = new QLabel(formatAdaptiveSize(srcInfo.size()), this);
-        lblSrcSizeShort->setAlignment(Qt::AlignRight);
+        lblSrcSizeShort->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         gridLayout->addWidget(lblSrcSizeShort, 1, iCol);
 
         auto *lblDstSizeShort = new QLabel(formatAdaptiveSize(dstInfo.size()), this);
-        lblDstSizeShort->setAlignment(Qt::AlignRight);
+        lblDstSizeShort->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         gridLayout->addWidget(lblDstSizeShort, 2, iCol);
 
         iCol++;
