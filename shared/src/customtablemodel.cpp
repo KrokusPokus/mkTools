@@ -38,8 +38,9 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
 
     if (role == Qt::DisplayRole) {
         switch (col) {
-            case 0: return file.displayName;
-            case 1: {
+            case eColName: return file.displayName;
+            case eColNewName: return file.newName;
+            case eColPath: {
                     if (file.anchorPathLength > 0) {
                         if (file.anchorPathLength <= file.path.length()) {
                             return QDir::toNativeSeparators(file.path.sliced(file.anchorPathLength));
@@ -50,14 +51,14 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
 			        }
             		return QDir::toNativeSeparators(file.path);
             	}
-            case 2: {
+            case eColSize: {
                     if (file.isDir && m_currentDirectoryPath != "drives://") {
                         return QVariant();
                     }
                     return formatAdaptiveSize(file.size);
                 }
-            case 3: return file.date.toString("yyyy-MM-dd  HH:mm:ss");
-            case 4: {
+            case eColDate: return file.date.toString("yyyy-MM-dd  HH:mm:ss");
+            case eColType: {
                     if (file.isSymbolicLink) {
                         if (file.type.isEmpty()) {
                             return "SymLink";
@@ -67,28 +68,29 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
                     }
                 }
                 return file.type;
-            case 5: return file.nameMatchQuality;
-            case 6: return file.contentMatchCount;
-            case 7: return file.crc;
+            case eColQuality: return file.nameMatchQuality;
+            case eColCount: return file.contentMatchCount;
+            case eColCRC: return file.crc;
             default: return QVariant();
         }
     }
     else if (role == Qt::EditRole) {
         switch (col) {
-            case 0: return file.name;
-            case 1: return file.path;
-            case 2: return file.size;
-            case 3: return file.date;
-            case 4: return file.type;
-            case 5: return file.nameMatchQuality;
-            case 6: return file.contentMatchCount;
-            case 7: return file.crc;
+            case eColName: return file.name;
+            case eColNewName: return file.name;
+            case eColPath: return file.path;
+            case eColSize: return file.size;
+            case eColDate: return file.date;
+            case eColType: return file.type;
+            case eColQuality: return file.nameMatchQuality;
+            case eColCount: return file.contentMatchCount;
+            case eColCRC: return file.crc;
             default:
                 return data(index, Qt::DisplayRole);
         }
     }
     else if (role == Qt::DecorationRole) {
-        if (col != 0) return QVariant(); // Icons nur in der Namensspalte anzeigen
+        if (col != eColName) return QVariant(); // Icons nur in der Namensspalte anzeigen
 
         QString absolutePath = file.filePath;
 #ifdef Q_OS_WIN
@@ -146,18 +148,18 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
     }
     else if (role == Qt::TextAlignmentRole) {
         switch (col) {
-        case 0:
-        case 1:
-            return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
-        case 2:
+        case eColSize:
             return QVariant(Qt::AlignRight | Qt::AlignVCenter);
-        case 3:
-        case 4:
-            return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
-        case 5:
-        case 6:
-        case 7:
+        case eColQuality:
+        case eColCount:
+        case eColCRC:
             return QVariant(Qt::AlignCenter | Qt::AlignVCenter);
+        case eColName:
+        case eColNewName:
+        case eColPath:
+        case eColDate:
+        case eColType:
+            return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
         default:
             return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
         }
@@ -204,21 +206,23 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
 QVariant CustomTableModel::headerData(int section, Qt::Orientation orientation, int role) const {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole) {
         switch (section) {
-        case 0:
+        case eColName:
             return tr("Name");
-        case 1:
+        case eColNewName:
+            return tr("New Name");
+        case eColPath:
             return tr("Path");
-        case 2:
+        case eColSize:
             return tr("Size");
-        case 3:
+        case eColDate:
             return tr("Changed");
-        case 4:
+        case eColType:
             return tr("Type");
-        case 5:
+        case eColQuality:
             return tr("Rating");
-        case 6:
+        case eColCount:
             return tr("Count");
-        case 7:
+        case eColCRC:
             return tr("CRC");
         default:
             return QVariant();
@@ -227,18 +231,18 @@ QVariant CustomTableModel::headerData(int section, Qt::Orientation orientation, 
 
     if (orientation == Qt::Horizontal && role == Qt::TextAlignmentRole) {
         switch (section) {
-        case 0:
-        case 1:
-            return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
-        case 2:
+        case eColSize:
             return QVariant(Qt::AlignRight | Qt::AlignVCenter);
-        case 3:
-        case 4:
-            return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
-        case 5:
-        case 6:
-        case 7:
+        case eColQuality:
+        case eColCount:
+        case eColCRC:
             return QVariant(Qt::AlignCenter | Qt::AlignVCenter);
+        case eColName:
+        case eColNewName:
+        case eColPath:
+        case eColDate:
+        case eColType:
+            return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
         default:
             return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
         }
@@ -279,7 +283,7 @@ Qt::ItemFlags CustomTableModel::flags(const QModelIndex &index) const {
 }
 
 bool CustomTableModel::setData(const QModelIndex &index, const QVariant &value, int role) {
-    if (!index.isValid() || role != Qt::EditRole || index.column() != 0) {
+    if (!index.isValid() || role != Qt::EditRole || index.column() != eColName) {
         return false;
     }
 
@@ -492,6 +496,98 @@ void CustomTableModel::clearCutMarkers() {
             emit dataChanged(startIdx, endIdx, {CustomTableModel::IsCutRole, Qt::DecorationRole});
         }
     }
+}
+
+void CustomTableModel::setRenameRules(const RenameRules &rules) {
+    /*
+    if (rules.rgx != m_rules.rgx) {
+        // Only recompile QRegularExpression when RegEx rules specifically change!
+        m_RegexRulesCompiled = QRegularExpression(rules.rgx.match);
+    }
+    */
+
+    m_rules = rules;
+
+    if (rowCount() == 0)
+        return;
+
+    for (int i = 0; i < static_cast<int>(m_files.size()); ++i) {
+        m_files[i].newName = computeNewName(m_files[i]);
+    }
+
+    QModelIndex startIdx = this->index(0, eColNewName);
+    QModelIndex endIdx = this->index(rowCount() - 1, eColNewName);
+
+    emit dataChanged(startIdx, endIdx, {Qt::DisplayRole});
+}
+
+QString CustomTableModel::computeNewName(const CustomFileInfo &item) const {
+    QString result = item.name;
+
+    result = applyRegExRule(    result, m_rules.rgx); // RegEx (1)
+    result = applyFileNameRule( result, m_rules.fln); // File (2)
+    result = applyReplaceRule(  result, m_rules.rpl); // Repl. (3)
+    result = applyCaseRule(     result, m_rules.cas); // Case (4)
+    result = applyRemoveRule(   result, m_rules.rmv); // Remove (5)
+    result = applyMoveCopyRule( result, m_rules.mcp); // Move/Copy (6)
+    result = applyAddRule(      result, m_rules.add); // Add (7)
+    result = applyAutoDateRule( result, m_rules.ada); // Auto Date (8)
+    result = applyAppendFolderNameRule(result,  m_rules.afn); // Append Folder Name (9)
+    result = applyNumberingRule(result, m_rules.num); // Numbering (10)
+    result = applyExtensionRule(result, m_rules.ext); // Extension (11)
+
+    return result;
+}
+
+QString CustomTableModel::applyRegExRule(const QString &input, const RegExRule &rule) const {
+    return input;
+}
+
+QString CustomTableModel::applyFileNameRule(const QString &input, const FileNameRule &rule) const {
+    return input;
+}
+
+QString CustomTableModel::applyReplaceRule(const QString &input, const ReplaceRule &rule) const {
+    if (!rule.enabled || rule.match.isEmpty()) {
+        return input;
+    }
+
+    QString newName = input;
+    const Qt::CaseSensitivity cs = rule.matchCase ? Qt::CaseSensitive : Qt::CaseInsensitive;
+    newName.replace(rule.match, rule.replace, cs);
+    return newName;
+}
+
+QString CustomTableModel::applyCaseRule(const QString &input, const CaseRule &rule) const {
+    return input;
+}
+
+QString CustomTableModel::applyRemoveRule(const QString &input, const RemoveRule &rule) const {
+    return input;
+}
+
+QString CustomTableModel::applyMoveCopyRule(const QString &input, const MoveCopyRule &rule) const {
+    return input;
+}
+
+QString CustomTableModel::applyAddRule(const QString &input, const AddRule &rule) const {
+    return input;
+}
+
+QString CustomTableModel::applyAutoDateRule(const QString &input, const AutoDateRule &rule) const {
+    return input;
+}
+
+QString CustomTableModel::applyAppendFolderNameRule(const QString &input, const AppendFolderNameRule &rule) const {
+    return input;
+}
+
+QString CustomTableModel::applyNumberingRule(const QString &input, const NumberingRule &rule) const {
+    return input;
+}
+
+QString CustomTableModel::applyExtensionRule(const QString &input, const ExtensionRule &rule) const {
+    return input;
 }
 
 bool CustomTableModel::isDirectory(int row) const {
@@ -741,20 +837,19 @@ void CustomTableModel::populateModel_mkBatchRename(const QString &dirPath) {
     std::vector<CustomFileInfo> newFiles;
     m_currentDirectoryPath = dirPath;
 
-#ifdef Q_OS_WIN
-    if (m_currentDirectoryPath == "drives://") {
+    int iAnchorPathLength = dirPath.length();
+    if (!QDir::toNativeSeparators(dirPath).endsWith(QDir::separator())) {
+        iAnchorPathLength++;
     }
-    else
-#endif
-    {
-        QDir::Filters filters = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
-        QDirIterator it(dirPath, filters, QDirIterator::NoIteratorFlags);
-        while (it.hasNext()) {
-            it.next();
-            CustomFileInfo info = createCustomFileInfo(it.fileInfo());
 
-            newFiles.push_back(info);
-        }
+    QDir::Filters filters = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
+    QDirIterator it(dirPath, filters, QDirIterator::NoIteratorFlags);
+    while (it.hasNext()) {
+        it.next();
+        CustomFileInfo info = createCustomFileInfo(it.fileInfo(), iAnchorPathLength);
+        info.newName = computeNewName(info);
+
+        newFiles.push_back(info);
     }
 
     beginResetModel();

@@ -26,22 +26,23 @@ bool FileSortProxyModel::lessThan(const QModelIndex &source_left, const QModelIn
     QVariant rightData = sourceModel()->data(source_right, Qt::EditRole);
 
     switch (source_left.column()) {
-    case 0: // Name
-    case 1: // Pfad
-        return m_collator.compare(leftData.toString(), rightData.toString()) < 0;
-    case 2: // Größe
-        return leftData.toLongLong() < rightData.toLongLong();
-    case 3: // Datum
-        return leftData.toDateTime() < rightData.toDateTime();
-    case 4: // Typ
-        return m_collator.compare(leftData.toString(), rightData.toString()) < 0;
-    case 5: // Rating (Match-Qualität)
-    case 6: // Count (Anzahl der Treffer)
-        return leftData.toInt() < rightData.toInt();
-    case 7: // CRC
-        return m_collator.compare(leftData.toString(), rightData.toString()) < 0;
-    default:
-        return QSortFilterProxyModel::lessThan(source_left, source_right);
+        case CustomTableModel::eColName:
+        case CustomTableModel::eColNewName:
+        case CustomTableModel::eColPath:
+            return m_collator.compare(leftData.toString(), rightData.toString()) < 0;
+        case CustomTableModel::eColSize:
+            return leftData.toLongLong() < rightData.toLongLong();
+        case CustomTableModel::eColDate:
+            return leftData.toDateTime() < rightData.toDateTime();
+        case CustomTableModel::eColType:
+            return m_collator.compare(leftData.toString(), rightData.toString()) < 0;
+        case CustomTableModel::eColQuality:
+        case CustomTableModel::eColCount:
+            return leftData.toInt() < rightData.toInt();
+        case CustomTableModel::eColCRC:
+            return m_collator.compare(leftData.toString(), rightData.toString()) < 0;
+        default:
+            return QSortFilterProxyModel::lessThan(source_left, source_right);
     }
 }
 

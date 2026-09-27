@@ -156,7 +156,7 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
 
     // --------------------------------------------------------------------
 
-    m_abstractModel = new CustomTableModel(&m_settings, 8, this);   // mkLauncher uses 8 rows: Name, Path, Size, Date, Type, Rating, Count, CRC
+    m_abstractModel = new CustomTableModel(&m_settings, 9, this);   // mkFileSearch uses 9 columns: Name, NewName (hidden), Path, Size, Date, Type, Rating, Count, CRC
 
     // --------------------------------------------------------------------
 
@@ -184,6 +184,7 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_tableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_tableView->setAlternatingRowColors(m_settings.alternatingRowColors);
     m_tableView->setShowGrid(m_settings.showGrid);
+    m_tableView->setColumnHidden(CustomTableModel::eColNewName, true);
     m_tableView->setColumnHidden(CustomTableModel::eColCount, true);
     m_tableView->setColumnHidden(CustomTableModel::eColCRC, true);
 
@@ -956,10 +957,10 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
 
         int currentColumn = m_proxyModel->sortColumn();
 
-        if      (currentColumn == 0) m_actionSortByName->setChecked(true);
-        else if (currentColumn == 1) m_actionSortBySize->setChecked(true);
-        else if (currentColumn == 2) m_actionSortByDate->setChecked(true);
-        else if (currentColumn == 3) m_actionSortByType->setChecked(true);
+        if      (currentColumn == CustomTableModel::eColName) m_actionSortByName->setChecked(true);
+        else if (currentColumn == CustomTableModel::eColSize) m_actionSortBySize->setChecked(true);
+        else if (currentColumn == CustomTableModel::eColDate) m_actionSortByDate->setChecked(true);
+        else if (currentColumn == CustomTableModel::eColType) m_actionSortByType->setChecked(true);
 
         Qt::SortOrder currentOrder = m_proxyModel->sortOrder();
         m_actionSortAscending->setChecked(currentOrder == Qt::AscendingOrder);
@@ -1086,7 +1087,7 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
             // 1. Alle eindeutigen MIME-Typen aus den markierten Dateien ermitteln
             QMimeDatabase db;
             QSet<QString> uniqueMimeTypes;
-            for (const QString &path : selectedPaths) {
+            for (const QString &path : std::as_const(selectedPaths)) {
                 uniqueMimeTypes.insert(db.mimeTypeForFile(path).name());
             }
 

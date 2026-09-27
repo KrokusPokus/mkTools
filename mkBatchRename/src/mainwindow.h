@@ -12,6 +12,7 @@
 #include <QComboBox>
 #include <QElapsedTimer>
 #include <QFileIconProvider>
+#include <QGroupBox>
 #include <QItemSelectionModel>
 #include <QLineEdit>
 #include <QMainWindow>
@@ -35,18 +36,15 @@ private slots:
     void onHorizontalBarScrollChange();
     void onListItemDoubleClicked(const QModelIndex &index);
     void onListViewHeaderClicked();
-    void onSearchProgress(uint itemsFound, uint nameMatched, uint contentMatched);
-    void onSearchFinished(uint iItemsFound, uint iNameMatched, uint iContentMatched, bool bSearchInterrupted);
+    void showFolder(QString directoryPath);
     void onTableCurrentChanged(const QModelIndex &current, const QModelIndex &previous);
     void onTimedUpdateIcons();
     void onToggleListViewHeader();
     void onVerticalBarScrollChange();
     void setMainViewMode(ViewMode index);
 
-    void onCheckboxClickedCRC(Qt::CheckState state);
     void onCheckboxClickedRegExContent(Qt::CheckState state);
     void onCheckboxClickedRegExName(Qt::CheckState state);
-    void onTimedCalcCRC();
 
 private:
     QString getActiveViewCurrentItemPath();
@@ -77,7 +75,6 @@ private:
     void action_SortDescending();
 
     bool showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly);
-    void startSearch();
     void duplicateInstance();
     void elevateInstance();
     void loadMimeCache();
@@ -97,6 +94,8 @@ private:
     void updateWidgetStyles();
     QPixmap generateThumbnailIcon(const QFileInfo &fileInfo);
     static QImage generateThumbnailAsync(const QFileInfo &fileInfo);
+    void setupRenameRuleSignals();
+    void onRenameRulesChanged();
 
     CustomTableModel *m_abstractModel = nullptr;
     QItemSelectionModel *m_selectionModel = nullptr;
@@ -111,16 +110,28 @@ private:
     CustomListView *m_thumbnailView = nullptr;
     QStackedWidget *m_viewStack = nullptr;
 
+    QGroupBox *m_groupBox1 = nullptr;
     QLineEdit *m_groupBox1_LineEdit1 = nullptr;
     QLineEdit *m_groupBox1_LineEdit2 = nullptr;
     QCheckBox *m_groupBox1_CheckBox = nullptr;
+    QGroupBox *m_groupBox2 = nullptr;
     QComboBox *m_groupBox2_ComboBox = nullptr;
     QLineEdit *m_groupBox2_LineEdit = nullptr;
+    QGroupBox *m_groupBox3 = nullptr;
     QLineEdit *m_groupBox3_LineEdit1 = nullptr;
     QLineEdit *m_groupBox3_LineEdit2 = nullptr;
     QCheckBox *m_groupBox3_CheckBox = nullptr;
+    QGroupBox *m_groupBox4 = nullptr;
     QComboBox *m_groupBox4_ComboBox = nullptr;
     QLineEdit *m_groupBox4_LineEdit = nullptr;
+    QGroupBox *m_groupBox5 = nullptr;
+    QGroupBox *m_groupBox6 = nullptr;
+    QGroupBox *m_groupBox7 = nullptr;
+    QGroupBox *m_groupBox8 = nullptr;
+    QGroupBox *m_groupBox9 = nullptr;
+    QGroupBox *m_groupBox10 = nullptr;
+    QGroupBox *m_groupBox11 = nullptr;
+    QGroupBox *m_groupBox12 = nullptr;
 
 
     QAction *m_actionListViewOpenFiles = nullptr;

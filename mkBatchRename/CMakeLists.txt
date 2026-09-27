@@ -7,6 +7,7 @@ qt_add_executable(mkBatchRename
     src/mainwindow.h src/mainwindow.cpp
 
     res/resources.qrc
+
 )
 
 target_include_directories(mkBatchRename PRIVATE src)

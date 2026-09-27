@@ -99,7 +99,7 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
 
     // --------------------------------------------------------------------
 
-    m_abstractModel = new CustomTableModel(&m_settings, 5, this);   // mkLauncher uses 5 rows: Name, Path (hidden), Size, Changed, Type [unused: Rating, Count, CRC]
+    m_abstractModel = new CustomTableModel(&m_settings, 6, this);   // mkFolderWidget uses 6 columns: Name, NewName (hidden), Path (hidden), Size, Changed, Type [unused: Rating, Count, CRC]
 
     // --------------------------------------------------------------------
 
@@ -127,8 +127,8 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     m_tableView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_tableView->setAlternatingRowColors(m_settings.alternatingRowColors);
     m_tableView->setShowGrid(m_settings.showGrid);
+    m_tableView->setColumnHidden(CustomTableModel::eColNewName, true);
     m_tableView->setColumnHidden(CustomTableModel::eColPath, true);
-    //m_tableView->setColumnHidden(CustomTableModel::eColCRC, true);
 
     m_tableView->verticalHeader()->setVisible(false);
     m_tableView->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
@@ -952,10 +952,10 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
 
         int currentColumn = m_proxyModel->sortColumn();
 
-        if      (currentColumn == 0) m_actionSortByName->setChecked(true);
-        else if (currentColumn == 1) m_actionSortBySize->setChecked(true);
-        else if (currentColumn == 2) m_actionSortByDate->setChecked(true);
-        else if (currentColumn == 3) m_actionSortByType->setChecked(true);
+        if      (currentColumn == CustomTableModel::eColName) m_actionSortByName->setChecked(true);
+        else if (currentColumn == CustomTableModel::eColSize) m_actionSortBySize->setChecked(true);
+        else if (currentColumn == CustomTableModel::eColDate) m_actionSortByDate->setChecked(true);
+        else if (currentColumn == CustomTableModel::eColType) m_actionSortByType->setChecked(true);
 
         Qt::SortOrder currentOrder = m_proxyModel->sortOrder();
         m_actionSortAscending->setChecked(currentOrder == Qt::AscendingOrder);
@@ -2874,6 +2874,11 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
             if (keyEvent->key() == Qt::Key_F) {
                 if (!m_currentDirectory.isEmpty() && m_currentDirectory != "drives://" && !m_settings.searchTool.isEmpty()) {
                     openFileListWithHandler(m_settings.searchTool, { m_currentDirectory });
+                }
+                return true;
+            } else if (keyEvent->key() == Qt::Key_R) {
+                if (!m_currentDirectory.isEmpty() && m_currentDirectory != "drives://" && !m_settings.searchTool.isEmpty()) {
+                    openFileListWithHandler("mkBatchRename", { m_currentDirectory });
                 }
                 return true;
             }

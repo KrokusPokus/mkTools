@@ -149,7 +149,7 @@ public:
             painter->setOpacity(0.50);
         }
 
-        if (index.column() == 1) {
+        if (index.column() == CustomTableModel::eColPath) {
             QStyle *style = opt.widget ? opt.widget->style() : QApplication::style();
 
             QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &opt, opt.widget);
@@ -207,7 +207,7 @@ protected:
     void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override {
         QStyledItemDelegate::initStyleOption(option, index);
 
-        if (index.column() == 1) {
+        if (index.column() == CustomTableModel::eColPath) {
             option->textElideMode = Qt::ElideMiddle;
         }
 
