@@ -30,7 +30,6 @@
 #include <QMimeType>
 #include <QObject>
 #include <QProcess>
-#include <QPushButton>
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QSettings>
@@ -81,6 +80,7 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
 
     // --------------------------------------------------------------------
 
+    m_settings.showFileExtensions = true; // mkBatchRename always shows the file extension
     m_abstractModel = new CustomTableModel(&m_settings, 6, this);   // mkBatchRename uses 6 columns: Name, NewName, Path, Size, Changed, Type [unused: Rating, Count, CRC]
 
     // --------------------------------------------------------------------
@@ -199,29 +199,6 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_viewStack->setCurrentIndex(1);
     m_abstractModel->setModelViewMode(ViewMode::Detail);
 
-    using namespace Qt::StringLiterals;
-    const auto groupBoxStyleSheet = uR"(
-        QGroupBox {
-            border: 1px solid #565656;
-            border-radius: 5px;
-            margin-top: 8px;
-            padding: 10px 0px 0px 0px;
-        }
-
-        QGroupBox::title {
-            subcontrol-origin: margin;
-            subcontrol-position: top left;
-            left: 10px;
-            padding: 0 4px;
-            background-color: palette(window);
-        }
-
-        QGroupBox::indicator {
-            width: 20px;
-            height: 20px;
-        }
-    )"_s;
-
     // --------------------------------------------------------------------
     // --------------------------------------------------------------------
 
@@ -238,22 +215,16 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     groupBox1Layout->addWidget(m_groupBox1_LineEdit2);
     groupBox1Layout->addWidget(m_groupBox1_CheckBox);
     m_groupBox1->setLayout(groupBox1Layout);
-    m_groupBox1->setStyleSheet(groupBoxStyleSheet);
 
-
-    m_groupBox2 = new QGroupBox("File (2)", this);
+    m_groupBox2 = new QGroupBox("Filename (2)", this);
     m_groupBox2->setCheckable(true);
     m_groupBox2_ComboBox = new QComboBox();
-    m_groupBox2_ComboBox->addItems({"Keep", "Remove", "Fixed", "Reverse"});
+    m_groupBox2_ComboBox->addItems({"Same", "Lower", "Upper", "Title", "Sentence", "Fixed", "Remove"});
     m_groupBox2_LineEdit = new QLineEdit();
-    QHBoxLayout *groupBox2Layout1 = new QHBoxLayout;
-    groupBox2Layout1->addWidget(new QLabel(tr("Name")));
-    groupBox2Layout1->addWidget(m_groupBox2_ComboBox);
-    QVBoxLayout *groupBox2Layout = new QVBoxLayout;
-    groupBox2Layout->addLayout(groupBox2Layout1);
+    QHBoxLayout *groupBox2Layout = new QHBoxLayout;
+    groupBox2Layout->addWidget(m_groupBox2_ComboBox);
     groupBox2Layout->addWidget(m_groupBox2_LineEdit);
     m_groupBox2->setLayout(groupBox2Layout);
-    m_groupBox2->setStyleSheet(groupBoxStyleSheet);
 
     m_groupBox3 = new QGroupBox("Repl. (3)", this);
     m_groupBox3->setCheckable(true);
@@ -268,133 +239,190 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     groupBox3Layout->addWidget(m_groupBox3_LineEdit2);
     groupBox3Layout->addWidget(m_groupBox3_CheckBox);
     m_groupBox3->setLayout(groupBox3Layout);
-    m_groupBox3->setStyleSheet(groupBoxStyleSheet);
-
-    m_groupBox4 = new QGroupBox("Case (4)", this);
-    m_groupBox4->setCheckable(true);
-    m_groupBox4_ComboBox = new QComboBox();
-    m_groupBox4_ComboBox->addItems({"Same", "Lower", "Upper", "Title", "Sentence"});
-    m_groupBox4_LineEdit = new QLineEdit();
-    QHBoxLayout *groupBox4Layout1 = new QHBoxLayout;
-    groupBox4Layout1->addWidget(new QLabel(tr("Excep.")));
-    groupBox4Layout1->addWidget(m_groupBox4_LineEdit);
-
-    QVBoxLayout *groupBox4Layout = new QVBoxLayout;
-    groupBox4Layout->addWidget(m_groupBox4_ComboBox);
-    groupBox4Layout->addLayout(groupBox4Layout1);
-    m_groupBox4->setLayout(groupBox4Layout);
-    m_groupBox4->setStyleSheet(groupBoxStyleSheet);
 
     m_groupBox5 = new QGroupBox("Remove (5)", this);
     m_groupBox5->setCheckable(true);
-    QVBoxLayout *groupBox5Layout = new QVBoxLayout;
-    m_groupBox5->setLayout(groupBox5Layout);
-    m_groupBox5->setStyleSheet(groupBoxStyleSheet);
+    QLabel *groupBox5_Label1 = new QLabel(tr("First n"));
+    m_groupBox5_SpinBox1 = new QSpinBox();
+    m_groupBox5_SpinBox1->setRange(0, 255);
+    QLabel *groupBox5_Label2 = new QLabel(tr("Last n"));
+    m_groupBox5_SpinBox2 = new QSpinBox();
+    m_groupBox5_SpinBox2->setRange(0, 255);
+    QLabel *groupBox5_Label3 = new QLabel(tr("From"));
+    m_groupBox5_SpinBox3 = new QSpinBox();
+    m_groupBox5_SpinBox3->setRange(0, 255);
+    QLabel *groupBox5_Label4 = new QLabel(tr("to"));
+    m_groupBox5_SpinBox4 = new QSpinBox();
+    m_groupBox5_SpinBox4->setRange(0, 255);
+    QGridLayout *groupBox5_gridLayout = new QGridLayout();
+    groupBox5_gridLayout->addWidget(groupBox5_Label1,   0, 0, 1, 1, Qt::AlignCenter);
+    groupBox5_gridLayout->addWidget(m_groupBox5_SpinBox1, 0, 1);
+    groupBox5_gridLayout->addWidget(groupBox5_Label2,   0, 2, 1, 1, Qt::AlignCenter);
+    groupBox5_gridLayout->addWidget(m_groupBox5_SpinBox2, 0, 3);
+    groupBox5_gridLayout->addWidget(groupBox5_Label3,   1, 0, 1, 1, Qt::AlignCenter);
+    groupBox5_gridLayout->addWidget(m_groupBox5_SpinBox3, 1, 1);
+    groupBox5_gridLayout->addWidget(groupBox5_Label4,   1, 2, 1, 1, Qt::AlignCenter);
+    groupBox5_gridLayout->addWidget(m_groupBox5_SpinBox4, 1, 3);
+    m_groupBox5->setLayout(groupBox5_gridLayout);
 
     m_groupBox6 = new QGroupBox("Move/Copy (6)", this);
     m_groupBox6->setCheckable(true);
-    QVBoxLayout *groupBox6Layout = new QVBoxLayout;
+    m_groupBox6_ComboBox1 = new QComboBox();
+    m_groupBox6_ComboBox1->addItems({"None", "Copy first n", "Copy last n", "Move first n", "Move last n"});
+    m_groupBox6_SpinBox1 = new QSpinBox();
+    m_groupBox6_SpinBox1->setRange(0, 255);
+    m_groupBox6_ComboBox2 = new QComboBox();
+    m_groupBox6_ComboBox2->addItems({"None", "To start", "To end", "To pos."});
+    m_groupBox6_SpinBox2 = new QSpinBox();
+    m_groupBox6_SpinBox2->setRange(0, 255);
+    m_groupBox6_LineEdit = new QLineEdit();
+    QHBoxLayout *groupBox6Layout = new QHBoxLayout;
+    groupBox6Layout->addWidget(m_groupBox6_ComboBox1);
+    groupBox6Layout->addWidget(m_groupBox6_SpinBox1);
+    groupBox6Layout->addWidget(m_groupBox6_ComboBox2);
+    groupBox6Layout->addWidget(m_groupBox6_SpinBox2);
+    groupBox6Layout->addWidget(m_groupBox6_LineEdit);
     m_groupBox6->setLayout(groupBox6Layout);
-    m_groupBox6->setStyleSheet(groupBoxStyleSheet);
 
     m_groupBox7 = new QGroupBox("Add (7)", this);
     m_groupBox7->setCheckable(true);
-    QVBoxLayout *groupBox7Layout = new QVBoxLayout;
-    m_groupBox7->setLayout(groupBox7Layout);
-    m_groupBox7->setStyleSheet(groupBoxStyleSheet);
+    QLabel *groupBox7_Label1 = new QLabel(tr("Prefix"));
+    m_groupBox7_LineEdit1 = new QLineEdit();
+    QLabel *groupBox7_Label2 = new QLabel(tr("Insert"));
+    m_groupBox7_LineEdit2 = new QLineEdit();
+    QLabel *groupBox7_Label3 = new QLabel(tr("at pos."));
+    m_groupBox7_SpinBox = new QSpinBox();
+    m_groupBox7_SpinBox->setRange(0, 255);
+    QLabel *groupBox7_Label4 = new QLabel(tr("Suffix"));
+    m_groupBox7_LineEdit3 = new QLineEdit();
+    QGridLayout *m_groupBox7GridLayout = new QGridLayout();
+    m_groupBox7GridLayout->addWidget(groupBox7_Label1, 0, 0);
+    m_groupBox7GridLayout->addWidget(m_groupBox7_LineEdit1, 0, 1, 1, 3);
+    m_groupBox7GridLayout->addWidget(groupBox7_Label2, 1, 0);
+    m_groupBox7GridLayout->addWidget(m_groupBox7_LineEdit2, 1, 1);
+    m_groupBox7GridLayout->addWidget(groupBox7_Label3, 1, 2);
+    m_groupBox7GridLayout->addWidget(m_groupBox7_SpinBox, 1, 3);
+    m_groupBox7GridLayout->addWidget(groupBox7_Label4, 2, 0);
+    m_groupBox7GridLayout->addWidget(m_groupBox7_LineEdit3, 2, 1, 1, 3);
+    m_groupBox7->setLayout(m_groupBox7GridLayout);
 
+    /*
     m_groupBox8 = new QGroupBox("Auto Date (8)", this);
     m_groupBox8->setCheckable(true);
     QVBoxLayout *groupBox8Layout = new QVBoxLayout;
     m_groupBox8->setLayout(groupBox8Layout);
-    m_groupBox8->setStyleSheet(groupBoxStyleSheet);
+    */
 
     m_groupBox9 = new QGroupBox("Append Folder Name (9)", this);
     m_groupBox9->setCheckable(true);
-    QVBoxLayout *groupBox9Layout = new QVBoxLayout;
+    m_groupBox9_ComboBox = new QComboBox();
+    m_groupBox9_ComboBox->addItems({"None", "Prefix", "Suffix"});
+    QLabel *groupBox9_Label1 = new QLabel(tr("Sep."));
+    m_groupBox9_LineEdit = new QLineEdit();
+    QLabel *groupBox9_Label2 = new QLabel(tr("Levels"));
+    m_groupBox9_SpinBox = new QSpinBox();
+    m_groupBox9_SpinBox->setRange(0, 255);
+    QHBoxLayout *groupBox9Layout = new QHBoxLayout;
+    groupBox9Layout->addWidget(m_groupBox9_ComboBox);
+    groupBox9Layout->addWidget(groupBox9_Label1);
+    groupBox9Layout->addWidget(m_groupBox9_LineEdit);
+    groupBox9Layout->addWidget(groupBox9_Label2);
+    groupBox9Layout->addWidget(m_groupBox9_SpinBox);
     m_groupBox9->setLayout(groupBox9Layout);
-    m_groupBox9->setStyleSheet(groupBoxStyleSheet);
 
     m_groupBox10 = new QGroupBox("Numbering (10)", this);
     m_groupBox10->setCheckable(true);
+    m_groupBox10_CheckBox1 = new QCheckBox("Add lead");
+    m_groupBox10_LineEdit = new QLineEdit();
+    m_groupBox10_LineEdit->setMaxLength(1);
+    m_groupBox10_LineEdit->setFixedWidth(24);
+    QLabel *groupBox10_Label1 = new QLabel(tr("Digits:"));
+    m_groupBox10_SpinBox1 = new QSpinBox();
+    m_groupBox10_SpinBox1->setRange(0, 99);
+    m_groupBox10_CheckBox2 = new QCheckBox("New");
+    QLabel *groupBox10_Label2 = new QLabel(tr("Start:"));
+    m_groupBox10_SpinBox2 = new QSpinBox();
+    m_groupBox10_SpinBox2->setRange(0, 99);
+    QLabel *groupBox10_Label3 = new QLabel(tr("Step:"));
+    m_groupBox10_SpinBox3 = new QSpinBox();
+    m_groupBox10_SpinBox3->setRange(0, 99);
+    QHBoxLayout *groupBox10Layout1 = new QHBoxLayout;
+    groupBox10Layout1->addWidget(m_groupBox10_CheckBox1);
+    groupBox10Layout1->addWidget(m_groupBox10_LineEdit);
+    groupBox10Layout1->addWidget(groupBox10_Label1);
+    groupBox10Layout1->addWidget(m_groupBox10_SpinBox1);
+    groupBox10Layout1->addStretch();
+    QHBoxLayout *groupBox10Layout2 = new QHBoxLayout;
+    groupBox10Layout2->addWidget(m_groupBox10_CheckBox2);
+    groupBox10Layout2->addSpacing(20);
+    groupBox10Layout2->addWidget(groupBox10_Label2);
+    groupBox10Layout2->addWidget(m_groupBox10_SpinBox2);
+    groupBox10Layout2->addWidget(groupBox10_Label3);
+    groupBox10Layout2->addWidget(m_groupBox10_SpinBox3);
+    groupBox10Layout2->addStretch();
     QVBoxLayout *groupBox10Layout = new QVBoxLayout;
+    groupBox10Layout->addLayout(groupBox10Layout1);
+    groupBox10Layout->addLayout(groupBox10Layout2);
     m_groupBox10->setLayout(groupBox10Layout);
-    m_groupBox10->setStyleSheet(groupBoxStyleSheet);
 
     m_groupBox11 = new QGroupBox("Extension (11)", this);
     m_groupBox11->setCheckable(true);
-    QVBoxLayout *groupBox11Layout = new QVBoxLayout;
+    m_groupBox11_ComboBox = new QComboBox();
+    m_groupBox11_ComboBox->addItems({"Same", "Lower", "Upper", "Title", "Fixed", "Extra", "Remove"});
+    m_groupBox11_LineEdit = new QLineEdit();
+    QHBoxLayout *groupBox11Layout = new QHBoxLayout;
+    groupBox11Layout->addWidget(m_groupBox11_ComboBox);
+    groupBox11Layout->addWidget(m_groupBox11_LineEdit);
     m_groupBox11->setLayout(groupBox11Layout);
-    m_groupBox11->setStyleSheet(groupBoxStyleSheet);
 
     m_groupBox12 = new QGroupBox("Selections (12)", this);
     //m_groupBox12->setCheckable(true);
-    QVBoxLayout *groupBox12Layout = new QVBoxLayout;
+    m_groupBox12_CheckBox1 = new QCheckBox("Files");
+    m_groupBox12_CheckBox1->setChecked(true);
+    m_groupBox12_CheckBox2 = new QCheckBox("Folders");
+    m_groupBox12_CheckBox2->setChecked(true);
+    m_groupBox12_CheckBox3 = new QCheckBox("Recursive");
+    m_groupBox12_CheckBox3->setChecked(false);
+    QLabel *groupBox12_Label = new QLabel(tr("Filter"));
+    m_groupBox12_LineEdit = new QLineEdit();
+    m_groupBox12_CheckBox4 = new QCheckBox("Match case");
+    m_groupBox12_CheckBox4->setChecked(false);
+    QHBoxLayout *groupBox12Layout = new QHBoxLayout();
+    groupBox12Layout->addWidget(m_groupBox12_CheckBox1);
+    groupBox12Layout->addWidget(m_groupBox12_CheckBox2);
+    groupBox12Layout->addWidget(m_groupBox12_CheckBox3);
+    groupBox12Layout->addSpacing(32);
+    groupBox12Layout->addWidget(groupBox12_Label);
+    groupBox12Layout->addWidget(m_groupBox12_LineEdit);
+    groupBox12Layout->addWidget(m_groupBox12_CheckBox4);
     m_groupBox12->setLayout(groupBox12Layout);
-    m_groupBox12->setStyleSheet(groupBoxStyleSheet);
 
-    QPushButton *btnRename = new QPushButton("Rename", this);
-    btnRename->setSizePolicy(QSizePolicy::Policy::Fixed, QSizePolicy::Policy::Fixed);
-
-    QVBoxLayout *bottomControlsVBoxLayout1 = new QVBoxLayout();
-    bottomControlsVBoxLayout1->setContentsMargins(0, 0, 0, 0);
-    bottomControlsVBoxLayout1->addWidget(m_groupBox1);  // RegEx (1)
-    bottomControlsVBoxLayout1->addWidget(m_groupBox2);  // File (2)
-
-    QVBoxLayout *bottomControlsVBoxLayout2= new QVBoxLayout();
-    bottomControlsVBoxLayout2->setContentsMargins(0, 0, 0, 0);
-    bottomControlsVBoxLayout2->addWidget(m_groupBox3);  // Repl. (3)
-    bottomControlsVBoxLayout2->addWidget(m_groupBox4);  // Case (4)
-
-    QHBoxLayout *bottomControlsHBoxLayout1 = new QHBoxLayout();
-    bottomControlsHBoxLayout1->setContentsMargins(5, 5, 5, 5);
-    bottomControlsHBoxLayout1->addLayout(bottomControlsVBoxLayout1);
-    bottomControlsHBoxLayout1->addLayout(bottomControlsVBoxLayout2);
-    bottomControlsHBoxLayout1->addWidget(m_groupBox5);  // Remove (5)
-
-    QVBoxLayout *bottomControlsVBoxLayout11 = new QVBoxLayout();
-    bottomControlsVBoxLayout11->setContentsMargins(5, 5, 5, 5);
-    bottomControlsVBoxLayout11->addLayout(bottomControlsHBoxLayout1);
-    bottomControlsVBoxLayout11->addWidget(m_groupBox6);  // Move/Copy (6)
-
-    QHBoxLayout *bottomControlsHBoxLayout2 = new QHBoxLayout();
-    bottomControlsHBoxLayout2->setContentsMargins(5, 5, 5, 5);
-    bottomControlsHBoxLayout2->addWidget(m_groupBox7);  // Add (7)
-    bottomControlsHBoxLayout2->addWidget(m_groupBox8);  // Auto Date (8)
-
-    QVBoxLayout *bottomControlsVBoxLayout12 = new QVBoxLayout();
-    bottomControlsVBoxLayout12->setContentsMargins(5, 5, 5, 5);
-    bottomControlsVBoxLayout12->addLayout(bottomControlsHBoxLayout2);
-    bottomControlsVBoxLayout12->addWidget(m_groupBox9);  // Append Folder Name (9)
-
-    QVBoxLayout *bottomControlsVBoxLayout13 = new QVBoxLayout();
-    bottomControlsVBoxLayout13->setContentsMargins(5, 5, 5, 5);
-    bottomControlsVBoxLayout13->addWidget(m_groupBox10); // Numbering (10)
-    bottomControlsVBoxLayout13->addWidget(m_groupBox11); // Extension (11)
-
-    QHBoxLayout *bottomControlsHBoxLayout14 = new QHBoxLayout();
-    bottomControlsHBoxLayout14->setContentsMargins(5, 5, 5, 5);
-    bottomControlsHBoxLayout14->addLayout(bottomControlsVBoxLayout11);
-    bottomControlsHBoxLayout14->addLayout(bottomControlsVBoxLayout12);
-    bottomControlsHBoxLayout14->addLayout(bottomControlsVBoxLayout13);
-
-    QHBoxLayout *bottomControlsHBoxLayout15 = new QHBoxLayout();
-    bottomControlsHBoxLayout15->setContentsMargins(5, 5, 5, 5);
-    bottomControlsHBoxLayout15->addWidget(m_groupBox12);  // Selections (12)
-    bottomControlsHBoxLayout15->addWidget(btnRename);
-
-    // --------------------------------------------------------------------
-
-    // Container for editbox and checkbox controls
+    QHBoxLayout *buttonBoxLayout = new QHBoxLayout;
+    m_buttonDoRename = new QPushButton("Rename", this);
+    m_buttonDoRename->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    buttonBoxLayout->addStretch();
+    buttonBoxLayout->addWidget(m_buttonDoRename);
 
     m_bottomControlsContainerWidget = new QWidget();
-    QVBoxLayout *bottomControlsVBoxLayout = new QVBoxLayout(m_bottomControlsContainerWidget);
-    bottomControlsVBoxLayout->setContentsMargins(0, 0, 0, 0);
-    bottomControlsVBoxLayout->setSpacing(5);
 
-    bottomControlsVBoxLayout->addLayout(bottomControlsHBoxLayout14);
-    bottomControlsVBoxLayout->addLayout(bottomControlsHBoxLayout15);
+    QGridLayout *bottomControlsGridLayout = new QGridLayout(m_bottomControlsContainerWidget);
+    bottomControlsGridLayout->setContentsMargins(10, 10, 10, 10);
+    bottomControlsGridLayout->setSpacing(10);
 
+    bottomControlsGridLayout->addWidget(m_groupBox1,   0, 0);  // RegEx (1)
+    bottomControlsGridLayout->addWidget(m_groupBox3,   0, 1);  // Repl. (3)
+    bottomControlsGridLayout->addWidget(m_groupBox5,   0, 2);  // Remove (5)
+    bottomControlsGridLayout->addWidget(m_groupBox7,   0, 3);  // Add (7)
+    bottomControlsGridLayout->addWidget(m_groupBox10,  0, 4);  // Numbering (10)
+
+    bottomControlsGridLayout->addWidget(m_groupBox2,   1, 0);  // Filename (2)
+    bottomControlsGridLayout->addWidget(m_groupBox11,  1, 1);  // Extension (11)
+    bottomControlsGridLayout->addWidget(m_groupBox9,   1, 2);  // Append Folder Name (9)
+
+    bottomControlsGridLayout->addWidget(m_groupBox6,   2, 0, 1, 2);   // Move/Copy (6)
+
+    bottomControlsGridLayout->addWidget(m_groupBox12,  3, 0, 1, 2);   // Selections (12)
+    bottomControlsGridLayout->addLayout(buttonBoxLayout, 3, 4);
 
     m_mainLayout->addWidget(m_bottomControlsContainerWidget);
 
@@ -551,67 +579,6 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
 #endif
 
     // --------------------------------------------------------------------
-    // Shorcuts: CheckBoxes
-/*
-    QShortcut *CheckboxRegExFileNameEnter = new QShortcut(QKeySequence("Enter"), m_CheckboxRegExName);
-    CheckboxRegExFileNameEnter->setContext(Qt::WidgetShortcut);
-    connect(CheckboxRegExFileNameEnter, &QShortcut::activated, this, &MainWindow::startSearch);
-
-    QShortcut *CheckboxRegExFileNameReturn = new QShortcut(QKeySequence("Return"), m_CheckboxRegExName);
-    CheckboxRegExFileNameReturn->setContext(Qt::WidgetShortcut);
-    connect(CheckboxRegExFileNameReturn, &QShortcut::activated, this, &MainWindow::startSearch);
-
-    // -----------------------
-
-    QShortcut *CheckboxRegExContentEnter = new QShortcut(QKeySequence("Enter"), m_CheckboxRegExContent);
-    CheckboxRegExContentEnter->setContext(Qt::WidgetShortcut);
-    connect(CheckboxRegExContentEnter, &QShortcut::activated, this, &MainWindow::startSearch);
-
-    QShortcut *CheckboxRegExContentReturn = new QShortcut(QKeySequence("Return"), m_CheckboxRegExContent);
-    CheckboxRegExContentReturn->setContext(Qt::WidgetShortcut);
-    connect(CheckboxRegExContentReturn, &QShortcut::activated, this, &MainWindow::startSearch);
-
-    // -----------------------
-
-    QShortcut *CheckboxNameCaseSenseEnter = new QShortcut(QKeySequence("Enter"), m_CheckboxNameCaseSense);
-    CheckboxNameCaseSenseEnter->setContext(Qt::WidgetShortcut);
-    connect(CheckboxNameCaseSenseEnter, &QShortcut::activated, this, &MainWindow::startSearch);
-
-    QShortcut *CheckboxNameCaseSenseReturn = new QShortcut(QKeySequence("Return"), m_CheckboxNameCaseSense);
-    CheckboxNameCaseSenseReturn->setContext(Qt::WidgetShortcut);
-    connect(CheckboxNameCaseSenseReturn, &QShortcut::activated, this, &MainWindow::startSearch);
-
-    // -----------------------
-
-    QShortcut *CheckboxContentCaseSenseEnter = new QShortcut(QKeySequence("Enter"), m_CheckboxContentCaseSense);
-    CheckboxContentCaseSenseEnter->setContext(Qt::WidgetShortcut);
-    connect(CheckboxContentCaseSenseEnter, &QShortcut::activated, this, &MainWindow::startSearch);
-
-    QShortcut *CheckboxContentCaseSenseReturn = new QShortcut(QKeySequence("Return"), m_CheckboxContentCaseSense);
-    CheckboxContentCaseSenseReturn->setContext(Qt::WidgetShortcut);
-    connect(CheckboxContentCaseSenseReturn, &QShortcut::activated, this, &MainWindow::startSearch);
-
-    // -----------------------
-
-    QShortcut *CheckboxDirectoriesEnter = new QShortcut(QKeySequence("Enter"), m_CheckboxDirectories);
-    CheckboxDirectoriesEnter->setContext(Qt::WidgetShortcut);
-    connect(CheckboxDirectoriesEnter, &QShortcut::activated, this, &MainWindow::startSearch);
-
-    QShortcut *CheckboxDirectoriesReturn = new QShortcut(QKeySequence("Return"), m_CheckboxDirectories);
-    CheckboxDirectoriesReturn->setContext(Qt::WidgetShortcut);
-    connect(CheckboxDirectoriesReturn, &QShortcut::activated, this, &MainWindow::startSearch);
-
-    // -----------------------
-
-    QShortcut *CheckboxCRCEnter = new QShortcut(QKeySequence("Enter"), m_CheckboxCRC);
-    CheckboxCRCEnter->setContext(Qt::WidgetShortcut);
-    connect(CheckboxCRCEnter, &QShortcut::activated, this, &MainWindow::startSearch);
-
-    QShortcut *CheckboxCRCReturn = new QShortcut(QKeySequence("Return"), m_CheckboxCRC);
-    CheckboxCRCReturn->setContext(Qt::WidgetShortcut);
-    connect(CheckboxCRCReturn, &QShortcut::activated, this, &MainWindow::startSearch);
-*/
-    // --------------------------------------------------------------------
 
     // Note: any single event of any widget will first flow through this filter before reaching the target widget
     qApp->installEventFilter(this);
@@ -642,18 +609,29 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
 
     connect(m_tableView->horizontalHeader(), &QHeaderView::sectionClicked, this, &MainWindow::onListViewHeaderClicked);
     connect(QApplication::clipboard(), &QClipboard::dataChanged, this, &MainWindow::onClipboardChanged);
-
-    connect(m_CheckboxRegExName, &QCheckBox::checkStateChanged, this, &MainWindow::validateInputBoxRegex);
-    connect(m_CheckboxRegExContent, &QCheckBox::checkStateChanged, this, &MainWindow::validateInputBoxRegex);
-
-    connect(m_CheckboxRegExName, &QCheckBox::checkStateChanged, this, &MainWindow::onCheckboxClickedRegExName);
-    connect(m_CheckboxRegExContent, &QCheckBox::checkStateChanged, this, &MainWindow::onCheckboxClickedRegExContent);
+    
+    connect(m_groupBox1_LineEdit1, &QLineEdit::textChanged, this, &MainWindow::validateInputBoxRegex);
 
     // part of mitigation for Shift+Pos1 / Shift+End not working in tableView
     connect(m_tableView->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::onTableCurrentChanged);
+    connect(m_tableView->selectionModel(), &QItemSelectionModel::selectionChanged,
+            this, [this]() {
+                QModelIndexList selectedProxyIndexes = m_tableView->selectionModel()->selectedIndexes();
+                QSet<int> selectedSourceRows;
+
+                for (const QModelIndex &proxyIndex : std::as_const(selectedProxyIndexes)) {
+                    if (proxyIndex.column() == CustomTableModel::eColNewName) {
+                        QModelIndex sourceIndex = m_proxyModel->mapToSource(proxyIndex);
+                        selectedSourceRows.insert(sourceIndex.row());
+                    }
+                }
+
+                // Dem Model die markierten Zeilen mitteilen
+                m_abstractModel->setRenameRows(selectedSourceRows);
+            });
 
     setupRenameRuleSignals();
-
+    onRenameRulesChanged();
     showFolder(m_currentDirectory);
 }
 
@@ -744,8 +722,6 @@ void MainWindow::showFolder(QString directoryPath) {
     m_currentDirectory = directoryPath;
 
     setWindowTitle(QDir::toNativeSeparators(m_currentDirectory));
-    QFileInfo fileInfo(m_currentDirectory);
-    setWindowIcon(m_iconProvider.icon(fileInfo));
 
     // --- Update columns of tableView ---
     if (m_viewStack->currentWidget() == m_tableView) {
@@ -2149,9 +2125,6 @@ QImage MainWindow::generateThumbnailAsync(const QFileInfo &fileInfo) {
 
 void MainWindow::updateWidgetStyles() {
 
-    //m_LineEdit1->setStyleSheet(m_styleLineEditNormal);
-    //m_LineEdit1->setStyleSheet(m_styleLineEditNormal);
-
 #ifdef Q_OS_WIN
     bool isDark = true;
 #elif defined(Q_OS_LINUX)
@@ -2191,15 +2164,35 @@ void MainWindow::updateWidgetStyles() {
                 "QMainWindow { background-color: #222222; }"
                 "QHeaderView::section { background-color: #222222; color: #ffffff; }"
                 );
+
+            m_groupBox1->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            m_groupBox2->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            m_groupBox3->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            m_groupBox5->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            m_groupBox6->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            m_groupBox7->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            //m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            m_groupBox9->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            m_groupBox10->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            m_groupBox11->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            m_groupBox12->setStyleSheet(Styles::groupBoxStyleSheetDark);
         } else {
             // WICHTIG: Stylesheet leeren, wenn das System auf Light Mode wechselt!
             // Dadurch schaltet Qt wieder auf das helle Breeze-Standarddesign um.
             this->setStyleSheet("");
-        }
 
-        m_tableView->setFrameShape(QFrame::Box);      // Alternativ: QFrame::StyledPanel
-        m_tableView->setFrameShadow(QFrame::Sunken);  // Alternativ: QFrame::Plain
-        m_tableView->setLineWidth(1);
+            m_groupBox1->setStyleSheet(Styles::groupBoxStyleSheet);
+            m_groupBox2->setStyleSheet(Styles::groupBoxStyleSheet);
+            m_groupBox3->setStyleSheet(Styles::groupBoxStyleSheet);
+            m_groupBox5->setStyleSheet(Styles::groupBoxStyleSheet);
+            m_groupBox6->setStyleSheet(Styles::groupBoxStyleSheet);
+            m_groupBox7->setStyleSheet(Styles::groupBoxStyleSheet);
+            //m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheet);
+            m_groupBox9->setStyleSheet(Styles::groupBoxStyleSheet);
+            m_groupBox10->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            m_groupBox11->setStyleSheet(Styles::groupBoxStyleSheet);
+            m_groupBox12->setStyleSheet(Styles::groupBoxStyleSheet);
+        }
 
         if (targetState == StyleState::Elevated) {
             m_tableView->setStyleSheet(Styles::tableViewElevatedLinux);
@@ -2213,17 +2206,12 @@ void MainWindow::updateWidgetStyles() {
     else if (currentPalette != m_StyleLastPalette) {
         m_currentStyleState = targetState;
         m_StyleLastPalette = currentPalette;
-        /*
-        if (m_LineEdit1) {
-            m_LineEdit1->style()->unpolish(m_LineEdit1);
-            m_LineEdit1->style()->polish(m_LineEdit1);
+
+        if (m_groupBox1_LineEdit1) {
+            m_groupBox1_LineEdit1->style()->unpolish(m_groupBox1_LineEdit1);
+            m_groupBox1_LineEdit1->style()->polish(m_groupBox1_LineEdit1);
         }
 
-        if (m_LineEdit2) {
-            m_LineEdit2->style()->unpolish(m_LineEdit2);
-            m_LineEdit2->style()->polish(m_LineEdit2);
-        }
-        */
         if (m_tableView) {
             m_tableView->style()->unpolish(m_tableView);
             m_tableView->style()->polish(m_tableView);
@@ -2367,8 +2355,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
             return QObject::eventFilter(obj, event); // Not our window -> hand off
         }
 
-        //qDebug() << "[KeyPress pos 1] key:" << keyEvent->key() << "isAutoRepeat:" << keyEvent->isAutoRepeat() << "obj:" << obj << "targetWidget:" << targetWidget << "targetWidget->parent():" << targetWidget->parent();
-
         // Window-wide hotkeys
         if (keyEvent->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) {
             if (keyEvent->key() == Qt::Key_F) {
@@ -2389,52 +2375,15 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                 action_ViewModeThumbs();
                 return true;
             }
-            /*
-            else if (keyEvent->key() == Qt::Key_H) {
-                m_bShowHiddenFiles = !m_bShowHiddenFiles;
-                m_proxyModel->setShowHiddenFiles(m_bShowHiddenFiles);
-                return true;
-            }
-            else if (keyEvent->key() == Qt::Key_W) {
-                elevateInstance();
-                return true;
-            }
-            */
         }
-        /*
-        else if (keyEvent->modifiers() == Qt::AltModifier) {
-            if (keyEvent->key() == Qt::Key_Left) {
-                navigateBack();
-                return true;
-            }
-            else if (keyEvent->key() == Qt::Key_Right) {
-                navigateForward();
-                return true;
-            }
-        }
-        */
-
 
         // Wenn in der View gerade ein Editor offen ist (z.B. Dateiname umbenennen),
         // dürfen wir Tasten wie "Entf", "Backspace" oder "Enter" NICHT abfangen!
         if (qobject_cast<QLineEdit*>(targetWidget)) {
-            /*
-            if (targetWidget == m_LineEdit1 && keyEvent->key() == Qt::Key_Escape) {
-                m_LineEdit1->clear();
-                m_bottomControlsContainerWidget->hide();
-                return true;
-            }
-            */
-            //if (keyEvent->key() == Qt::Key_Enter || keyEvent->key() == Qt::Key_Return) qDebug() << "[KeyPress pos 2a] key:" << keyEvent->key() << "isAutoRepeat:" << keyEvent->isAutoRepeat() << "obj:" << obj << "targetWidget:" << targetWidget << "targetWidget->parent():" << targetWidget->parent();
-
             return QObject::eventFilter(obj, event);
         }
         else if (qobject_cast<QLineEdit*>(targetWidget->parent())) {
-            //qDebug() << "[KeyPress pos 2b] key:" << keyEvent->key() << "isAutoRepeat:" << keyEvent->isAutoRepeat() << "obj:" << obj << "targetWidget:" << targetWidget << "targetWidget->parent():" << targetWidget->parent();
             return QObject::eventFilter(obj, event);
-        }
-        else {
-            //if (keyEvent->key() == Qt::Key_Enter || keyEvent->key() == Qt::Key_Return) qDebug() << "[KeyPress pos 2c] key:" << keyEvent->key() << "isAutoRepeat:" << keyEvent->isAutoRepeat() << "obj:" << obj << "targetWidget:" << targetWidget << "targetWidget->parent():" << targetWidget->parent();
         }
 
         if (keyEvent->key() == Qt::Key_Escape) {
@@ -2475,20 +2424,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                     action_ListViewBrowseToFile();
                     return true;
                 }
-                /*
-                else if (keyEvent->key() == Qt::Key_N) {
-                    action_ListViewNewFolder();
-                    return true;
-                }
-                else if (keyEvent->key() == Qt::Key_P) {
-                    navigateToClipboardPath();
-                    return true;
-                }
-                else if (keyEvent->key() == Qt::Key_V) {
-                    action_ListViewPasteFiles();
-                    return true;
-                }
-                */
                 else if (keyEvent->key() == Qt::Key_X) {
                     action_ListViewCutFiles();
                     return true;
@@ -2499,12 +2434,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                     action_ListViewRenameFiles();
                     return true;
                 }
-                /*
                 else if (keyEvent->key() == Qt::Key_F5) {
-                    reloadDirectory();
+                    showFolder(m_currentDirectory);
                     return true;
                 }
-                */
                 else if (keyEvent->key() == Qt::Key_Escape) {
                     const QMimeData* mimeData = QApplication::clipboard()->mimeData();
                     if (mimeData->hasFormat(m_privateTokenName) && mimeData->data(m_privateTokenName) == m_currentClipboardToken) {
@@ -2512,12 +2445,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                         return true;
                     }
                 }
-                /*
-                 else if (keyEvent->key() == Qt::Key_Backspace) {
-                    navigateUp();
-                    return true;
-                }
-                */
                 else if (keyEvent->key() == Qt::Key_Delete) {
                     if (keyEvent->modifiers() & Qt::ShiftModifier) {
                         action_ListViewDeleteFiles(false);
@@ -2601,298 +2528,94 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
     return QObject::eventFilter(obj, event);
 }
 
-/*
-void MainWindow::action_ListViewNewFolder() {
-    if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") return;
-
-    // 1. Create unique dummy name
-    QDir dir(m_currentDirectory);
-    QString baseName = tr("New Folder");
-    QString folderName = baseName;
-    int counter = 2;
-
-    while (dir.exists(folderName)) {
-        folderName = QString("%1 (%2)").arg(baseName).arg(counter++);
-    }
-
-    // Wir sagen dem Watcher-Slot, dass er das nächste Signal ignorieren soll
-    m_ignoreNextWatcherSignal = true;
-
-    // 2. Den Dummy-Ordner physisch auf der Festplatte erstellen
-    if (!dir.mkdir(folderName)) {
-        m_ignoreNextWatcherSignal = false;
-        return;
-    }
-
-    auto *activeView = qobject_cast<QAbstractItemView*>(m_viewStack->currentWidget());
-    if (!activeView) {
-        // Fallback/Sicherheit, falls im Stack mal kein valides View-Widget liegt
-        m_ignoreNextWatcherSignal = false;
-        return;
-    }
-
-    // 3. Modell anweisen, das Verzeichnis neu zu laden
-    m_abstractModel->populateModel_mkFolderWidget(m_currentDirectory);
-
-    // 4. Den QModelIndex des neuen Ordners in der AKTIVEN View finden
-    // WICHTIG: Wir holen das Modell der View, die der Nutzer gerade sieht!
-    QAbstractItemModel *currentViewModel = activeView->model();
-    if (!currentViewModel) return;
-
-    QModelIndex targetIndex;
-    QModelIndexList matches = currentViewModel->match(currentViewModel->index(0, 0), Qt::EditRole, folderName, 1, Qt::MatchExactly | Qt::MatchWrap);
-
-    if (!matches.isEmpty()) {
-        targetIndex = matches.first();
-    }
-
-    // 5. Die AKTIVE View auf den neuen Ordner ansetzen und das Inline-Editing starten
-    if (targetIndex.isValid()) {
-        activeView->scrollTo(targetIndex, QAbstractItemView::EnsureVisible);
-        activeView->setCurrentIndex(targetIndex);
-
-        // Öffnet die Edit-Box in der View, in der der Nutzer sich gerade befindet
-        activeView->edit(targetIndex);
-    }
-}
-
-void MainWindow::action_ListViewNewTextFile() {
-    if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") return;
-
-    QString baseName = tr("New Text Document");
-    QString extension = ".txt";
-
-    QDir dir(m_currentDirectory);
-    QString finalFileName = baseName + extension;
-    int counter = 2;
-
-    while (dir.exists(finalFileName)) {
-        finalFileName = QString("%1 (%2)%3").arg(baseName).arg(counter).arg(extension);
-        counter++;
-    }
-
-    QString fullPath = dir.filePath(finalFileName);
-
-    m_ignoreNextWatcherSignal = true;
-
-    QFile file(fullPath);
-    if (file.open(QIODevice::WriteOnly)) {
-#ifdef Q_OS_WIN
-        file.write("\xEF\xBB\xBF", 3);  // UTF-8 BOM only on Windows
-#endif
-        file.close();
-    } else {
-        qWarning() << "Konnte Textdatei nicht erstellen:" << file.errorString();
-        m_ignoreNextWatcherSignal = false;
-        return;
-    }
-
-    auto *activeView = qobject_cast<QAbstractItemView*>(m_viewStack->currentWidget());
-    if (!activeView) {
-        m_ignoreNextWatcherSignal = false;
-        return;
-    }
-
-    m_abstractModel->populateModel_mkFolderWidget(m_currentDirectory);
-
-    QAbstractItemModel *currentViewModel = activeView->model();
-    if (!currentViewModel) return;
-
-    QModelIndex targetIndex;
-    QModelIndexList matches = currentViewModel->match(currentViewModel->index(0, 0), Qt::EditRole, finalFileName, 1, Qt::MatchExactly | Qt::MatchWrap);
-
-    if (!matches.isEmpty()) {
-        targetIndex = matches.first();
-    }
-
-    if (targetIndex.isValid()) {
-        activeView->scrollTo(targetIndex, QAbstractItemView::EnsureVisible);
-        activeView->setCurrentIndex(targetIndex);
-        activeView->edit(targetIndex);
-    }
-}
-
-void MainWindow::navigateToClipboardPath() {
-    QClipboard *clipboard = QApplication::clipboard();
-    if (!clipboard) return;
-
-    QString text = clipboard->text().trimmed();
-    if (text.isEmpty()) return;
-
-    if (text.startsWith('"') && text.endsWith('"')) {
-        text = text.mid(1, text.length() - 2);
-    }
-
-    if (text.startsWith("file:///")) {
-        text = QUrl(text).toLocalFile();
-    }
-
-    QFileInfo fileInfo(text);
-    if (!fileInfo.exists()) return;
-
-    if (fileInfo.isDir()) {
-        browseFolder(fileInfo.absoluteFilePath(), QString());
-    } else {
-        browseFolder(fileInfo.absolutePath(), fileInfo.absoluteFilePath());
-    }
-
-    return;
-}
-
-void MainWindow::duplicateInstance() {
-    QString appPath = QCoreApplication::applicationFilePath();
-    QStringList arguments;
-    arguments << "-X" << QString::number(this->x() + 40)
-              << "-Y" << QString::number(this->y() + 40)
-              << "-W" << QString::number(this->width())
-              << "-H" << QString::number(this->height())
-              << m_currentDirectory;
-
-    QString focusedFile = getActiveViewCurrentItemPath();
-    if (!focusedFile.isEmpty()) {
-        arguments << "-f" << focusedFile;
-    }
-
-    QProcess::startDetached(appPath, arguments);
-}
-
-void MainWindow::elevateInstance() {
-    if (m_processIsElevated) return;
-
-    QString appPath = QCoreApplication::applicationFilePath();
-    QStringList arguments;
-    arguments << "-X" << QString::number(this->x() + 40)
-              << "-Y" << QString::number(this->y() + 40)
-              << "-W" << QString::number(this->width())
-              << "-H" << QString::number(this->height())
-              << m_currentDirectory;
-
-    QString focusedFile = getActiveViewCurrentItemPath();
-    if (!focusedFile.isEmpty()) {
-        arguments << "-f" << focusedFile;
-    }
-
-    bool bSuccess = false;
-#ifdef Q_OS_WIN
-    bSuccess = startProcessElevatedWin(appPath, argumentsToWinString(arguments));
-#elif defined(Q_OS_LINUX)
-    QStringList pkexecArgs;
-    pkexecArgs << "env"
-               // Wir holen die Display-Infos des aktuellen Nutzers und übergeben sie an Root
-               << QString("DISPLAY=%1").arg(QString::fromLocal8Bit(qgetenv("DISPLAY")))
-               << QString("XAUTHORITY=%1").arg(QString::fromLocal8Bit(qgetenv("XAUTHORITY")))
-               // WICHTIG: Zwingt Qt zu X11/XWayland, da Wayland Root-GUIs blockiert
-               << "QT_QPA_PLATFORM=xcb"
-               // Erst JETZT folgt deine App und deine Argumente
-               << appPath
-               << arguments;
-    qint64 pid;
-    bSuccess = QProcess::startDetached("pkexec", pkexecArgs, QString(), &pid);
-#endif
-    if (bSuccess) {
-        QMetaObject::invokeMethod(qApp, "closeAllWindows", Qt::QueuedConnection);
-    }
-}
-
-void MainWindow::navigateUp() {
-    if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") return;
-
-    QDir currentDir(m_currentDirectory);
-    if (currentDir.isRoot()) {
-#ifdef Q_OS_WIN
-        QString focusPath = currentDir.absolutePath();
-        browseFolder("drives://", focusPath);
-#endif
-    } else {
-        QString focusPath = currentDir.absolutePath();
-        currentDir.cdUp();
-        QString parentPath = currentDir.absolutePath();
-
-        browseFolder(parentPath, focusPath);
-    }
-}
-
-void MainWindow::navigateBack() {
-    if (m_backHistory.isEmpty()) return;
-
-    // Letzten Pfad aus dem Verlauf holen und entfernen
-    QString targetPath = m_backHistory.takeLast();
-
-    // Aktuellen Pfad in den Vorwärts-Verlauf schieben
-    if (!m_currentDirectory.isEmpty()) {
-        m_forwardHistory.append(m_currentDirectory);
-    }
-
-    browseFolder(targetPath, QString(), true);
-}
-
-void MainWindow::navigateForward() {
-    if (m_forwardHistory.isEmpty()) return;
-
-    // Letzten Pfad aus dem Vorwärts-Verlauf holen
-    QString targetPath = m_forwardHistory.takeLast();
-
-    // Aktuellen Pfad wieder zurück in den normalen Verlauf
-    if (!m_currentDirectory.isEmpty()) {
-        m_backHistory.append(m_currentDirectory);
-    }
-
-    browseFolder(targetPath, QString(), true);
-}
-*/
-
 void MainWindow::validateInputBoxRegex() {
-    /*
-    QString InputBox1Text = m_LineEdit1->text();
-    QString InputBox2Text = m_LineEdit2->text();
+    QString InputBox1Text = m_groupBox1_LineEdit1->text();
 
     if (InputBox1Text.isEmpty()) {
-        m_LineEdit1->setStyleSheet(m_styleLineEditNormal);
+        m_groupBox1_LineEdit1->setStyleSheet(m_styleLineEditNormal);
     } else {
-        if (m_CheckboxRegExName->isChecked()) {
-            QRegularExpression re1(InputBox1Text);
-            if (!re1.isValid()) {
-                m_LineEdit1->setStyleSheet(m_styleLineEditError);
-            } else {
-                m_LineEdit1->setStyleSheet(m_styleLineEditNormal);
-            }
-        } else {
-            m_LineEdit1->setStyleSheet(m_styleLineEditNormal);
-        }
-    }
+        QRegularExpression re1(InputBox1Text);
 
-    if (InputBox2Text.isEmpty()) {
-        m_LineEdit2->setStyleSheet(m_styleLineEditNormal);
-    } else {
-        if (m_CheckboxRegExContent->isChecked()) {
-            QRegularExpression re2(InputBox2Text);
-            if (!re2.isValid()) {
-                m_LineEdit2->setStyleSheet(m_styleLineEditError);
-            } else {
-                m_LineEdit2->setStyleSheet(m_styleLineEditNormal);
-            }
+        if (!re1.isValid()) {
+            m_groupBox1_LineEdit1->setStyleSheet(m_styleLineEditError);
         } else {
-            m_LineEdit2->setStyleSheet(m_styleLineEditNormal);
+            m_groupBox1_LineEdit1->setStyleSheet(m_styleLineEditNormal);
         }
     }
-    */
 }
 
 void MainWindow::setupRenameRuleSignals() {
 
+    // RegEx (1)
     connect(m_groupBox1, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox1_LineEdit1, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox1_LineEdit2, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox1_CheckBox, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
 
+    // Filename (2)
     connect(m_groupBox2, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox2_ComboBox, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox2_LineEdit, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
 
+    // Replace (3)
     connect(m_groupBox3, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox3_LineEdit1, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox3_LineEdit2, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox3_CheckBox, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
+
+    // Remove (5)
+    connect(m_groupBox5, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox5_SpinBox1, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox5_SpinBox2, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox5_SpinBox3, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox5_SpinBox4, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
+
+    // Move/Copy (6)
+    connect(m_groupBox6, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox6_ComboBox1, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox6_ComboBox2, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox6_SpinBox1, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox6_SpinBox2, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox6_LineEdit, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
+
+    // Add (7)
+    connect(m_groupBox7, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox7_LineEdit1, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox7_LineEdit2, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox7_SpinBox,   &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox7_LineEdit3, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
+
+    // Auto Date (8)
+    /*
+    connect(m_groupBox8, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
+    */
+
+    // Append Folder Name (9)
+    connect(m_groupBox9, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox9_ComboBox, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox9_LineEdit, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox9_SpinBox,  &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
+
+    // Numbering (10)
+    connect(m_groupBox10, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox10_CheckBox1, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox10_LineEdit,  &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox10_SpinBox1,  &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox10_CheckBox2, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox10_SpinBox2,  &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox10_SpinBox3,  &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
+
+    // Extension (11)
+    connect(m_groupBox11, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox11_ComboBox, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox11_LineEdit, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
+
+    // Selections (12)
+    connect(m_groupBox12_CheckBox1, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox12_CheckBox2, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox12_CheckBox3, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox12_CheckBox4, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox12_LineEdit,  &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
 }
 
 void MainWindow::onRenameRulesChanged() {
@@ -2904,7 +2627,7 @@ void MainWindow::onRenameRulesChanged() {
     rules.rgx.replace = m_groupBox1_LineEdit2->text();
     rules.rgx.includeExtension = m_groupBox1_CheckBox->isChecked();
 
-    // File (2)
+    // Filename (2)
     rules.fln.enabled = m_groupBox2->isChecked();
     rules.fln.mode = m_groupBox2_ComboBox->currentIndex();
     rules.fln.fixedName = m_groupBox2_LineEdit->text();
@@ -2915,31 +2638,59 @@ void MainWindow::onRenameRulesChanged() {
     rules.rpl.replace = m_groupBox3_LineEdit2->text();
     rules.rpl.matchCase = m_groupBox3_CheckBox->isChecked();
 
-    // Case (4)
-    rules.cas.enabled = m_groupBox4->isChecked();
-
     // Remove (5)
     rules.rmv.enabled = m_groupBox5->isChecked();
+    rules.rmv.firstN = m_groupBox5_SpinBox1->value();
+    rules.rmv.lastN = m_groupBox5_SpinBox2->value();
+    rules.rmv.fromN = m_groupBox5_SpinBox3->value();
+    rules.rmv.toN = m_groupBox5_SpinBox4->value();
 
     // Move/Copy (6)
     rules.mcp.enabled = m_groupBox6->isChecked();
+    rules.mcp.fromMode = m_groupBox6_ComboBox1->currentIndex();
+    rules.mcp.fromPos = m_groupBox6_SpinBox1->value();
+    rules.mcp.toMode = m_groupBox6_ComboBox2->currentIndex();
+    rules.mcp.toPos = m_groupBox6_SpinBox2->value();
+    rules.mcp.separator = m_groupBox6_LineEdit->text();
 
     // Add (7)
     rules.add.enabled = m_groupBox7->isChecked();
+    rules.add.prefix = m_groupBox7_LineEdit1->text();
+    rules.add.insertText = m_groupBox7_LineEdit2->text();
+    rules.add.insertPos = m_groupBox7_SpinBox->value();
+    rules.add.suffix = m_groupBox7_LineEdit3->text();
 
     // Auto Date (8)
+    /*
     rules.ada.enabled = m_groupBox8->isChecked();
+    */
 
     // Append Folder Name (9)
     rules.afn.enabled = m_groupBox9->isChecked();
+    rules.afn.type = m_groupBox9_ComboBox->currentIndex();
+    rules.afn.separator = m_groupBox9_LineEdit->text();
+    rules.afn.levels = m_groupBox9_SpinBox->value();
 
     // Numbering (10)
     rules.num.enabled = m_groupBox10->isChecked();
+    rules.num.addLeadEnabled = m_groupBox10_CheckBox1->isChecked();
+    rules.num.addLeadChar = m_groupBox10_LineEdit->text();
+    rules.num.addLeadCount = m_groupBox10_SpinBox1->value();
+    rules.num.addLeadNewEnabled = m_groupBox10_CheckBox2->isChecked();
+    rules.num.addLeadNewStart = m_groupBox10_SpinBox2->value();
+    rules.num.addLeadNewStep = m_groupBox10_SpinBox3->value();
 
     // Extension (11)
     rules.ext.enabled = m_groupBox11->isChecked();
+    rules.ext.mode = m_groupBox11_ComboBox->currentIndex();
+    rules.ext.fixedExt = m_groupBox11_LineEdit->text();
 
     // Selections (12)
+    rules.sel.showFiles = m_groupBox12_CheckBox1->isChecked();
+    rules.sel.showFolders = m_groupBox12_CheckBox2->isChecked();
+    rules.sel.showRecursive = m_groupBox12_CheckBox3->isChecked();
+    rules.sel.filter = m_groupBox12_LineEdit->text();
+    rules.sel.matchCase = m_groupBox12_CheckBox4->isChecked();
 
     // Pass bundled settings to the model
     m_abstractModel->setRenameRules(rules);

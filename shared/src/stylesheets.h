@@ -405,6 +405,51 @@ namespace Styles {
             }
         )"_s;
 
+    inline const auto groupBoxStyleSheetDark = uR"(
+        QGroupBox {
+            border: 1px solid #565656;
+            border-radius: 5px;
+            margin-top: 8px;
+            padding: 10px 0px 0px 0px;
+        }
+
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            subcontrol-position: top left;
+            left: 10px;
+            padding: 0 4px;
+            background-color: #222222;
+        }
+
+        QGroupBox::indicator {
+            width: 20px;
+            height: 20px;
+        }
+    )"_s;
+
+
+    inline const auto groupBoxStyleSheet = uR"(
+        QGroupBox {
+            border: 1px solid #565656;
+            border-radius: 5px;
+            margin-top: 8px;
+            padding: 10px 0px 0px 0px;
+        }
+
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            subcontrol-position: top left;
+            left: 10px;
+            padding: 0 4px;
+            background-color: palette(window);
+        }
+
+        QGroupBox::indicator {
+            width: 20px;
+            height: 20px;
+        }
+    )"_s;
+
 } // namespace Styles
 
 #endif // STYLESHEETS_H

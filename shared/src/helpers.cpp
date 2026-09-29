@@ -1070,6 +1070,21 @@ namespace {
 
 namespace Helpers {
 
+    QString toSentenceCase(const QString &input) {
+        if (input.isEmpty()) return input;
+        return input.at(0).toUpper() + input.mid(1).toLower();
+    }
+
+    QString toTitleCase(const QString &input) {
+        if (input.isEmpty()) return input;
+
+        QStringList words = input.split(' ', Qt::SkipEmptyParts);
+        for (QString &word : words) {
+            word = word.at(0).toUpper() + word.mid(1).toLower();
+        }
+        return words.join(' ');
+    }
+
     QString expandPath(QString path) {
         if (path.size() > kMaxInputLength) {
             path.truncate(kMaxInputLength);

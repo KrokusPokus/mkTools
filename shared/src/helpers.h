@@ -74,6 +74,9 @@ uint getContentMatchCount(const QFileInfo &fileInfo, const QString &searchString
 uint getRegExContentMatchCount(const QFileInfo &fileInfo, const QRegularExpression &re, const QSet<QString> &m_FileExtTextSet);
 
 namespace Helpers {
+    QString toSentenceCase(const QString &input);
+    QString toTitleCase(const QString &input);
+
     QString expandPath(QString path);
     QString getPathFromClipboard(QString text);
     void showPopup(const QString &appName, const QString &title, const QString &body);

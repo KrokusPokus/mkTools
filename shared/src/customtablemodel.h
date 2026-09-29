@@ -10,6 +10,7 @@
 #include <QFontMetrics>
 #include <QHash>
 #include <QIcon>
+#include <QRegularExpression>
 #include <QUrl>
 #include <vector>
 
@@ -63,10 +64,10 @@ struct RegExRule {
     bool includeExtension = false;
 };
 
-// File (2)
+// Filename (2)
 struct FileNameRule {
     bool enabled = false;
-    int mode = 0; // 0: Keep, 1: Remove, 2: Fixed, 3: Reverse
+    int mode = 0; // 0: Same, 1: Lower-Case, 2: Upper-Case, 3: Title-Case, Sentence-Case, Fixed, Remove
     QString fixedName;
 };
 
@@ -78,26 +79,32 @@ struct ReplaceRule {
     bool matchCase = false;
 };
 
-// Case (4)
-struct CaseRule {
-    bool enabled = false;
-    int mode = 0; // 0: Same, 1: Lower, 2: Upper, 3: Title, 4: Sentence
-    QString exception;
-};
-
 // Remove (5)
 struct RemoveRule {
     bool enabled = false;
+    int firstN = 0;
+    int lastN = 0;
+    int fromN = 0;
+    int toN = 0;
 };
 
 // Move/Copy (6)
 struct MoveCopyRule {
     bool enabled = false;
+    int fromMode = 0; // 0: None, 1: Copy first n, 2: Copy last n, 3: Move first n, 4: Move last n
+    int fromPos = 0;
+    int toMode = 0; // 0: None, 1: To start, 2: To end, 3: To pos.
+    int toPos = 0;
+    QString separator;
 };
 
 // Add (7)
 struct AddRule {
     bool enabled = false;
+    QString prefix;
+    QString insertText;
+    int insertPos;
+    QString suffix;
 };
 
 // Auto Date (8)
@@ -108,28 +115,46 @@ struct AutoDateRule {
 // Append Folder Name (9)
 struct AppendFolderNameRule {
     bool enabled = false;
+    int type = 0; // 0: None, 1: Prefix, 2: Suffix
+    QString separator;
+    int levels = 0;
 };
 
 // Numbering (10)
 struct NumberingRule {
     bool enabled = false;
+    bool addLeadEnabled = false;
+    QString addLeadChar;
+    int addLeadCount = 0;
+    bool addLeadNewEnabled = false;
+    int addLeadNewStart = 0;
+    int addLeadNewStep = 0;
 };
 
 // Extension (11)
 struct ExtensionRule {
     bool enabled = false;
+    int mode = 0; // 0: Same, 1: Lower, 2: Upper, 3: Title, 4: Fixed, 5: Extra, 6: Remove
+    QString fixedExt;
 };
 
 // Selections (12)
 struct SelectionRule {
-    bool enabled = false;
+    bool showFiles = false;
+    bool showFolders = false;
+    bool showRecursive = false;
+    QString filter;
+    bool matchCase = false;
+
+    // Überladung für Vergleiche auf Änderung
+    bool operator==(const SelectionRule &other) const = default; // C++20
+    bool operator!=(const SelectionRule &other) const { return !(*this == other); }
 };
 
 struct RenameRules {
     RegExRule rgx;      // RegEx (1)
     FileNameRule fln;   // File (2)
     ReplaceRule rpl;    // Repl. (3)
-    CaseRule cas;       // Case (4)
     RemoveRule rmv;     // Remove (5)
     MoveCopyRule mcp;   // Move/Copy (6)
     AddRule add;        // Add (7)
@@ -224,6 +249,7 @@ public:
         m_viewMode = nIndex;
     }
 
+    void setRenameRows(const QSet<int> &rows);
     void setRenameRules(const RenameRules &rules);
 
 private:
@@ -244,19 +270,20 @@ private:
     mutable QHash<QString, ThumbnailCacheEntry> m_individualThumbnailCache;
     mutable QHash<QString, CrcCacheEntry> m_CrcCache;
 
+    QSet<int> m_renameRows;
     RenameRules m_rules;
+    QRegularExpression m_RegexRulesCompiled;
     QString computeNewName(const CustomFileInfo &item) const;
     QString applyRegExRule(const QString &input, const RegExRule &rule) const;
     QString applyFileNameRule(const QString &input, const FileNameRule &rule) const;
     QString applyReplaceRule(const QString &input, const ReplaceRule &rule) const;
-    QString applyCaseRule(const QString &input, const CaseRule &rule) const;
     QString applyRemoveRule(const QString &input, const RemoveRule &rule) const;
     QString applyMoveCopyRule(const QString &input, const MoveCopyRule &rule) const;
     QString applyAddRule(const QString &input, const AddRule &rule) const;
     QString applyAutoDateRule(const QString &input, const AutoDateRule &rule) const;
-    QString applyAppendFolderNameRule(const QString &input, const AppendFolderNameRule &rule) const;
+    QString applyAppendFolderNameRule(const QString &input, const QString &path, const AppendFolderNameRule &rule) const;
     QString applyNumberingRule(const QString &input, const NumberingRule &rule) const;
-    QString applyExtensionRule(const QString &input, const ExtensionRule &rule) const;
+    QString applyFileExtRule(const QString &input, const ExtensionRule &rule) const;
 
     SettingsManager *m_settings;
     QFontMetrics m_fontMetrics;

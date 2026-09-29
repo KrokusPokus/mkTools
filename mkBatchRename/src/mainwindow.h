@@ -17,7 +17,9 @@
 #include <QLineEdit>
 #include <QMainWindow>
 #include <QPointer>
+#include <QPushButton>
 #include <QSet>
+#include <QSpinBox>
 #include <QStackedWidget>
 #include <QTimer>
 #include <QVBoxLayout>
@@ -121,18 +123,45 @@ private:
     QLineEdit *m_groupBox3_LineEdit1 = nullptr;
     QLineEdit *m_groupBox3_LineEdit2 = nullptr;
     QCheckBox *m_groupBox3_CheckBox = nullptr;
-    QGroupBox *m_groupBox4 = nullptr;
-    QComboBox *m_groupBox4_ComboBox = nullptr;
-    QLineEdit *m_groupBox4_LineEdit = nullptr;
     QGroupBox *m_groupBox5 = nullptr;
+    QSpinBox  *m_groupBox5_SpinBox1 = nullptr;
+    QSpinBox  *m_groupBox5_SpinBox2 = nullptr;
+    QSpinBox  *m_groupBox5_SpinBox3 = nullptr;
+    QSpinBox  *m_groupBox5_SpinBox4 = nullptr;
     QGroupBox *m_groupBox6 = nullptr;
+    QComboBox *m_groupBox6_ComboBox1 = nullptr;
+    QSpinBox  *m_groupBox6_SpinBox1 = nullptr;
+    QComboBox *m_groupBox6_ComboBox2 = nullptr;
+    QSpinBox  *m_groupBox6_SpinBox2 = nullptr;
+    QLineEdit *m_groupBox6_LineEdit = nullptr;
     QGroupBox *m_groupBox7 = nullptr;
+    QLineEdit *m_groupBox7_LineEdit1 = nullptr;
+    QLineEdit *m_groupBox7_LineEdit2 = nullptr;
+    QLineEdit *m_groupBox7_LineEdit3 = nullptr;
+    QSpinBox  *m_groupBox7_SpinBox = nullptr;
     QGroupBox *m_groupBox8 = nullptr;
     QGroupBox *m_groupBox9 = nullptr;
+    QComboBox *m_groupBox9_ComboBox = nullptr;
+    QLineEdit *m_groupBox9_LineEdit = nullptr;
+    QSpinBox  *m_groupBox9_SpinBox = nullptr;
     QGroupBox *m_groupBox10 = nullptr;
-    QGroupBox *m_groupBox11 = nullptr;
-    QGroupBox *m_groupBox12 = nullptr;
+    QCheckBox *m_groupBox10_CheckBox1 = nullptr;
+    QLineEdit *m_groupBox10_LineEdit = nullptr;
+    QCheckBox *m_groupBox10_CheckBox2 = nullptr;
+    QSpinBox  *m_groupBox10_SpinBox1 = nullptr;
+    QSpinBox  *m_groupBox10_SpinBox2 = nullptr;
+    QSpinBox  *m_groupBox10_SpinBox3 = nullptr;
 
+    QGroupBox *m_groupBox11 = nullptr;
+    QComboBox *m_groupBox11_ComboBox = nullptr;
+    QLineEdit *m_groupBox11_LineEdit = nullptr;
+    QGroupBox *m_groupBox12 = nullptr;
+    QLineEdit *m_groupBox12_LineEdit = nullptr;
+    QCheckBox *m_groupBox12_CheckBox1 = nullptr;
+    QCheckBox *m_groupBox12_CheckBox2 = nullptr;
+    QCheckBox *m_groupBox12_CheckBox3 = nullptr;
+    QCheckBox *m_groupBox12_CheckBox4 = nullptr;
+    QPushButton *m_buttonDoRename = nullptr;
 
     QAction *m_actionListViewOpenFiles = nullptr;
     QAction *m_actionListViewEditFiles = nullptr;
@@ -171,24 +200,16 @@ private:
     std::atomic<int> m_currentSearchGeneration{0};
     QHash<QString, QStringList> m_mimeCache;
     QByteArray m_currentClipboardToken;
-    QString m_privateTokenName = "application/x-mkfolderwidget-token";
+    QString m_privateTokenName = "application/x-mkbatchrename-token";
     SettingsManager m_settings;
 
     qint64 m_lastActivationTime = 0;
     bool m_activationClickActive = false;
     QSet<QString> m_loadingThumbnails;
-    QSet<QString> m_loadingCRCs;
     QString m_styleLineEditNormal = "";
     QString m_styleLineEditError = "background-color: red; color: white;";
 
     void validateInputBoxRegex();
-    QCheckBox *m_CheckboxRegExContent = nullptr;
-    QCheckBox *m_CheckboxRegExName = nullptr;
-    QCheckBox *m_CheckboxNameCaseSense = nullptr;
-    QCheckBox *m_CheckboxContentCaseSense = nullptr;
-    QCheckBox *m_CheckboxDirectories = nullptr;
-    QCheckBox *m_CheckboxCRC = nullptr;
-    QTimer *m_timerCalcCrc = nullptr;
 
     bool m_processIsElevated{false};
     QPalette m_StyleLastPalette;

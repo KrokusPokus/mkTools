@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationVersion("1.0");
 
     QCommandLineParser parser;
-    parser.setApplicationDescription("Qt6 based file search tool");
+    parser.setApplicationDescription("Qt6 based batch rename tool");
     auto helpOption = parser.addHelpOption();
     auto versionOption = parser.addVersionOption();
     parser.addPositionalArgument("[searchpath]", QCoreApplication::translate("main", "Path to search"));
