@@ -251,8 +251,10 @@ public:
 
     void setRenameRows(const QSet<int> &rows);
     void setRenameRules(const RenameRules &rules);
+    void applyBatchRename();
 
 private:
+    bool renameFileInternal(int row, const QString &rawNewName);
     QPixmap generateDummyThumb(const QString &dummyName) const;
     CustomFileInfo createCustomFileInfo(const QFileInfo &fileInfo, int anchorPathLength = 0) const;
 
@@ -274,6 +276,7 @@ private:
     RenameRules m_rules;
     QRegularExpression m_RegexRulesCompiled;
     QString computeNewName(const CustomFileInfo &item) const;
+
     QString applyRegExRule(const QString &input, const RegExRule &rule) const;
     QString applyFileNameRule(const QString &input, const FileNameRule &rule) const;
     QString applyReplaceRule(const QString &input, const ReplaceRule &rule) const;

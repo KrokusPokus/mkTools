@@ -24,6 +24,22 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+class ZeroOnEmptySpinBox : public QSpinBox {
+    Q_OBJECT
+public:
+    using QSpinBox::QSpinBox;
+
+protected:
+    // Wird von Qt aufgerufen, wenn die Eingabe ungültig/leer ist
+    void fixup(QString &input) const override {
+        if (input.trimmed().isEmpty()) {
+            input = QString::number(minimum()); // Setzt den Text auf das Minimum (z.B. "0")
+        } else {
+            QSpinBox::fixup(input);
+        }
+    }
+};
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -124,33 +140,33 @@ private:
     QLineEdit *m_groupBox3_LineEdit2 = nullptr;
     QCheckBox *m_groupBox3_CheckBox = nullptr;
     QGroupBox *m_groupBox5 = nullptr;
-    QSpinBox  *m_groupBox5_SpinBox1 = nullptr;
-    QSpinBox  *m_groupBox5_SpinBox2 = nullptr;
-    QSpinBox  *m_groupBox5_SpinBox3 = nullptr;
-    QSpinBox  *m_groupBox5_SpinBox4 = nullptr;
+    ZeroOnEmptySpinBox  *m_groupBox5_SpinBox1 = nullptr;
+    ZeroOnEmptySpinBox  *m_groupBox5_SpinBox2 = nullptr;
+    ZeroOnEmptySpinBox  *m_groupBox5_SpinBox3 = nullptr;
+    ZeroOnEmptySpinBox  *m_groupBox5_SpinBox4 = nullptr;
     QGroupBox *m_groupBox6 = nullptr;
     QComboBox *m_groupBox6_ComboBox1 = nullptr;
-    QSpinBox  *m_groupBox6_SpinBox1 = nullptr;
+    ZeroOnEmptySpinBox  *m_groupBox6_SpinBox1 = nullptr;
     QComboBox *m_groupBox6_ComboBox2 = nullptr;
-    QSpinBox  *m_groupBox6_SpinBox2 = nullptr;
+    ZeroOnEmptySpinBox  *m_groupBox6_SpinBox2 = nullptr;
     QLineEdit *m_groupBox6_LineEdit = nullptr;
     QGroupBox *m_groupBox7 = nullptr;
     QLineEdit *m_groupBox7_LineEdit1 = nullptr;
     QLineEdit *m_groupBox7_LineEdit2 = nullptr;
     QLineEdit *m_groupBox7_LineEdit3 = nullptr;
-    QSpinBox  *m_groupBox7_SpinBox = nullptr;
+    ZeroOnEmptySpinBox  *m_groupBox7_SpinBox = nullptr;
     QGroupBox *m_groupBox8 = nullptr;
     QGroupBox *m_groupBox9 = nullptr;
     QComboBox *m_groupBox9_ComboBox = nullptr;
     QLineEdit *m_groupBox9_LineEdit = nullptr;
-    QSpinBox  *m_groupBox9_SpinBox = nullptr;
+    ZeroOnEmptySpinBox  *m_groupBox9_SpinBox = nullptr;
     QGroupBox *m_groupBox10 = nullptr;
     QCheckBox *m_groupBox10_CheckBox1 = nullptr;
     QLineEdit *m_groupBox10_LineEdit = nullptr;
     QCheckBox *m_groupBox10_CheckBox2 = nullptr;
-    QSpinBox  *m_groupBox10_SpinBox1 = nullptr;
-    QSpinBox  *m_groupBox10_SpinBox2 = nullptr;
-    QSpinBox  *m_groupBox10_SpinBox3 = nullptr;
+    ZeroOnEmptySpinBox  *m_groupBox10_SpinBox1 = nullptr;
+    ZeroOnEmptySpinBox  *m_groupBox10_SpinBox2 = nullptr;
+    ZeroOnEmptySpinBox  *m_groupBox10_SpinBox3 = nullptr;
 
     QGroupBox *m_groupBox11 = nullptr;
     QComboBox *m_groupBox11_ComboBox = nullptr;

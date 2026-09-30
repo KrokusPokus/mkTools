@@ -60,7 +60,7 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
                     if (file.isDir && m_currentDirectoryPath != "drives://") {
                         return QVariant();
                     }
-                    return formatAdaptiveSize(file.size);
+                    return Helpers::formatAdaptiveSize(file.size);
                 }
             case eColDate: return file.date.toString("yyyy-MM-dd  HH:mm:ss");
             case eColType: {
@@ -297,37 +297,43 @@ bool CustomTableModel::setData(const QModelIndex &index, const QVariant &value, 
         return false;
     }
 
-    int row = index.row();
+    if (!renameFileInternal(index.row(), value.toString())) {
+        return false;
+    }
+
+    // View für die einzelne Zeile benachrichtigen
+    emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
+
+    return true;
+}
+
+bool CustomTableModel::renameFileInternal(int row, const QString &rawNewName) {
     if (row < 0 || row >= static_cast<int>(m_files.size())) {
         return false;
     }
 
-    QString newName = cleanFileName(value.toString().trimmed());
+    QString newName = Helpers::cleanFileName(rawNewName.trimmed());
 
     // Abbrechen, wenn der Name leer ist oder sich gar nicht geändert hat
     if (newName.isEmpty() || newName == m_files[row].name) {
         return false;
     }
 
-    // --- 1. DATEI AUF DER FESTPLATTE UMBENENNEN ---
+    // 1. Datei auf der Festplatte umbenennen
     QString oldPath = m_files[row].filePath;
     QString newPath = QDir::cleanPath(m_files[row].path + "/" + newName);
-    
-    // Versuchen, das Filesystem-Objekt umzubenennen
+
     if (!QFile::rename(oldPath, newPath)) {
-        // Wenn das OS streikt (z.B. Datei geöffnet, keine Rechte), brechen wir ab
         return false;
     }
 
-
     // 2. Struct im Speicher aktualisieren
     CustomFileInfo &info = m_files[row];
-
-    QString ext;
     info.name = newName;
     info.displayName = newName;
     info.filePath = newPath;
 
+    QString ext;
     if (!info.isDir) {
         int lastDot = newName.lastIndexOf('.');
         if (lastDot > 0) {
@@ -344,9 +350,6 @@ bool CustomTableModel::setData(const QModelIndex &index, const QVariant &value, 
 #ifdef Q_OS_WIN
     info.isExecutable = (ext == "exe" || ext == "scr");
 #endif
-
-    // --- 3. VIEW BENACHRICHTIGEN ---
-    emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
 
     return true;
 }
@@ -564,6 +567,41 @@ QString CustomTableModel::computeNewName(const CustomFileInfo &item) const {
     return result;
 }
 
+void CustomTableModel::applyBatchRename() {
+    if (m_files.empty() || m_renameRows.isEmpty())
+        return;
+
+    int minRow = -1;
+    int maxRow = -1;
+    bool anyRenamed = false;
+
+    for (int row : std::as_const(m_renameRows)) {
+        if (row < 0 || row >= static_cast<int>(m_files.size()))
+            continue;
+
+        // Nutzt den bereits vorausberechneten newName
+        if (renameFileInternal(row, m_files[row].newName)) {
+            anyRenamed = true;
+
+            if (minRow == -1 || row < minRow) {
+                minRow = row;
+            }
+
+            if (row > maxRow) {
+                maxRow = row;
+            }
+        }
+    }
+
+    // Nur ein einziges dataChanged-Signal für den gesamten betroffenen Zeilenbereich aussenden
+    if (anyRenamed && minRow != -1 && maxRow != -1) {
+        QModelIndex topLeft = index(minRow, 0);
+        QModelIndex bottomRight = index(maxRow, columnCount() - 1);
+
+        emit dataChanged(topLeft, bottomRight);
+    }
+}
+
 QString CustomTableModel::applyRegExRule(const QString &input, const RegExRule &rule) const {
     if (!rule.enabled || rule.match.isEmpty()) {
         return input;
@@ -736,7 +774,6 @@ QString CustomTableModel::applyMoveCopyRule(const QString &input, const MoveCopy
         fileExt  = input.sliced(lastDot + 1);
     }
 
-    // --- Beginn der Berechnung auf fileName ---
     QString remaining = fileName;
 
     // Anzahl der zu kopierenden/verschiebenden Zeichen auf die Dateinamen-Länge begrenzen
@@ -805,9 +842,7 @@ QString CustomTableModel::applyMoveCopyRule(const QString &input, const MoveCopy
     default:
         return input;
     }
-    // --- Ende der Berechnung ---
 
-    // Dateiname und Endung wieder zusammenführen
     if (!fileExt.isEmpty()) {
         return fileName + '.' + fileExt;
     }
@@ -1237,7 +1272,7 @@ bool CustomTableModel::dropMimeData(const QMimeData *data, Qt::DropAction action
                     webTitle = url.isValid() && !url.isLocalFile() ? url.host() : data->text();
                 }
 
-                createInternetShortcut(webUrlStr, targetDir, webTitle);
+                Helpers::createInternetShortcut(webUrlStr, targetDir, webTitle);
             }
         }
 
@@ -1323,7 +1358,7 @@ void CustomTableModel::populateModel_mkBatchRename(const QString &dirPath) {
         QFileInfo fileInfo = it.fileInfo();
 
         if (!bSearchStringFilenameEmpty) {
-            if (getNameMatchQuality(fileInfo.fileName(), fileInfo.path(), searchStringFilename, searchStringFilenameSplit, caseSensitivityFilename) == 0) {
+            if (Helpers::getNameMatchQuality(fileInfo.fileName(), fileInfo.path(), searchStringFilename, searchStringFilenameSplit, caseSensitivityFilename) == 0) {
                 continue;
             }
         }
@@ -1419,9 +1454,9 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
 
         if (!bSearchStringFilenameEmpty) {
             if (bRegExFilename) {
-                nameMatchQuality = getRegExNameMatchQuality(fileInfo, qreFileName);
+                nameMatchQuality = Helpers::getRegExNameMatchQuality(fileInfo, qreFileName);
             } else {
-                nameMatchQuality = getNameMatchQuality(fileInfo.fileName(), fileInfo.path(), searchStringFilename, searchStringFilenameSplit, caseSensitivityFilename);
+                nameMatchQuality = Helpers::getNameMatchQuality(fileInfo.fileName(), fileInfo.path(), searchStringFilename, searchStringFilenameSplit, caseSensitivityFilename);
             }
 
             if (nameMatchQuality == 0) {
@@ -1436,9 +1471,9 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
 
         if (!bsearchStringContentEmpty) {
             if (bRegExContent) {
-                contentMatchCount = getRegExContentMatchCount(fileInfo, qreContent, FileExtTextSet);
+                contentMatchCount = Helpers::getRegExContentMatchCount(fileInfo, qreContent, FileExtTextSet);
             } else {
-                contentMatchCount = getContentMatchCount(fileInfo, searchStringContent, caseSensitivityContent, FileExtTextSet);
+                contentMatchCount = Helpers::getContentMatchCount(fileInfo, searchStringContent, caseSensitivityContent, FileExtTextSet);
             }
 
             if (contentMatchCount == 0) {
@@ -1579,7 +1614,7 @@ void CustomTableModel::populateModel_mkLauncher(const QStringList &searchFolders
 
                         QFileInfo fileInfo = iter.fileInfo();
 
-                        nameMatchQuality = getNameMatchQuality(alternativeName, fileInfo.path(), searchString, searchStringSplit, Qt::CaseInsensitive);
+                        nameMatchQuality = Helpers::getNameMatchQuality(alternativeName, fileInfo.path(), searchString, searchStringSplit, Qt::CaseInsensitive);
                         if (nameMatchQuality == 0) {
                             continue;
                         } else {
@@ -1631,7 +1666,7 @@ void CustomTableModel::populateModel_mkLauncher(const QStringList &searchFolders
 
                 QFileInfo fileInfo = iter.fileInfo();
 
-                nameMatchQuality = getNameMatchQuality(fileInfo.fileName(), fileInfo.path(), searchString, searchStringSplit, Qt::CaseInsensitive);
+                nameMatchQuality = Helpers::getNameMatchQuality(fileInfo.fileName(), fileInfo.path(), searchString, searchStringSplit, Qt::CaseInsensitive);
                 if (nameMatchQuality == 0) {
                     continue;
                 } else {
@@ -1752,7 +1787,7 @@ CustomFileInfo CustomTableModel::createCustomFileInfo(const QFileInfo &fileInfo,
 
 #ifdef Q_OS_WIN
     if (fileInfo.isShortcut()) {
-        LnkInfo lnkinfo = getLnkInfo(fileInfo.filePath());
+        LnkInfo lnkinfo = Helpers::getLnkInfo(fileInfo.filePath());
         if (lnkinfo.exists) {
             info.isHidden = lnkinfo.isHidden;
             info.size = lnkinfo.size;

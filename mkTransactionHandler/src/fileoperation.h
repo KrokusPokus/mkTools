@@ -95,7 +95,7 @@ private:
     std::pair<qint64, int> calculateStats(const QStringList &filePaths);
     bool copyFileInChunks(const QString &src, const QString &dst);
     void updateProgress(bool force = false);
-    std::optional<quint32> calculateCRC32(const QString &filePath);
+    std::optional<quint32> calculateCRC32_interruptable(const QString &filePath);
     ConflictResolution askUserForResolution(const Conflict &conflict);
     bool removeReadOnlyAttribute(const QString &path);
     void runRetryList(const QList<FailedItem> &itemsToRetry);

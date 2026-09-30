@@ -84,9 +84,8 @@ public:
     ConflictResult result() const { return m_result; }
 
 private:
-    QString formatAdaptiveSize(quint64 bytes);
     QString getTypeString(const QFileInfo &fileInfo);
-    QPixmap generateThumbnail(const QFileInfo &fileInfo);
+    QPixmap generateIconOrThumbnail(const QFileInfo &fileInfo);
     void openCompareTool(const QString &pathA, const QString &pathB);
 
     SettingsManager m_settings;

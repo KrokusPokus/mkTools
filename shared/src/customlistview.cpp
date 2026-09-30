@@ -355,7 +355,7 @@ void CustomListView::updateTargetCache(const QPoint &pos, const QMimeData *mimeD
                 if (firstFile.absolutePath() == currentTargetDir) {
                     m_isSameFolderCached = true;
                 }
-                m_isSameDriveCached = onSameStorageDevice(firstFile.absolutePath(), currentTargetDir);
+                m_isSameDriveCached = Helpers::onSameStorageDevice(firstFile.absolutePath(), currentTargetDir);
             }
         }
     }

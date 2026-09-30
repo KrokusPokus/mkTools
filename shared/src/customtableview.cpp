@@ -395,7 +395,7 @@ void CustomTableView::updateTargetCache(const QPoint &pos, const QMimeData *mime
                 if (firstFile.absolutePath() == currentTargetDir) {
                     m_isSameFolderCached = true;
                 }
-                m_isSameDriveCached = onSameStorageDevice(firstFile.absolutePath(), currentTargetDir);
+                m_isSameDriveCached = Helpers::onSameStorageDevice(firstFile.absolutePath(), currentTargetDir);
             }
         }
     }

@@ -68,7 +68,7 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     setWindowIcon(QIcon(":/icons/app.ico"));
     resize(728, 545);
 
-    m_processIsElevated = isCurrentProcessElevated();
+    m_processIsElevated = Helpers::isCurrentProcessElevated();
 
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
@@ -243,16 +243,16 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_groupBox5 = new QGroupBox("Remove (5)", this);
     m_groupBox5->setCheckable(true);
     QLabel *groupBox5_Label1 = new QLabel(tr("First n"));
-    m_groupBox5_SpinBox1 = new QSpinBox();
+    m_groupBox5_SpinBox1 = new ZeroOnEmptySpinBox();
     m_groupBox5_SpinBox1->setRange(0, 255);
     QLabel *groupBox5_Label2 = new QLabel(tr("Last n"));
-    m_groupBox5_SpinBox2 = new QSpinBox();
+    m_groupBox5_SpinBox2 = new ZeroOnEmptySpinBox();
     m_groupBox5_SpinBox2->setRange(0, 255);
     QLabel *groupBox5_Label3 = new QLabel(tr("From"));
-    m_groupBox5_SpinBox3 = new QSpinBox();
+    m_groupBox5_SpinBox3 = new ZeroOnEmptySpinBox();
     m_groupBox5_SpinBox3->setRange(0, 255);
     QLabel *groupBox5_Label4 = new QLabel(tr("to"));
-    m_groupBox5_SpinBox4 = new QSpinBox();
+    m_groupBox5_SpinBox4 = new ZeroOnEmptySpinBox();
     m_groupBox5_SpinBox4->setRange(0, 255);
     QGridLayout *groupBox5_gridLayout = new QGridLayout();
     groupBox5_gridLayout->addWidget(groupBox5_Label1,   0, 0, 1, 1, Qt::AlignCenter);
@@ -269,11 +269,11 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_groupBox6->setCheckable(true);
     m_groupBox6_ComboBox1 = new QComboBox();
     m_groupBox6_ComboBox1->addItems({"None", "Copy first n", "Copy last n", "Move first n", "Move last n"});
-    m_groupBox6_SpinBox1 = new QSpinBox();
+    m_groupBox6_SpinBox1 = new ZeroOnEmptySpinBox();
     m_groupBox6_SpinBox1->setRange(0, 255);
     m_groupBox6_ComboBox2 = new QComboBox();
     m_groupBox6_ComboBox2->addItems({"None", "To start", "To end", "To pos."});
-    m_groupBox6_SpinBox2 = new QSpinBox();
+    m_groupBox6_SpinBox2 = new ZeroOnEmptySpinBox();
     m_groupBox6_SpinBox2->setRange(0, 255);
     m_groupBox6_LineEdit = new QLineEdit();
     QHBoxLayout *groupBox6Layout = new QHBoxLayout;
@@ -291,7 +291,7 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     QLabel *groupBox7_Label2 = new QLabel(tr("Insert"));
     m_groupBox7_LineEdit2 = new QLineEdit();
     QLabel *groupBox7_Label3 = new QLabel(tr("at pos."));
-    m_groupBox7_SpinBox = new QSpinBox();
+    m_groupBox7_SpinBox = new ZeroOnEmptySpinBox();
     m_groupBox7_SpinBox->setRange(0, 255);
     QLabel *groupBox7_Label4 = new QLabel(tr("Suffix"));
     m_groupBox7_LineEdit3 = new QLineEdit();
@@ -320,7 +320,7 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     QLabel *groupBox9_Label1 = new QLabel(tr("Sep."));
     m_groupBox9_LineEdit = new QLineEdit();
     QLabel *groupBox9_Label2 = new QLabel(tr("Levels"));
-    m_groupBox9_SpinBox = new QSpinBox();
+    m_groupBox9_SpinBox = new ZeroOnEmptySpinBox();
     m_groupBox9_SpinBox->setRange(0, 255);
     QHBoxLayout *groupBox9Layout = new QHBoxLayout;
     groupBox9Layout->addWidget(m_groupBox9_ComboBox);
@@ -337,14 +337,14 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_groupBox10_LineEdit->setMaxLength(1);
     m_groupBox10_LineEdit->setFixedWidth(24);
     QLabel *groupBox10_Label1 = new QLabel(tr("Digits:"));
-    m_groupBox10_SpinBox1 = new QSpinBox();
+    m_groupBox10_SpinBox1 = new ZeroOnEmptySpinBox();
     m_groupBox10_SpinBox1->setRange(0, 99);
     m_groupBox10_CheckBox2 = new QCheckBox("New");
     QLabel *groupBox10_Label2 = new QLabel(tr("Start:"));
-    m_groupBox10_SpinBox2 = new QSpinBox();
+    m_groupBox10_SpinBox2 = new ZeroOnEmptySpinBox();
     m_groupBox10_SpinBox2->setRange(0, 99);
     QLabel *groupBox10_Label3 = new QLabel(tr("Step:"));
-    m_groupBox10_SpinBox3 = new QSpinBox();
+    m_groupBox10_SpinBox3 = new ZeroOnEmptySpinBox();
     m_groupBox10_SpinBox3->setRange(0, 99);
     QHBoxLayout *groupBox10Layout1 = new QHBoxLayout;
     groupBox10Layout1->addWidget(m_groupBox10_CheckBox1);
@@ -400,6 +400,7 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     QHBoxLayout *buttonBoxLayout = new QHBoxLayout;
     m_buttonDoRename = new QPushButton("Rename", this);
     m_buttonDoRename->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
+    m_buttonDoRename->setEnabled(false);
     buttonBoxLayout->addStretch();
     buttonBoxLayout->addWidget(m_buttonDoRename);
 
@@ -611,9 +612,11 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     connect(QApplication::clipboard(), &QClipboard::dataChanged, this, &MainWindow::onClipboardChanged);
     
     connect(m_groupBox1_LineEdit1, &QLineEdit::textChanged, this, &MainWindow::validateInputBoxRegex);
-
-    // part of mitigation for Shift+Pos1 / Shift+End not working in tableView
-    connect(m_tableView->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::onTableCurrentChanged);
+    connect(m_buttonDoRename, &QPushButton::clicked, this, [this]() {
+        m_abstractModel->applyBatchRename();
+        onRenameRulesChanged(); // force recalculation of newName
+        //m_tableView->clearSelection();
+    });
     connect(m_tableView->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, [this]() {
                 QModelIndexList selectedProxyIndexes = m_tableView->selectionModel()->selectedIndexes();
@@ -628,7 +631,12 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
 
                 // Dem Model die markierten Zeilen mitteilen
                 m_abstractModel->setRenameRows(selectedSourceRows);
+
+                m_buttonDoRename->setEnabled(!selectedSourceRows.isEmpty());
             });
+
+    // part of mitigation for Shift+Pos1 / Shift+End not working in tableView
+    connect(m_tableView->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::onTableCurrentChanged);
 
     setupRenameRuleSignals();
     onRenameRulesChanged();
@@ -908,11 +916,11 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
                 openWithMenu->setIcon(QIcon::fromTheme("system-run"));
             }
             for (const QString &id : std::as_const(appIds)) {
-                DesktopEntry info = getDesktopEntryById(id);
+                DesktopEntry info = Helpers::getDesktopEntryById(id);
                 if (info.isValid) {
                     QAction *action = openWithMenu->addAction(QIcon::fromTheme(info.icon), info.name);
                     connect(action, &QAction::triggered, [info, filePath, this]() {
-                        openFileListWithHandler(info.id, getActiveViewPathList());
+                        Helpers::openFileListWithHandler(info.id, getActiveViewPathList());
                     });
                 }
             }
@@ -1107,7 +1115,7 @@ void MainWindow::action_ListViewOpenFiles() {
         QString fileExt = fileInfo.suffix().toLower();
 
         if (fileExt == "desktop") {
-            launchDesktopFile(getDesktopEntry(fileInfo));
+            Helpers::launchDesktopFile(Helpers::getDesktopEntry(fileInfo));
         }
 #ifdef Q_OS_LINUX
         else if (fileInfo.isExecutable()
@@ -1173,19 +1181,19 @@ void MainWindow::action_ListViewEditFiles() {
     }
 
     if (!pathListAudio.isEmpty()) {
-        openFileListWithHandler(m_settings.audioEditor, pathListAudio);
+        Helpers::openFileListWithHandler(m_settings.audioEditor, pathListAudio);
     }
 
     if (!pathListImage.isEmpty()) {
-        openFileListWithHandler(m_settings.imageEditor, pathListImage);
+        Helpers::openFileListWithHandler(m_settings.imageEditor, pathListImage);
     }
 
     if (!pathListText.isEmpty()) {
-        openFileListWithHandler(m_settings.textEditor, pathListText);
+        Helpers::openFileListWithHandler(m_settings.textEditor, pathListText);
     }
 
     if (!pathListVideo.isEmpty()) {
-        openFileListWithHandler(m_settings.videoEditor, pathListVideo);
+        Helpers::openFileListWithHandler(m_settings.videoEditor, pathListVideo);
     }
 }
 
@@ -1222,7 +1230,7 @@ void MainWindow::action_ListViewDeleteFiles(bool bRecycleOnly) {
     }
 
     // Special case: delete directly instead of handing over to mkTransactionHandler
-    if (hasOnlyFiles(pathList)) {
+    if (Helpers::hasOnlyFiles(pathList)) {
         QSet<QString> successfullyDeletedPaths;
 
         for (const QString &path : std::as_const(pathList)) {
@@ -1350,7 +1358,7 @@ void MainWindow::action_ListViewBrowseToFile() {
     QString path = getActiveViewCurrentItemPath();
     if (path.isEmpty()) return;
 
-    browseToFile(path, m_settings.fileManager);
+    Helpers::browseToFile(path, m_settings.fileManager);
 }
 
 void MainWindow::action_ListViewRenameFiles() {
@@ -1733,7 +1741,7 @@ void MainWindow::onTimedUpdateIcons() {
                 return QSet<QByteArray>(formats.begin(), formats.end());
             }();
 
-            if (supportedFormats.contains(fileInfo.suffix().toLower().toUtf8()) && !hasIconExt(fileInfo)) {
+            if (supportedFormats.contains(fileInfo.suffix().toLower().toUtf8()) && !Helpers::hasIconExt(fileInfo)) {
                 m_loadingThumbnails.insert(fullPath);
 
                 auto *watcher = new QFutureWatcher<QImage>(this);
@@ -1988,13 +1996,13 @@ bool MainWindow::showDeleteConfirmationDialog(const QStringList &pathList, bool 
     if (pathList.size() == 1) {
         QFileInfo fileInfo(pathList.first());
         QString fileName = fileInfo.fileName();
-        QString size = formatAdaptiveSize(fileInfo.size());
+        QString size = Helpers::formatAdaptiveSize(fileInfo.size());
         QString lastModified = fileInfo.lastModified().toString("yyyy-MM-dd  HH:mm:ss");
 
         QIcon icon = m_iconProvider.icon(fileInfo);
         QPixmap pix = icon.pixmap(QSize(48, 48));
-        if (!hasIconExt(fileInfo)) {
-            QPixmap thumb = generateThumbnail(fileInfo);
+        if (!Helpers::hasIconExt(fileInfo)) {
+            QPixmap thumb = Helpers::generateThumbnail(fileInfo);
             if (!thumb.isNull()) {
                 pix = thumb;
             }
@@ -2358,7 +2366,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
         // Window-wide hotkeys
         if (keyEvent->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) {
             if (keyEvent->key() == Qt::Key_F) {
-                openFileListWithHandler(m_settings.searchTool, { m_currentDirectory });
+                Helpers::openFileListWithHandler(m_settings.searchTool, { m_currentDirectory });
                 return true;
             }
         }

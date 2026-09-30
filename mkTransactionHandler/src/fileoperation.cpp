@@ -371,7 +371,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
 
                 // Only check crc for files up to 128 MiB which have the same size
                 if (fileSizeSource == fileSizeTarget && fileSizeSource <= 134217728) {
-                    auto crcSource = calculateCRC32(src);
+                    auto crcSource = calculateCRC32_interruptable(src);
                     if (!crcSource) {
                         if (!checkInterruption()) return FileOpResult::Cancelled;
                         m_stats.filesError++;
@@ -380,7 +380,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                         return FileOpResult::Error;
                     }
 
-                    auto crcTarget = calculateCRC32(dst);
+                    auto crcTarget = calculateCRC32_interruptable(dst);
                     if (!crcTarget) {
                         if (!checkInterruption()) return FileOpResult::Cancelled;
                         m_stats.filesError++;
@@ -803,7 +803,7 @@ std::pair<qint64, int> FileOperation::calculateStats(const QStringList &filePath
 #ifdef Q_OS_WIN
         // --- WINDOWS .LNK SHORTCUTS ---
         if (info.isShortcut()) {
-            totalBytes += getLnkSize(info.filePath());
+            totalBytes += Helpers::getLnkSize(info.filePath());
             totalFiles++;
             return;
         }
@@ -997,7 +997,7 @@ QString FileOperation::calculateRelativeDisplayPath(const QFileInfo &info) {
     return info.fileName();
 }
 
-std::optional<quint32> FileOperation::calculateCRC32(const QString &filePath) {
+std::optional<quint32> FileOperation::calculateCRC32_interruptable(const QString &filePath) {
     QFile file(filePath);
     if (!file.open(QIODevice::ReadOnly)) {
         qWarning() << "CRC32 fehlgeschlagen: Datei konnte nicht geöffnet werden:" << filePath;

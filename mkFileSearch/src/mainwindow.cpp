@@ -68,7 +68,7 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     setWindowIcon(QIcon(":/icons/app.ico"));
     resize(728, 545);
 
-    m_processIsElevated = isCurrentProcessElevated();
+    m_processIsElevated = Helpers::isCurrentProcessElevated();
 
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
@@ -755,7 +755,7 @@ void MainWindow::onTimedCalcCRC() {
             });
 
             QFuture<QString> future = QtConcurrent::run([fullPath]() {
-                quint32 crc = calculateCRC32(fullPath);
+                quint32 crc = Helpers::calculateCRC32(fullPath);
                 return QString("%1").arg(crc, 8, 16, QChar('0')).toUpper();
             });
             watcher->setFuture(future);
@@ -1070,11 +1070,11 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
                 openWithMenu->setIcon(QIcon::fromTheme("system-run"));
             }
             for (const QString &id : std::as_const(appIds)) {
-                DesktopEntry info = getDesktopEntryById(id);
+                DesktopEntry info = Helpers::getDesktopEntryById(id);
                 if (info.isValid) {
                     QAction *action = openWithMenu->addAction(QIcon::fromTheme(info.icon), info.name);
                     connect(action, &QAction::triggered, [info, filePath, this]() {
-                        openFileListWithHandler(info.id, getActiveViewPathList());
+                        Helpers::openFileListWithHandler(info.id, getActiveViewPathList());
                     });
                 }
             }
@@ -1269,7 +1269,7 @@ void MainWindow::action_ListViewOpenFiles() {
         QString fileExt = fileInfo.suffix().toLower();
 
         if (fileExt == "desktop") {
-            launchDesktopFile(getDesktopEntry(fileInfo));
+            Helpers::launchDesktopFile(Helpers::getDesktopEntry(fileInfo));
         }
 #ifdef Q_OS_LINUX
         else if (fileInfo.isExecutable()
@@ -1335,19 +1335,19 @@ void MainWindow::action_ListViewEditFiles() {
     }
 
     if (!pathListAudio.isEmpty()) {
-        openFileListWithHandler(m_settings.audioEditor, pathListAudio);
+        Helpers::openFileListWithHandler(m_settings.audioEditor, pathListAudio);
     }
 
     if (!pathListImage.isEmpty()) {
-        openFileListWithHandler(m_settings.imageEditor, pathListImage);
+        Helpers::openFileListWithHandler(m_settings.imageEditor, pathListImage);
     }
 
     if (!pathListText.isEmpty()) {
-        openFileListWithHandler(m_settings.textEditor, pathListText);
+        Helpers::openFileListWithHandler(m_settings.textEditor, pathListText);
     }
 
     if (!pathListVideo.isEmpty()) {
-        openFileListWithHandler(m_settings.videoEditor, pathListVideo);
+        Helpers::openFileListWithHandler(m_settings.videoEditor, pathListVideo);
     }
 }
 
@@ -1384,7 +1384,7 @@ void MainWindow::action_ListViewDeleteFiles(bool bRecycleOnly) {
     }
 
     // Special case: delete directly instead of handing over to mkTransactionHandler
-    if (hasOnlyFiles(pathList)) {
+    if (Helpers::hasOnlyFiles(pathList)) {
         QSet<QString> successfullyDeletedPaths;
 
         for (const QString &path : std::as_const(pathList)) {
@@ -1512,7 +1512,7 @@ void MainWindow::action_ListViewBrowseToFile() {
     QString path = getActiveViewCurrentItemPath();
     if (path.isEmpty()) return;
 
-    browseToFile(path, m_settings.fileManager);
+    Helpers::browseToFile(path, m_settings.fileManager);
 }
 
 void MainWindow::action_ListViewRenameFiles() {
@@ -1895,7 +1895,7 @@ void MainWindow::onTimedUpdateIcons() {
                 return QSet<QByteArray>(formats.begin(), formats.end());
             }();
 
-            if (supportedFormats.contains(fileInfo.suffix().toLower().toUtf8()) && !hasIconExt(fileInfo)) {
+            if (supportedFormats.contains(fileInfo.suffix().toLower().toUtf8()) && !Helpers::hasIconExt(fileInfo)) {
                 m_loadingThumbnails.insert(fullPath);
 
                 auto *watcher = new QFutureWatcher<QImage>(this);
@@ -2150,13 +2150,13 @@ bool MainWindow::showDeleteConfirmationDialog(const QStringList &pathList, bool 
     if (pathList.size() == 1) {
         QFileInfo fileInfo(pathList.first());
         QString fileName = fileInfo.fileName();
-        QString size = formatAdaptiveSize(fileInfo.size());
+        QString size = Helpers::formatAdaptiveSize(fileInfo.size());
         QString lastModified = fileInfo.lastModified().toString("yyyy-MM-dd  HH:mm:ss");
 
         QIcon icon = m_iconProvider.icon(fileInfo);
         QPixmap pix = icon.pixmap(QSize(48, 48));
-        if (!hasIconExt(fileInfo)) {
-            QPixmap thumb = generateThumbnail(fileInfo);
+        if (!Helpers::hasIconExt(fileInfo)) {
+            QPixmap thumb = Helpers::generateThumbnail(fileInfo);
             if (!thumb.isNull()) {
                 pix = thumb;
             }
@@ -2505,7 +2505,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
         // Window-wide hotkeys
         if (keyEvent->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) {
             if (keyEvent->key() == Qt::Key_F) {
-                openFileListWithHandler(m_settings.searchTool, { m_currentDirectory });
+                Helpers::openFileListWithHandler(m_settings.searchTool, { m_currentDirectory });
                 return true;
             }
         }
@@ -2930,7 +2930,7 @@ void MainWindow::elevateInstance() {
 
     bool bSuccess = false;
 #ifdef Q_OS_WIN
-    bSuccess = startProcessElevatedWin(appPath, argumentsToWinString(arguments));
+    bSuccess = Helpers::startProcessElevatedWin(appPath, Helpers::argumentsToWinString(arguments));
 #elif defined(Q_OS_LINUX)
     QStringList pkexecArgs;
     pkexecArgs << "env"

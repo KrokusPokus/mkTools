@@ -115,7 +115,6 @@ private slots:
 
 private:
     void setupUi();
-    QString formatAdaptiveSize(quint64 bytes);
     void setTaskbarProgress(double progressValue, bool visible);
 
     QLocale m_locale;

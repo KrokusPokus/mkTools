@@ -262,23 +262,23 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
     // 1. Summary
     switch (m_operationType) {
         case OperationType::Copy:
-            m_headerLabel->setText(tr("Copying %n file (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setText(tr("Copying %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
             break;
 
         case OperationType::Move:
-            m_headerLabel->setText(tr("Moving %n file (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setText(tr("Moving %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
             break;
 
         case OperationType::Link:
-            m_headerLabel->setText(tr("Linking %n file (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setText(tr("Linking %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
             break;
 
         case OperationType::Delete:
-            m_headerLabel->setText(tr("Deleting %n file (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setText(tr("Deleting %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
             break;
 
         case OperationType::Recycle:
-            m_headerLabel->setText(tr("Recycling %n file (%1)", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setText(tr("Recycling %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
             break;
 
         default:
@@ -298,14 +298,14 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
     int filesLeft = qMax(0, stats.totalFiles - processedFiles);
     qint64 bytesLeft = qMax(0ll, stats.totalBytes - stats.bytesWritten);
 
-    m_itemsLeftLabel->setText(tr("%1 (%2)").arg(m_locale.toString(filesLeft), formatAdaptiveSize(bytesLeft)));
+    m_itemsLeftLabel->setText(tr("%1 (%2)").arg(m_locale.toString(filesLeft), Helpers::formatAdaptiveSize(bytesLeft)));
 
     double secondsElapsed = stats.elapsedMs / 1000.0;
 
     if (secondsElapsed > 0.1 && stats.bytesWritten > 0) {
         // Geschwindigkeit in Bytes pro Sekunde
         double bytesPerSecond = stats.bytesWritten / secondsElapsed;
-        m_speedLabel->setText(tr("%1/s").arg(formatAdaptiveSize(bytesPerSecond)));
+        m_speedLabel->setText(tr("%1/s").arg(Helpers::formatAdaptiveSize(bytesPerSecond)));
 
         // Geschätzte Restzeit (Time Remaining)
         double secondsLeft = std::min(bytesLeft / bytesPerSecond, 86400.0 * 365);
@@ -361,23 +361,23 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
 
     switch (m_operationType) {
         case OperationType::Copy:
-            setWindowTitle(tr("Copying %n file (%1) to '%2' at %3%", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)).arg(stats.currentTargetDir).arg(byteProgressPercent));
+            setWindowTitle(tr("Copying %n file (%1) to '%2' at %3%", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)).arg(stats.currentTargetDir).arg(byteProgressPercent));
             break;
 
         case OperationType::Move:
-            setWindowTitle(tr("Moving %n file (%1) to '%2' at %3%", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)).arg(stats.currentTargetDir).arg(byteProgressPercent));
+            setWindowTitle(tr("Moving %n file (%1) to '%2' at %3%", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)).arg(stats.currentTargetDir).arg(byteProgressPercent));
             break;
 
         case OperationType::Link:
-            setWindowTitle(tr("Linking %n file (%1) to '%2' at %3%", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)).arg(stats.currentTargetDir).arg(byteProgressPercent));
+            setWindowTitle(tr("Linking %n file (%1) to '%2' at %3%", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)).arg(stats.currentTargetDir).arg(byteProgressPercent));
             break;
 
         case OperationType::Delete:
-            setWindowTitle(tr("Deleting %n file (%1) at %2%", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)).arg(byteProgressPercent));
+            setWindowTitle(tr("Deleting %n file (%1) at %2%", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)).arg(byteProgressPercent));
             break;
 
         case OperationType::Recycle:
-            setWindowTitle(tr("Recycling %n file (%1) at %2%", nullptr, stats.totalFiles).arg(formatAdaptiveSize(stats.totalBytes)).arg(byteProgressPercent));
+            setWindowTitle(tr("Recycling %n file (%1) at %2%", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)).arg(byteProgressPercent));
             break;
 
         default:
@@ -562,33 +562,6 @@ void MainWindow::onCancelRequested() {
         m_fileOp->doCancel();
     }
 }
-
-QString MainWindow::formatAdaptiveSize(quint64 bytes) {
-    if (bytes < 1024) {
-        return m_locale.toString(bytes) + " Bytes";
-    }
-
-    double size = static_cast<double>(bytes);
-    static const QStringList units = {"Bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"};
-    int unitIndex = 0;
-
-    while (size >= 1024.0 && unitIndex < units.size() - 1) {
-        size /= 1024.0;
-        unitIndex++;
-    }
-
-    int precision = 0;
-    if (size < 10.0) {
-        precision = 2; // z.B. 1,23 MiB
-    } else if (size < 100.0) {
-        precision = 1; // z.B. 12,3 MiB
-    } else {
-        precision = 0; // z.B. 123 MiB
-    }
-
-    return m_locale.toString(size, 'f', precision) + " " + units[unitIndex];
-}
-
 
 void MainWindow::setTaskbarProgress(double progressValue, bool visible) {
 #ifdef Q_OS_WIN

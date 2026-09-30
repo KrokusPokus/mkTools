@@ -1,5 +1,5 @@
 #include "filepropertiesdialog.h"
-#include "helpers.h"    // needed for formatAdaptiveSize()
+#include "helpers.h"    // needed for Helpers::formatAdaptiveSize()
 
 #include <QFileIconProvider>
 #include <QDateTime>
@@ -147,7 +147,7 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
 #ifdef Q_OS_WIN
     LnkInfo lnkinfo;
     if (fileInfo.isShortcut()) {
-        lnkinfo = getLnkInfo(fileInfo.filePath());
+        lnkinfo = Helpers::getLnkInfo(fileInfo.filePath());
     }
 #endif
 
@@ -163,7 +163,7 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
     QFileIconProvider provider;
     QIcon icon = provider.icon(fileInfo);
     QPixmap pix = icon.pixmap(QSize(48, 48));
-        QPixmap thumb = generateThumbnail(fileInfo);
+        QPixmap thumb = Helpers::generateThumbnail(fileInfo);
         if (!thumb.isNull()) {
             pix = thumb;
         }
@@ -287,14 +287,14 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
         driveSpaceFree = driveInfo.bytesFree();
         driveSpaceTotal = driveInfo.bytesTotal();
         driveSpaceUsed = driveSpaceTotal - driveSpaceFree;
-        m_sizeLabel->setText(tr("%1 (%2 Bytes)").arg(formatAdaptiveSize(driveSpaceUsed)).arg(m_locale.toString(driveSpaceUsed)));
+        m_sizeLabel->setText(tr("%1 (%2 Bytes)").arg(Helpers::formatAdaptiveSize(driveSpaceUsed)).arg(m_locale.toString(driveSpaceUsed)));
     }
 #ifdef Q_OS_WIN
     else if (fileInfo.isShortcut() && lnkinfo.exists) {
         if (lnkinfo.size <= 1024) {
-            m_sizeLabel->setText(formatAdaptiveSize(lnkinfo.size));
+            m_sizeLabel->setText(Helpers::formatAdaptiveSize(lnkinfo.size));
         } else {
-            m_sizeLabel->setText(tr("%1 (%2 Bytes)").arg(formatAdaptiveSize(lnkinfo.size)).arg(m_locale.toString(lnkinfo.size)));
+            m_sizeLabel->setText(tr("%1 (%2 Bytes)").arg(Helpers::formatAdaptiveSize(lnkinfo.size)).arg(m_locale.toString(lnkinfo.size)));
         }
     }
 #endif
@@ -303,9 +303,9 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
     }
     else {
         if (fileInfo.size() <= 1024) {
-            m_sizeLabel->setText(formatAdaptiveSize(fileInfo.size()));
+            m_sizeLabel->setText(Helpers::formatAdaptiveSize(fileInfo.size()));
         } else {
-            m_sizeLabel->setText(tr("%1 (%2 Bytes)").arg(formatAdaptiveSize(fileInfo.size())).arg(m_locale.toString(fileInfo.size())));
+            m_sizeLabel->setText(tr("%1 (%2 Bytes)").arg(Helpers::formatAdaptiveSize(fileInfo.size())).arg(m_locale.toString(fileInfo.size())));
         }
     }
 
@@ -317,7 +317,7 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
         fileinfoGridLayout->addWidget(new QLabel(tr("Free Space:")), row, colLabel);
 
         m_sizeLabel2 = new QLabel();
-        m_sizeLabel2->setText(tr("%1 (%2 Bytes)").arg(formatAdaptiveSize(driveSpaceFree)).arg(m_locale.toString(driveSpaceFree)));
+        m_sizeLabel2->setText(tr("%1 (%2 Bytes)").arg(Helpers::formatAdaptiveSize(driveSpaceFree)).arg(m_locale.toString(driveSpaceFree)));
 
         m_sizeLabel2->setTextInteractionFlags(Qt::TextSelectableByMouse);
         fileinfoGridLayout->addWidget(m_sizeLabel2, row, colField);
@@ -341,7 +341,7 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
         fileinfoGridLayout->addWidget(new QLabel(tr("Total Space:")), row, colLabel);
 
         m_sizeLabel3 = new QLabel();
-        m_sizeLabel3->setText(tr("%1 (%2 Bytes)").arg(formatAdaptiveSize(driveSpaceTotal)).arg(m_locale.toString(driveSpaceTotal)));
+        m_sizeLabel3->setText(tr("%1 (%2 Bytes)").arg(Helpers::formatAdaptiveSize(driveSpaceTotal)).arg(m_locale.toString(driveSpaceTotal)));
 
         m_sizeLabel3->setTextInteractionFlags(Qt::TextSelectableByMouse);
         fileinfoGridLayout->addWidget(m_sizeLabel3, row, colField);
@@ -684,20 +684,20 @@ void FilePropertiesDialog::updateGuiLabelText(const ProgressResult &result) {
     QString sizeInfoDisplay;
 
     if (result.followedSize <= 1024) {
-        sizeInfoDisplay = formatAdaptiveSize(result.followedSize);
+        sizeInfoDisplay = Helpers::formatAdaptiveSize(result.followedSize);
     } else {
         sizeInfoDisplay = tr("%1 (%2 Bytes)")
-        .arg(formatAdaptiveSize(result.followedSize))
+        .arg(Helpers::formatAdaptiveSize(result.followedSize))
             .arg(m_locale.toString(result.followedSize));
     }
 
     if (result.followedSize != result.directSize) {
         QString bonusInfo;
         if (result.directSize <= 1024) {
-            bonusInfo = formatAdaptiveSize(result.directSize);
+            bonusInfo = Helpers::formatAdaptiveSize(result.directSize);
         } else {
             bonusInfo = tr("%1 (%2 Bytes)")
-            .arg(formatAdaptiveSize(result.directSize))
+            .arg(Helpers::formatAdaptiveSize(result.directSize))
                 .arg(m_locale.toString(result.directSize));
         }
 
@@ -779,7 +779,7 @@ void FilePropertiesDialog::calculateStats(const QStringList &filePaths,
 #ifdef Q_OS_WIN
         // --- 1. WINDOWS .LNK SHORTCUTS ---
         if (info.isShortcut()) {
-            quint64 lnkSize = getLnkSize(info.filePath());
+            quint64 lnkSize = Helpers::getLnkSize(info.filePath());
 
             res.followedFiles++;
             res.followedSize += lnkSize;

@@ -37,7 +37,7 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
 
     // Line 1: Source Header
     QLabel *lblSrcIcon = new QLabel(this);
-    lblSrcIcon->setPixmap(generateThumbnail(srcInfo));
+    lblSrcIcon->setPixmap(generateIconOrThumbnail(srcInfo));
     lblSrcIcon->setAlignment(Qt::AlignCenter);
     lblSrcIcon->setContentsMargins(8, 8, 8, 8);
 
@@ -76,7 +76,7 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
 
     // Line 4: Destination Header
     QLabel *lblDstIcon = new QLabel(this);
-    lblDstIcon->setPixmap(generateThumbnail(dstInfo));
+    lblDstIcon->setPixmap(generateIconOrThumbnail(dstInfo));
     lblDstIcon->setAlignment(Qt::AlignCenter);
     lblDstIcon->setContentsMargins(8, 8, 8, 8);
 
@@ -102,11 +102,11 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     iCol++;
 
     if (srcInfo.size() >= 1024 || dstInfo.size() >= 1024) {
-        auto *lblSrcSizeShort = new QLabel(formatAdaptiveSize(srcInfo.size()), this);
+        auto *lblSrcSizeShort = new QLabel(Helpers::formatAdaptiveSize(srcInfo.size()), this);
         lblSrcSizeShort->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         gridLayout->addWidget(lblSrcSizeShort, 1, iCol);
 
-        auto *lblDstSizeShort = new QLabel(formatAdaptiveSize(dstInfo.size()), this);
+        auto *lblDstSizeShort = new QLabel(Helpers::formatAdaptiveSize(dstInfo.size()), this);
         lblDstSizeShort->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
         gridLayout->addWidget(lblDstSizeShort, 2, iCol);
 
@@ -197,7 +197,7 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
 }
 
 void ConflictDialog::openCompareTool(const QString &pathA, const QString &pathB) {
-    openFileListWithHandler(m_settings.mergeTool, { pathA, pathB});
+    Helpers::openFileListWithHandler(m_settings.mergeTool, { pathA, pathB});
 }
 
 QString ConflictDialog::getTypeString(const QFileInfo &fileInfo) {
@@ -208,67 +208,41 @@ QString ConflictDialog::getTypeString(const QFileInfo &fileInfo) {
     return tr("File");
 }
 
-QString ConflictDialog::formatAdaptiveSize(quint64 bytes) {
-    if (bytes < 1024) {
-        return m_locale.toString(bytes) + tr(" Bytes");
-    }
+    QPixmap ConflictDialog::generateIconOrThumbnail(const QFileInfo &fileInfo) {
+        QPixmap pix = m_iconProvider.icon(fileInfo).pixmap(48, 48);
 
-    double size = static_cast<double>(bytes);
-    static const QStringList units = {"Bytes", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB"};
-    int unitIndex = 0;
+        QString ext = fileInfo.suffix().toLower();
+        if (ext == "cur" || ext == "ico" || ext == "icns") {
+            return pix;
+        }
 
-    while (size >= 1024.0 && unitIndex < units.size() - 1) {
-        size /= 1024.0;
-        unitIndex++;
-    }
+        // 2. Unterstützte Formate statisch cachen (wird nur einmalig beim allerersten Aufruf erstellt)
+        static const QSet<QByteArray> supportedFormats = []() {
+            auto formats = QImageReader::supportedImageFormats();
+            return QSet<QByteArray>(formats.begin(), formats.end());
+        }();
 
-    int precision = 0;
-    if (size < 10.0) {
-        precision = 2; // z.B. 1,23 MiB
-    } else if (size < 100.0) {
-        precision = 1; // z.B. 12,3 MiB
-    } else {
-        precision = 0; // z.B. 123 MiB
-    }
+        if (supportedFormats.contains(fileInfo.suffix().toLower().toUtf8())) {
+            QImageReader reader(fileInfo.absoluteFilePath());
+            reader.setAutoTransform(true); // Wichtig für EXIF-Rotationen von Smartphones
 
-    return m_locale.toString(size, 'f', precision) + " " + units[unitIndex];
-}
+            if (reader.canRead()) {
+                // 1. Die echte Dimension des Bildes auslesen (kostet kaum Performance)
+                QSize originalSize = reader.size();
 
-QPixmap ConflictDialog::generateThumbnail(const QFileInfo &fileInfo) {
-    QPixmap pix = m_iconProvider.icon(fileInfo).pixmap(48, 48);
+                // 2. Proportionale Größe berechnen, die in eine 96x96 Box passt
+                // Aus z.B. 1920x1080 wird hier automatisch 96x54
+                QSize scaledSize = originalSize.scaled(QSize(96, 96), Qt::KeepAspectRatio);
 
-    QString ext = fileInfo.suffix().toLower();
-    if (ext == "cur" || ext == "ico" || ext == "icns") {
-        return pix;
-    }
+                // 3. Dem Reader die proportionale Größe mitteilen
+                reader.setScaledSize(scaledSize);
 
-    // 2. Unterstützte Formate statisch cachen (wird nur einmalig beim allerersten Aufruf erstellt)
-    static const QSet<QByteArray> supportedFormats = []() {
-        auto formats = QImageReader::supportedImageFormats();
-        return QSet<QByteArray>(formats.begin(), formats.end());
-    }();
-
-    if (supportedFormats.contains(fileInfo.suffix().toLower().toUtf8())) {
-        QImageReader reader(fileInfo.absoluteFilePath());
-        reader.setAutoTransform(true); // Wichtig für EXIF-Rotationen von Smartphones
-
-        if (reader.canRead()) {
-            // 1. Die echte Dimension des Bildes auslesen (kostet kaum Performance)
-            QSize originalSize = reader.size();
-
-            // 2. Proportionale Größe berechnen, die in eine 96x96 Box passt
-            // Aus z.B. 1920x1080 wird hier automatisch 96x54
-            QSize scaledSize = originalSize.scaled(QSize(96, 96), Qt::KeepAspectRatio);
-
-            // 3. Dem Reader die proportionale Größe mitteilen
-            reader.setScaledSize(scaledSize);
-
-            QImage img = reader.read();
-            if (!img.isNull()) {
-                pix =  QPixmap::fromImage(img);
+                QImage img = reader.read();
+                if (!img.isNull()) {
+                    pix =  QPixmap::fromImage(img);
+                }
             }
         }
-    }
 
-    return pix;
-}
+        return pix;
+    }
