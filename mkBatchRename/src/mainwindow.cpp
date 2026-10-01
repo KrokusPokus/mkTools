@@ -73,11 +73,6 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
 
-    m_mainLayout = new QVBoxLayout(m_centralWidget);
-
-    m_mainLayout->setContentsMargins(0, 0, 0, 0);
-    m_mainLayout->setSpacing(0);
-
     // --------------------------------------------------------------------
 
     m_settings.showFileExtensions = true; // mkBatchRename always shows the file extension
@@ -194,58 +189,62 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_viewStack->addWidget(m_listView);
     m_viewStack->addWidget(m_tableView);
     m_viewStack->addWidget(m_thumbnailView);
-    m_mainLayout->addWidget(m_viewStack);
-
     m_viewStack->setCurrentIndex(1);
     m_abstractModel->setModelViewMode(ViewMode::Detail);
 
     // --------------------------------------------------------------------
     // --------------------------------------------------------------------
 
-    m_groupBox1 = new QGroupBox("RegEx (1)", this);
+    m_groupBox13 = new QGroupBox("Which part", this);
+    m_groupBox13_RadioButton1 = new QRadioButton("File Name");
+    m_groupBox13_RadioButton2 = new QRadioButton("File Extension");
+    m_groupBox13_RadioButton3 = new QRadioButton("Full Name");
+    m_groupBox13_RadioButton1->setChecked(true);
+    QHBoxLayout *groupBox13Layout = new QHBoxLayout();
+    groupBox13Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
+    groupBox13Layout->addWidget(m_groupBox13_RadioButton1);
+    groupBox13Layout->addWidget(m_groupBox13_RadioButton2);
+    groupBox13Layout->addWidget(m_groupBox13_RadioButton3);
+    groupBox13Layout->addStretch();
+    m_groupBox13->setLayout(groupBox13Layout);
+
+    m_groupBox1 = new QGroupBox("RegEx", this);
     m_groupBox1->setCheckable(true);
+    QLabel *groupBox1_Label1 = new QLabel(tr("Match"));
     m_groupBox1_LineEdit1 = new QLineEdit();
-    m_groupBox1_LineEdit1->setPlaceholderText(tr("(Match)"));
+    QLabel *groupBox1_Label2 = new QLabel(tr("Replace"));
     m_groupBox1_LineEdit2 = new QLineEdit();
-    m_groupBox1_LineEdit2->setPlaceholderText(tr("(Replace)"));
-    m_groupBox1_CheckBox = new QCheckBox("Include Ext");
-    m_groupBox1_CheckBox->setChecked(false);
-    QVBoxLayout *groupBox1Layout = new QVBoxLayout;
-    groupBox1Layout->addWidget(m_groupBox1_LineEdit1);
-    groupBox1Layout->addWidget(m_groupBox1_LineEdit2);
-    groupBox1Layout->addWidget(m_groupBox1_CheckBox);
+    QGridLayout *groupBox1Layout = new QGridLayout;
+    groupBox1Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
+    groupBox1Layout->addWidget(groupBox1_Label1, 1, 0);
+    groupBox1Layout->addWidget(m_groupBox1_LineEdit1, 1, 1);
+    groupBox1Layout->addWidget(groupBox1_Label2, 2, 0);
+    groupBox1Layout->addWidget(m_groupBox1_LineEdit2, 2, 1);
     m_groupBox1->setLayout(groupBox1Layout);
 
-    m_groupBox2 = new QGroupBox("Filename (2)", this);
-    m_groupBox2->setCheckable(true);
-    m_groupBox2_ComboBox = new QComboBox();
-    m_groupBox2_ComboBox->addItems({"Same", "Lower", "Upper", "Title", "Sentence", "Fixed", "Remove"});
-    m_groupBox2_LineEdit = new QLineEdit();
-    QHBoxLayout *groupBox2Layout = new QHBoxLayout;
-    groupBox2Layout->addWidget(m_groupBox2_ComboBox);
-    groupBox2Layout->addWidget(m_groupBox2_LineEdit);
-    m_groupBox2->setLayout(groupBox2Layout);
-
-    m_groupBox3 = new QGroupBox("Repl. (3)", this);
+    m_groupBox3 = new QGroupBox("Replace", this);
     m_groupBox3->setCheckable(true);
+    QLabel *groupBox3_Label1 = new QLabel(tr("Replace"));
     m_groupBox3_LineEdit1 = new QLineEdit();
-    m_groupBox3_LineEdit1->setPlaceholderText(tr("(Replace)"));
-    m_groupBox3_LineEdit2 = new QLineEdit();
-    m_groupBox3_LineEdit2->setPlaceholderText(tr("(With)"));
-    m_groupBox3_CheckBox = new QCheckBox("Match Case");
+    m_groupBox3_CheckBox = new QCheckBox(tr("Match Case"));
     m_groupBox3_CheckBox->setChecked(false);
-    QVBoxLayout *groupBox3Layout = new QVBoxLayout;
-    groupBox3Layout->addWidget(m_groupBox3_LineEdit1);
-    groupBox3Layout->addWidget(m_groupBox3_LineEdit2);
-    groupBox3Layout->addWidget(m_groupBox3_CheckBox);
+    QLabel *groupBox3_Label2 = new QLabel(tr("With"));
+    m_groupBox3_LineEdit2 = new QLineEdit();
+    QGridLayout *groupBox3Layout = new QGridLayout();
+    groupBox3Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
+    groupBox3Layout->addWidget(groupBox3_Label1, 1, 0);
+    groupBox3Layout->addWidget(m_groupBox3_LineEdit1, 1, 1);
+    groupBox3Layout->addWidget(m_groupBox3_CheckBox, 1, 2);
+    groupBox3Layout->addWidget(groupBox3_Label2, 2, 0);
+    groupBox3Layout->addWidget(m_groupBox3_LineEdit2, 2, 1, 1, 2);
     m_groupBox3->setLayout(groupBox3Layout);
 
-    m_groupBox5 = new QGroupBox("Remove (5)", this);
+    m_groupBox5 = new QGroupBox("Remove", this);
     m_groupBox5->setCheckable(true);
-    QLabel *groupBox5_Label1 = new QLabel(tr("First n"));
+    QLabel *groupBox5_Label1 = new QLabel(tr("First"));
     m_groupBox5_SpinBox1 = new ZeroOnEmptySpinBox();
     m_groupBox5_SpinBox1->setRange(0, 255);
-    QLabel *groupBox5_Label2 = new QLabel(tr("Last n"));
+    QLabel *groupBox5_Label2 = new QLabel(tr("Last"));
     m_groupBox5_SpinBox2 = new ZeroOnEmptySpinBox();
     m_groupBox5_SpinBox2->setRange(0, 255);
     QLabel *groupBox5_Label3 = new QLabel(tr("From"));
@@ -254,37 +253,48 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     QLabel *groupBox5_Label4 = new QLabel(tr("to"));
     m_groupBox5_SpinBox4 = new ZeroOnEmptySpinBox();
     m_groupBox5_SpinBox4->setRange(0, 255);
-    QGridLayout *groupBox5_gridLayout = new QGridLayout();
-    groupBox5_gridLayout->addWidget(groupBox5_Label1,   0, 0, 1, 1, Qt::AlignCenter);
-    groupBox5_gridLayout->addWidget(m_groupBox5_SpinBox1, 0, 1);
-    groupBox5_gridLayout->addWidget(groupBox5_Label2,   0, 2, 1, 1, Qt::AlignCenter);
-    groupBox5_gridLayout->addWidget(m_groupBox5_SpinBox2, 0, 3);
-    groupBox5_gridLayout->addWidget(groupBox5_Label3,   1, 0, 1, 1, Qt::AlignCenter);
-    groupBox5_gridLayout->addWidget(m_groupBox5_SpinBox3, 1, 1);
-    groupBox5_gridLayout->addWidget(groupBox5_Label4,   1, 2, 1, 1, Qt::AlignCenter);
-    groupBox5_gridLayout->addWidget(m_groupBox5_SpinBox4, 1, 3);
-    m_groupBox5->setLayout(groupBox5_gridLayout);
+    QHBoxLayout *groupBox5Layout = new QHBoxLayout();
+    groupBox5Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
+    groupBox5Layout->addWidget(groupBox5_Label1);
+    groupBox5Layout->addWidget(m_groupBox5_SpinBox1);
+    groupBox5Layout->addSpacing(30);
+    groupBox5Layout->addWidget(groupBox5_Label3);
+    groupBox5Layout->addWidget(m_groupBox5_SpinBox3);
+    groupBox5Layout->addWidget(groupBox5_Label4);
+    groupBox5Layout->addWidget(m_groupBox5_SpinBox4);
+    groupBox5Layout->addSpacing(30);
+    groupBox5Layout->addWidget(groupBox5_Label2);
+    groupBox5Layout->addWidget(m_groupBox5_SpinBox2);
+    groupBox5Layout->addStretch();
+    m_groupBox5->setLayout(groupBox5Layout);
 
-    m_groupBox6 = new QGroupBox("Move/Copy (6)", this);
+    m_groupBox6 = new QGroupBox("Move/Copy", this);
     m_groupBox6->setCheckable(true);
     m_groupBox6_ComboBox1 = new QComboBox();
     m_groupBox6_ComboBox1->addItems({"None", "Copy first n", "Copy last n", "Move first n", "Move last n"});
     m_groupBox6_SpinBox1 = new ZeroOnEmptySpinBox();
     m_groupBox6_SpinBox1->setRange(0, 255);
+    QLabel *groupBox6_Label1 = new QLabel(tr("to"));
     m_groupBox6_ComboBox2 = new QComboBox();
     m_groupBox6_ComboBox2->addItems({"None", "To start", "To end", "To pos."});
     m_groupBox6_SpinBox2 = new ZeroOnEmptySpinBox();
     m_groupBox6_SpinBox2->setRange(0, 255);
+    QLabel *groupBox6_Label2 = new QLabel(tr("Sep."));
     m_groupBox6_LineEdit = new QLineEdit();
+    m_groupBox6_LineEdit->setFixedWidth(24);
     QHBoxLayout *groupBox6Layout = new QHBoxLayout;
+    groupBox6Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
     groupBox6Layout->addWidget(m_groupBox6_ComboBox1);
     groupBox6Layout->addWidget(m_groupBox6_SpinBox1);
+    groupBox6Layout->addWidget(groupBox6_Label1);
     groupBox6Layout->addWidget(m_groupBox6_ComboBox2);
     groupBox6Layout->addWidget(m_groupBox6_SpinBox2);
+    groupBox6Layout->addWidget(groupBox6_Label2);
     groupBox6Layout->addWidget(m_groupBox6_LineEdit);
+    groupBox6Layout->addStretch();
     m_groupBox6->setLayout(groupBox6Layout);
 
-    m_groupBox7 = new QGroupBox("Add (7)", this);
+    m_groupBox7 = new QGroupBox("Add", this);
     m_groupBox7->setCheckable(true);
     QLabel *groupBox7_Label1 = new QLabel(tr("Prefix"));
     m_groupBox7_LineEdit1 = new QLineEdit();
@@ -295,88 +305,120 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_groupBox7_SpinBox->setRange(0, 255);
     QLabel *groupBox7_Label4 = new QLabel(tr("Suffix"));
     m_groupBox7_LineEdit3 = new QLineEdit();
-    QGridLayout *m_groupBox7GridLayout = new QGridLayout();
-    m_groupBox7GridLayout->addWidget(groupBox7_Label1, 0, 0);
-    m_groupBox7GridLayout->addWidget(m_groupBox7_LineEdit1, 0, 1, 1, 3);
-    m_groupBox7GridLayout->addWidget(groupBox7_Label2, 1, 0);
-    m_groupBox7GridLayout->addWidget(m_groupBox7_LineEdit2, 1, 1);
-    m_groupBox7GridLayout->addWidget(groupBox7_Label3, 1, 2);
-    m_groupBox7GridLayout->addWidget(m_groupBox7_SpinBox, 1, 3);
-    m_groupBox7GridLayout->addWidget(groupBox7_Label4, 2, 0);
-    m_groupBox7GridLayout->addWidget(m_groupBox7_LineEdit3, 2, 1, 1, 3);
-    m_groupBox7->setLayout(m_groupBox7GridLayout);
+    QGridLayout *groupBox7Layout = new QGridLayout();
+    groupBox7Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
+    groupBox7Layout->addWidget(groupBox7_Label1, 0, 0);
+    groupBox7Layout->addWidget(m_groupBox7_LineEdit1, 0, 1, 1, 3);
+    groupBox7Layout->addWidget(groupBox7_Label2, 1, 0);
+    groupBox7Layout->addWidget(m_groupBox7_LineEdit2, 1, 1);
+    groupBox7Layout->addWidget(groupBox7_Label3, 1, 2);
+    groupBox7Layout->addWidget(m_groupBox7_SpinBox, 1, 3);
+    groupBox7Layout->addWidget(groupBox7_Label4, 2, 0);
+    groupBox7Layout->addWidget(m_groupBox7_LineEdit3, 2, 1, 1, 3);
+    m_groupBox7->setLayout(groupBox7Layout);
 
-    /*
-    m_groupBox8 = new QGroupBox("Auto Date (8)", this);
+    m_groupBox2 = new QGroupBox("Add Numbering", this);
+    m_groupBox2->setCheckable(true);
+    m_groupBox2_ComboBox = new QComboBox();
+    m_groupBox2_ComboBox->addItems({"None", "Prefix", "Suffix"});
+    QLabel *groupBox2_Label1 = new QLabel(tr("Start:"));
+    m_groupBox2_SpinBox1 = new ZeroOnEmptySpinBox();
+    m_groupBox2_SpinBox1->setRange(0, 100000);
+    m_groupBox2_SpinBox1->setValue(1);
+    QLabel *groupBox2_Label2 = new QLabel(tr("Step:"));
+    m_groupBox2_SpinBox2 = new QSpinBox();
+    m_groupBox2_SpinBox2->setRange(1, 100000);
+    m_groupBox2_SpinBox2->setValue(1);
+    QLabel *groupBox2_Label3 = new QLabel(tr("Sep."));
+    m_groupBox2_LineEdit = new QLineEdit();
+    m_groupBox2_LineEdit->setFixedWidth(24);
+    QHBoxLayout *groupBox2Layout = new QHBoxLayout;
+    groupBox2Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
+    groupBox2Layout->addWidget(m_groupBox2_ComboBox);
+    groupBox2Layout->addWidget(groupBox2_Label1);
+    groupBox2Layout->addWidget(m_groupBox2_SpinBox1);
+    groupBox2Layout->addWidget(groupBox2_Label2);
+    groupBox2Layout->addWidget(m_groupBox2_SpinBox2);
+    groupBox2Layout->addWidget(groupBox2_Label3);
+    groupBox2Layout->addWidget(m_groupBox2_LineEdit);
+    groupBox2Layout->addStretch();
+    m_groupBox2->setLayout(groupBox2Layout);
+
+    m_groupBox8 = new QGroupBox("Add Date", this);
     m_groupBox8->setCheckable(true);
     QVBoxLayout *groupBox8Layout = new QVBoxLayout;
+    groupBox8Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
     m_groupBox8->setLayout(groupBox8Layout);
-    */
 
-    m_groupBox9 = new QGroupBox("Append Folder Name (9)", this);
+    m_groupBox9 = new QGroupBox("Add Folder Name", this);
     m_groupBox9->setCheckable(true);
     m_groupBox9_ComboBox = new QComboBox();
     m_groupBox9_ComboBox->addItems({"None", "Prefix", "Suffix"});
     QLabel *groupBox9_Label1 = new QLabel(tr("Sep."));
     m_groupBox9_LineEdit = new QLineEdit();
+    m_groupBox9_LineEdit->setFixedWidth(24);
     QLabel *groupBox9_Label2 = new QLabel(tr("Levels"));
-    m_groupBox9_SpinBox = new ZeroOnEmptySpinBox();
-    m_groupBox9_SpinBox->setRange(0, 255);
+    m_groupBox9_SpinBox = new QSpinBox();
+    m_groupBox9_SpinBox->setRange(1, 255);
+    m_groupBox9_SpinBox->setValue(1);
     QHBoxLayout *groupBox9Layout = new QHBoxLayout;
+    groupBox9Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
     groupBox9Layout->addWidget(m_groupBox9_ComboBox);
-    groupBox9Layout->addWidget(groupBox9_Label1);
-    groupBox9Layout->addWidget(m_groupBox9_LineEdit);
     groupBox9Layout->addWidget(groupBox9_Label2);
     groupBox9Layout->addWidget(m_groupBox9_SpinBox);
+    groupBox9Layout->addWidget(groupBox9_Label1);
+    groupBox9Layout->addWidget(m_groupBox9_LineEdit);
+    groupBox9Layout->addStretch();
     m_groupBox9->setLayout(groupBox9Layout);
 
-    m_groupBox10 = new QGroupBox("Numbering (10)", this);
+    m_groupBox10 = new QGroupBox("Number Padding", this);
     m_groupBox10->setCheckable(true);
-    m_groupBox10_CheckBox1 = new QCheckBox("Add lead");
+    m_groupBox10_CheckBox1 = new QCheckBox("Add lead:");
     m_groupBox10_LineEdit = new QLineEdit();
+    m_groupBox10_LineEdit->setText("0");
     m_groupBox10_LineEdit->setMaxLength(1);
     m_groupBox10_LineEdit->setFixedWidth(24);
     QLabel *groupBox10_Label1 = new QLabel(tr("Digits:"));
-    m_groupBox10_SpinBox1 = new ZeroOnEmptySpinBox();
-    m_groupBox10_SpinBox1->setRange(0, 99);
+    m_groupBox10_SpinBox1 = new QSpinBox();
+    m_groupBox10_SpinBox1->setRange(1, 255);
+    m_groupBox10_SpinBox1->setValue(3);
     m_groupBox10_CheckBox2 = new QCheckBox("New");
     QLabel *groupBox10_Label2 = new QLabel(tr("Start:"));
     m_groupBox10_SpinBox2 = new ZeroOnEmptySpinBox();
-    m_groupBox10_SpinBox2->setRange(0, 99);
+    m_groupBox10_SpinBox2->setRange(0, 100000);
+    m_groupBox10_SpinBox2->setValue(1);
     QLabel *groupBox10_Label3 = new QLabel(tr("Step:"));
-    m_groupBox10_SpinBox3 = new ZeroOnEmptySpinBox();
-    m_groupBox10_SpinBox3->setRange(0, 99);
+    m_groupBox10_SpinBox3 = new QSpinBox();
+    m_groupBox10_SpinBox3->setRange(1, 100000);
+    m_groupBox10_SpinBox3->setValue(1);
     QHBoxLayout *groupBox10Layout1 = new QHBoxLayout;
+    groupBox10Layout1->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
     groupBox10Layout1->addWidget(m_groupBox10_CheckBox1);
     groupBox10Layout1->addWidget(m_groupBox10_LineEdit);
+    groupBox10Layout1->addSpacing(20);
     groupBox10Layout1->addWidget(groupBox10_Label1);
     groupBox10Layout1->addWidget(m_groupBox10_SpinBox1);
+    groupBox10Layout1->addSpacing(20);
+    groupBox10Layout1->addWidget(m_groupBox10_CheckBox2);
+    groupBox10Layout1->addSpacing(20);
+    groupBox10Layout1->addWidget(groupBox10_Label2);
+    groupBox10Layout1->addWidget(m_groupBox10_SpinBox2);
+    groupBox10Layout1->addWidget(groupBox10_Label3);
+    groupBox10Layout1->addWidget(m_groupBox10_SpinBox3);
     groupBox10Layout1->addStretch();
-    QHBoxLayout *groupBox10Layout2 = new QHBoxLayout;
-    groupBox10Layout2->addWidget(m_groupBox10_CheckBox2);
-    groupBox10Layout2->addSpacing(20);
-    groupBox10Layout2->addWidget(groupBox10_Label2);
-    groupBox10Layout2->addWidget(m_groupBox10_SpinBox2);
-    groupBox10Layout2->addWidget(groupBox10_Label3);
-    groupBox10Layout2->addWidget(m_groupBox10_SpinBox3);
-    groupBox10Layout2->addStretch();
-    QVBoxLayout *groupBox10Layout = new QVBoxLayout;
-    groupBox10Layout->addLayout(groupBox10Layout1);
-    groupBox10Layout->addLayout(groupBox10Layout2);
-    m_groupBox10->setLayout(groupBox10Layout);
+    m_groupBox10->setLayout(groupBox10Layout1);
 
-    m_groupBox11 = new QGroupBox("Extension (11)", this);
+    m_groupBox11 = new QGroupBox("Case", this);
     m_groupBox11->setCheckable(true);
     m_groupBox11_ComboBox = new QComboBox();
-    m_groupBox11_ComboBox->addItems({"Same", "Lower", "Upper", "Title", "Fixed", "Extra", "Remove"});
+    m_groupBox11_ComboBox->addItems({"Same", "Lower", "Upper", "Title", "Fixed", "Sentence"});
     m_groupBox11_LineEdit = new QLineEdit();
     QHBoxLayout *groupBox11Layout = new QHBoxLayout;
+    groupBox11Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
     groupBox11Layout->addWidget(m_groupBox11_ComboBox);
     groupBox11Layout->addWidget(m_groupBox11_LineEdit);
     m_groupBox11->setLayout(groupBox11Layout);
 
-    m_groupBox12 = new QGroupBox("Selections (12)", this);
-    //m_groupBox12->setCheckable(true);
     m_groupBox12_CheckBox1 = new QCheckBox("Files");
     m_groupBox12_CheckBox1->setChecked(true);
     m_groupBox12_CheckBox2 = new QCheckBox("Folders");
@@ -388,6 +430,8 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_groupBox12_CheckBox4 = new QCheckBox("Match case");
     m_groupBox12_CheckBox4->setChecked(false);
     QHBoxLayout *groupBox12Layout = new QHBoxLayout();
+    groupBox12Layout->setContentsMargins(10, 10, 10, 10);
+    groupBox12Layout->setSpacing(10);
     groupBox12Layout->addWidget(m_groupBox12_CheckBox1);
     groupBox12Layout->addWidget(m_groupBox12_CheckBox2);
     groupBox12Layout->addWidget(m_groupBox12_CheckBox3);
@@ -395,7 +439,6 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     groupBox12Layout->addWidget(groupBox12_Label);
     groupBox12Layout->addWidget(m_groupBox12_LineEdit);
     groupBox12Layout->addWidget(m_groupBox12_CheckBox4);
-    m_groupBox12->setLayout(groupBox12Layout);
 
     QHBoxLayout *buttonBoxLayout = new QHBoxLayout;
     m_buttonDoRename = new QPushButton("Rename", this);
@@ -404,28 +447,35 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     buttonBoxLayout->addStretch();
     buttonBoxLayout->addWidget(m_buttonDoRename);
 
-    m_bottomControlsContainerWidget = new QWidget();
+    QVBoxLayout *controlsLayout = new QVBoxLayout();
+    controlsLayout->setContentsMargins(10, 10, 10, 10);
+    controlsLayout->setSpacing(10);
 
-    QGridLayout *bottomControlsGridLayout = new QGridLayout(m_bottomControlsContainerWidget);
-    bottomControlsGridLayout->setContentsMargins(10, 10, 10, 10);
-    bottomControlsGridLayout->setSpacing(10);
+    controlsLayout->addWidget(m_groupBox13); // Which part
+    controlsLayout->addWidget(m_groupBox1);  // RegEx
+    controlsLayout->addWidget(m_groupBox3);  // Replace
+    controlsLayout->addWidget(m_groupBox5);  // Remove
+    controlsLayout->addWidget(m_groupBox6);  // Move/Copy
+    controlsLayout->addWidget(m_groupBox7);  // Add
+    controlsLayout->addWidget(m_groupBox2);  // Add Numbering
+    controlsLayout->addWidget(m_groupBox8);  // Add Date
+    controlsLayout->addWidget(m_groupBox9);  // Add Folder Name
+    controlsLayout->addWidget(m_groupBox10); // Number Padding
+    controlsLayout->addWidget(m_groupBox11); // Case
 
-    bottomControlsGridLayout->addWidget(m_groupBox1,   0, 0);  // RegEx (1)
-    bottomControlsGridLayout->addWidget(m_groupBox3,   0, 1);  // Repl. (3)
-    bottomControlsGridLayout->addWidget(m_groupBox5,   0, 2);  // Remove (5)
-    bottomControlsGridLayout->addWidget(m_groupBox7,   0, 3);  // Add (7)
-    bottomControlsGridLayout->addWidget(m_groupBox10,  0, 4);  // Numbering (10)
+    controlsLayout->addLayout(buttonBoxLayout);
 
-    bottomControlsGridLayout->addWidget(m_groupBox2,   1, 0);  // Filename (2)
-    bottomControlsGridLayout->addWidget(m_groupBox11,  1, 1);  // Extension (11)
-    bottomControlsGridLayout->addWidget(m_groupBox9,   1, 2);  // Append Folder Name (9)
+    // --------------------------------------------------------------------
 
-    bottomControlsGridLayout->addWidget(m_groupBox6,   2, 0, 1, 2);   // Move/Copy (6)
+    QVBoxLayout *rightSideLayout = new QVBoxLayout();
+    rightSideLayout->addLayout(groupBox12Layout); // Filters
+    rightSideLayout->addWidget(m_viewStack);
 
-    bottomControlsGridLayout->addWidget(m_groupBox12,  3, 0, 1, 2);   // Selections (12)
-    bottomControlsGridLayout->addLayout(buttonBoxLayout, 3, 4);
-
-    m_mainLayout->addWidget(m_bottomControlsContainerWidget);
+    m_mainLayout = new QHBoxLayout(m_centralWidget);
+    m_mainLayout->setContentsMargins(0, 0, 0, 0);
+    m_mainLayout->setSpacing(0);
+    m_mainLayout->addLayout(controlsLayout, 0);
+    m_mainLayout->addLayout(rightSideLayout, 1);
 
     // --------------------------------------------------------------------
 
@@ -620,19 +670,29 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     connect(m_tableView->selectionModel(), &QItemSelectionModel::selectionChanged,
             this, [this]() {
                 QModelIndexList selectedProxyIndexes = m_tableView->selectionModel()->selectedIndexes();
-                QSet<int> selectedSourceRows;
+
+                std::sort(selectedProxyIndexes.begin(), selectedProxyIndexes.end(),
+                          [](const QModelIndex &a, const QModelIndex &b) {
+                              return a.row() < b.row();
+                          });
+
+                QList<int> orderedSourceRows;
+                QSet<int> seenSourceRows;
 
                 for (const QModelIndex &proxyIndex : std::as_const(selectedProxyIndexes)) {
                     if (proxyIndex.column() == CustomTableModel::eColNewName) {
                         QModelIndex sourceIndex = m_proxyModel->mapToSource(proxyIndex);
-                        selectedSourceRows.insert(sourceIndex.row());
+                        int sourceRow = sourceIndex.row();
+
+                        if (!seenSourceRows.contains(sourceRow)) {
+                            seenSourceRows.insert(sourceRow);
+                            orderedSourceRows.append(sourceRow);
+                        }
                     }
                 }
 
-                // Dem Model die markierten Zeilen mitteilen
-                m_abstractModel->setRenameRows(selectedSourceRows);
-
-                m_buttonDoRename->setEnabled(!selectedSourceRows.isEmpty());
+                m_abstractModel->setRenameRows(seenSourceRows, orderedSourceRows);
+                m_buttonDoRename->setEnabled(!orderedSourceRows.isEmpty());
             });
 
     // part of mitigation for Shift+Pos1 / Shift+End not working in tableView
@@ -2179,11 +2239,12 @@ void MainWindow::updateWidgetStyles() {
             m_groupBox5->setStyleSheet(Styles::groupBoxStyleSheetDark);
             m_groupBox6->setStyleSheet(Styles::groupBoxStyleSheetDark);
             m_groupBox7->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            //m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheetDark);
             m_groupBox9->setStyleSheet(Styles::groupBoxStyleSheetDark);
             m_groupBox10->setStyleSheet(Styles::groupBoxStyleSheetDark);
             m_groupBox11->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            m_groupBox12->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            //m_groupBox12->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            m_groupBox13->setStyleSheet(Styles::groupBoxStyleSheetDark);
         } else {
             // WICHTIG: Stylesheet leeren, wenn das System auf Light Mode wechselt!
             // Dadurch schaltet Qt wieder auf das helle Breeze-Standarddesign um.
@@ -2195,11 +2256,12 @@ void MainWindow::updateWidgetStyles() {
             m_groupBox5->setStyleSheet(Styles::groupBoxStyleSheet);
             m_groupBox6->setStyleSheet(Styles::groupBoxStyleSheet);
             m_groupBox7->setStyleSheet(Styles::groupBoxStyleSheet);
-            //m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheet);
+            m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheet);
             m_groupBox9->setStyleSheet(Styles::groupBoxStyleSheet);
-            m_groupBox10->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            m_groupBox10->setStyleSheet(Styles::groupBoxStyleSheet);
             m_groupBox11->setStyleSheet(Styles::groupBoxStyleSheet);
-            m_groupBox12->setStyleSheet(Styles::groupBoxStyleSheet);
+            //m_groupBox12->setStyleSheet(Styles::groupBoxStyleSheet);
+            m_groupBox13->setStyleSheet(Styles::groupBoxStyleSheet);
         }
 
         if (targetState == StyleState::Elevated) {
@@ -2553,32 +2615,35 @@ void MainWindow::validateInputBoxRegex() {
 }
 
 void MainWindow::setupRenameRuleSignals() {
+    // Which part
+    connect(m_groupBox13_RadioButton1, &QRadioButton::toggled, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox13_RadioButton2, &QRadioButton::toggled, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox13_RadioButton3, &QRadioButton::toggled, this, &MainWindow::onRenameRulesChanged);
 
-    // RegEx (1)
+    // RegEx
     connect(m_groupBox1, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox1_LineEdit1, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox1_LineEdit2, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
-    connect(m_groupBox1_CheckBox, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
 
     // Filename (2)
     connect(m_groupBox2, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox2_ComboBox, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox2_LineEdit, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
 
-    // Replace (3)
+    // Replace
     connect(m_groupBox3, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox3_LineEdit1, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox3_LineEdit2, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox3_CheckBox, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
 
-    // Remove (5)
+    // Remove
     connect(m_groupBox5, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox5_SpinBox1, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox5_SpinBox2, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox5_SpinBox3, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox5_SpinBox4, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
 
-    // Move/Copy (6)
+    // Move/Copy
     connect(m_groupBox6, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox6_ComboBox1, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox6_ComboBox2, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
@@ -2586,25 +2651,29 @@ void MainWindow::setupRenameRuleSignals() {
     connect(m_groupBox6_SpinBox2, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox6_LineEdit, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
 
-    // Add (7)
+    // Add
     connect(m_groupBox7, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox7_LineEdit1, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox7_LineEdit2, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox7_SpinBox,   &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox7_LineEdit3, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
 
-    // Auto Date (8)
-    /*
-    connect(m_groupBox8, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
-    */
+    // Add Numbering
+    connect(m_groupBox2_ComboBox,  &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox2_SpinBox1,  &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox2_SpinBox2,  &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
+    connect(m_groupBox2_LineEdit,  &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
 
-    // Append Folder Name (9)
+    // Auto Date
+    connect(m_groupBox8, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
+
+    // Append Folder Name
     connect(m_groupBox9, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox9_ComboBox, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox9_LineEdit, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox9_SpinBox,  &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
 
-    // Numbering (10)
+    // Number Padding
     connect(m_groupBox10, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox10_CheckBox1, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox10_LineEdit,  &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
@@ -2613,12 +2682,12 @@ void MainWindow::setupRenameRuleSignals() {
     connect(m_groupBox10_SpinBox2,  &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox10_SpinBox3,  &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
 
-    // Extension (11)
+    // Case
     connect(m_groupBox11, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox11_ComboBox, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox11_LineEdit, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
 
-    // Selections (12)
+    // Filters
     connect(m_groupBox12_CheckBox1, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox12_CheckBox2, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox12_CheckBox3, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);
@@ -2629,76 +2698,86 @@ void MainWindow::setupRenameRuleSignals() {
 void MainWindow::onRenameRulesChanged() {
     RenameRules rules;
 
-    // RegEx (1)
+    int target = m_groupBox13_RadioButton1->isChecked() ? 0 : m_groupBox13_RadioButton2->isChecked() ? 1 : 2;
+
+    // RegEx
     rules.rgx.enabled = m_groupBox1->isChecked();
+    rules.rgx.target = target;
     rules.rgx.match = m_groupBox1_LineEdit1->text();
     rules.rgx.replace = m_groupBox1_LineEdit2->text();
-    rules.rgx.includeExtension = m_groupBox1_CheckBox->isChecked();
 
-    // Filename (2)
-    rules.fln.enabled = m_groupBox2->isChecked();
-    rules.fln.mode = m_groupBox2_ComboBox->currentIndex();
-    rules.fln.fixedName = m_groupBox2_LineEdit->text();
-
-    // Replace (3)
+    // Replace
     rules.rpl.enabled = m_groupBox3->isChecked();
+    rules.rpl.target = target;
     rules.rpl.match = m_groupBox3_LineEdit1->text();
     rules.rpl.replace = m_groupBox3_LineEdit2->text();
     rules.rpl.matchCase = m_groupBox3_CheckBox->isChecked();
 
-    // Remove (5)
+    // Remove
     rules.rmv.enabled = m_groupBox5->isChecked();
+    rules.rmv.target = target;
     rules.rmv.firstN = m_groupBox5_SpinBox1->value();
     rules.rmv.lastN = m_groupBox5_SpinBox2->value();
     rules.rmv.fromN = m_groupBox5_SpinBox3->value();
     rules.rmv.toN = m_groupBox5_SpinBox4->value();
 
-    // Move/Copy (6)
+    // Move/Copy
     rules.mcp.enabled = m_groupBox6->isChecked();
+    rules.mcp.target = target;
     rules.mcp.fromMode = m_groupBox6_ComboBox1->currentIndex();
     rules.mcp.fromPos = m_groupBox6_SpinBox1->value();
     rules.mcp.toMode = m_groupBox6_ComboBox2->currentIndex();
     rules.mcp.toPos = m_groupBox6_SpinBox2->value();
     rules.mcp.separator = m_groupBox6_LineEdit->text();
 
-    // Add (7)
+    // Add
     rules.add.enabled = m_groupBox7->isChecked();
+    rules.add.target = target;
     rules.add.prefix = m_groupBox7_LineEdit1->text();
     rules.add.insertText = m_groupBox7_LineEdit2->text();
     rules.add.insertPos = m_groupBox7_SpinBox->value();
     rules.add.suffix = m_groupBox7_LineEdit3->text();
 
-    // Auto Date (8)
-    /*
-    rules.ada.enabled = m_groupBox8->isChecked();
-    */
+    // Add Numbering
+    rules.num.enabled = m_groupBox2->isChecked();
+    rules.num.target = target;
+    rules.num.mode = m_groupBox2_ComboBox->currentIndex();
+    rules.num.start = m_groupBox2_SpinBox1->value();
+    rules.num.step = m_groupBox2_SpinBox2->value();
+    rules.num.separator = m_groupBox2_LineEdit->text();
 
-    // Append Folder Name (9)
+    // Add Date
+    rules.dat.enabled = m_groupBox8->isChecked();
+    rules.dat.target = target;
+
+    // Add Folder Name
     rules.afn.enabled = m_groupBox9->isChecked();
-    rules.afn.type = m_groupBox9_ComboBox->currentIndex();
+    rules.afn.target = target;
+    rules.afn.mode = m_groupBox9_ComboBox->currentIndex();
     rules.afn.separator = m_groupBox9_LineEdit->text();
     rules.afn.levels = m_groupBox9_SpinBox->value();
 
-    // Numbering (10)
-    rules.num.enabled = m_groupBox10->isChecked();
-    rules.num.addLeadEnabled = m_groupBox10_CheckBox1->isChecked();
-    rules.num.addLeadChar = m_groupBox10_LineEdit->text();
-    rules.num.addLeadCount = m_groupBox10_SpinBox1->value();
-    rules.num.addLeadNewEnabled = m_groupBox10_CheckBox2->isChecked();
-    rules.num.addLeadNewStart = m_groupBox10_SpinBox2->value();
-    rules.num.addLeadNewStep = m_groupBox10_SpinBox3->value();
+    // Padding
+    rules.pad.enabled = m_groupBox10->isChecked();
+    rules.pad.target = target;
+    rules.pad.addLeadEnabled = m_groupBox10_CheckBox1->isChecked();
+    rules.pad.addLeadChar = m_groupBox10_LineEdit->text();
+    rules.pad.addLeadCount = m_groupBox10_SpinBox1->value();
+    rules.pad.addLeadNewEnabled = m_groupBox10_CheckBox2->isChecked();
+    rules.pad.addLeadNewStart = m_groupBox10_SpinBox2->value();
+    rules.pad.addLeadNewStep = m_groupBox10_SpinBox3->value();
 
-    // Extension (11)
-    rules.ext.enabled = m_groupBox11->isChecked();
-    rules.ext.mode = m_groupBox11_ComboBox->currentIndex();
-    rules.ext.fixedExt = m_groupBox11_LineEdit->text();
+    // Case
+    rules.cas.enabled = m_groupBox11->isChecked();
+    rules.cas.target = target;
+    rules.cas.mode = m_groupBox11_ComboBox->currentIndex();
 
-    // Selections (12)
-    rules.sel.showFiles = m_groupBox12_CheckBox1->isChecked();
-    rules.sel.showFolders = m_groupBox12_CheckBox2->isChecked();
-    rules.sel.showRecursive = m_groupBox12_CheckBox3->isChecked();
-    rules.sel.filter = m_groupBox12_LineEdit->text();
-    rules.sel.matchCase = m_groupBox12_CheckBox4->isChecked();
+    // Filters
+    rules.flt.showFiles = m_groupBox12_CheckBox1->isChecked();
+    rules.flt.showFolders = m_groupBox12_CheckBox2->isChecked();
+    rules.flt.showRecursive = m_groupBox12_CheckBox3->isChecked();
+    rules.flt.filter = m_groupBox12_LineEdit->text();
+    rules.flt.matchCase = m_groupBox12_CheckBox4->isChecked();
 
     // Pass bundled settings to the model
     m_abstractModel->setRenameRules(rules);

@@ -18,6 +18,7 @@
 #include <QMainWindow>
 #include <QPointer>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QSet>
 #include <QSpinBox>
 #include <QStackedWidget>
@@ -120,8 +121,7 @@ private:
     FileSortProxyModel *m_proxyModel = nullptr;
 
     QWidget *m_centralWidget = nullptr;
-    QVBoxLayout *m_mainLayout = nullptr;
-    QWidget *m_bottomControlsContainerWidget = nullptr;
+    QHBoxLayout *m_mainLayout = nullptr;
 
     CustomTableView *m_tableView = nullptr;
     CustomListView *m_listView = nullptr;
@@ -131,9 +131,10 @@ private:
     QGroupBox *m_groupBox1 = nullptr;
     QLineEdit *m_groupBox1_LineEdit1 = nullptr;
     QLineEdit *m_groupBox1_LineEdit2 = nullptr;
-    QCheckBox *m_groupBox1_CheckBox = nullptr;
     QGroupBox *m_groupBox2 = nullptr;
     QComboBox *m_groupBox2_ComboBox = nullptr;
+    ZeroOnEmptySpinBox *m_groupBox2_SpinBox1 = nullptr;
+    QSpinBox *m_groupBox2_SpinBox2 = nullptr;
     QLineEdit *m_groupBox2_LineEdit = nullptr;
     QGroupBox *m_groupBox3 = nullptr;
     QLineEdit *m_groupBox3_LineEdit1 = nullptr;
@@ -159,25 +160,28 @@ private:
     QGroupBox *m_groupBox9 = nullptr;
     QComboBox *m_groupBox9_ComboBox = nullptr;
     QLineEdit *m_groupBox9_LineEdit = nullptr;
-    ZeroOnEmptySpinBox  *m_groupBox9_SpinBox = nullptr;
+    QSpinBox  *m_groupBox9_SpinBox = nullptr;
     QGroupBox *m_groupBox10 = nullptr;
     QCheckBox *m_groupBox10_CheckBox1 = nullptr;
     QLineEdit *m_groupBox10_LineEdit = nullptr;
     QCheckBox *m_groupBox10_CheckBox2 = nullptr;
-    ZeroOnEmptySpinBox  *m_groupBox10_SpinBox1 = nullptr;
+    QSpinBox  *m_groupBox10_SpinBox1 = nullptr;
     ZeroOnEmptySpinBox  *m_groupBox10_SpinBox2 = nullptr;
-    ZeroOnEmptySpinBox  *m_groupBox10_SpinBox3 = nullptr;
-
+    QSpinBox  *m_groupBox10_SpinBox3 = nullptr;
     QGroupBox *m_groupBox11 = nullptr;
     QComboBox *m_groupBox11_ComboBox = nullptr;
     QLineEdit *m_groupBox11_LineEdit = nullptr;
-    QGroupBox *m_groupBox12 = nullptr;
+    QGroupBox *m_groupBox13 = nullptr;
+    QRadioButton *m_groupBox13_RadioButton1 = nullptr;
+    QRadioButton *m_groupBox13_RadioButton2 = nullptr;
+    QRadioButton *m_groupBox13_RadioButton3 = nullptr;
+    QPushButton *m_buttonDoRename = nullptr;
+
     QLineEdit *m_groupBox12_LineEdit = nullptr;
     QCheckBox *m_groupBox12_CheckBox1 = nullptr;
     QCheckBox *m_groupBox12_CheckBox2 = nullptr;
     QCheckBox *m_groupBox12_CheckBox3 = nullptr;
     QCheckBox *m_groupBox12_CheckBox4 = nullptr;
-    QPushButton *m_buttonDoRename = nullptr;
 
     QAction *m_actionListViewOpenFiles = nullptr;
     QAction *m_actionListViewEditFiles = nullptr;
