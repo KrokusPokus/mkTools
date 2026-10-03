@@ -36,6 +36,7 @@ struct CustomFileInfo {
     bool isDrive = false;
     bool isExecutable;
     bool isHidden;
+    bool isNameCollision = false;
 };
 
 Q_DECLARE_METATYPE(CustomFileInfo)

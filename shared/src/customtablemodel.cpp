@@ -158,29 +158,31 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
     }
     else if (role == Qt::TextAlignmentRole) {
         switch (col) {
-        case eColSize:
-            return QVariant(Qt::AlignRight | Qt::AlignVCenter);
-        case eColQuality:
-        case eColCount:
-        case eColCRC:
-            return QVariant(Qt::AlignCenter | Qt::AlignVCenter);
-        case eColName:
-        case eColNewName:
-        case eColPath:
-        case eColDate:
-        case eColType:
-            return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
-        default:
-            return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
+            case eColSize:
+                return QVariant(Qt::AlignRight | Qt::AlignVCenter);
+            case eColQuality:
+            case eColCount:
+            case eColCRC:
+                return QVariant(Qt::AlignCenter | Qt::AlignVCenter);
+            case eColName:
+            case eColNewName:
+            case eColPath:
+            case eColDate:
+            case eColType:
+                return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
+            default:
+                return QVariant(Qt::AlignLeft | Qt::AlignVCenter);
         }
     }
     else if (role == CustomTableModel::UseRedTextRole) {
-        // Prüfen, ob Datei ausführbar ist UND das Setting aktiv ist
-        if (file.isExecutable && !file.isDir && m_settings->executableFilesRed) {
-            return QVariant(true);
+        switch (col) {
+            case eColName:
+                return file.isExecutable && !file.isDir && m_settings && m_settings->executableFilesRed;
+            case eColNewName:
+                return file.isNameCollision;
+            default:
+                return QVariant(false);
         }
-        // Standardfarbe des Systems/Themes beibehalten
-        return QVariant(false);
     }
     else if (role == CustomTableModel::IsCutRole) {
         return QVariant(file.isCut);
@@ -529,10 +531,39 @@ void CustomTableModel::setRenameRows(const QSet<int> &rowSet, const QList<int> &
 void CustomTableModel::recalculateNewNames() {
     int seqIndex = 0;
 
+    QSet<QString> seenPaths;
+    QSet<QString> collidingPaths;
+
     for (int row : std::as_const(m_renameRowsList)) {
         if (row >= 0 && row < static_cast<int>(m_files.size())) {
-            m_files[row].newName = computeNewName(m_files[row], seqIndex);
+            auto &file = m_files[row];
+            file.newName = computeNewName(file, seqIndex);
+
+#ifdef Q_OS_WIN
+            QString lookupKey = QDir::cleanPath(QDir(file.path).filePath(file.newName)).toLower();
+#elif defined(Q_OS_LINUX)
+            QString lookupKey = QDir::cleanPath(QDir(file.path).filePath(file.newName));
+#endif
+            if (seenPaths.contains(lookupKey)) {
+                collidingPaths.insert(lookupKey);
+            } else {
+                seenPaths.insert(lookupKey);
+            }
+
             seqIndex++;
+        }
+    }
+
+    for (int row : std::as_const(m_renameRowsList)) {
+        if (row >= 0 && row < static_cast<int>(m_files.size())) {
+            auto &file = m_files[row];
+
+#ifdef Q_OS_WIN
+            QString lookupKey = QDir::cleanPath(QDir(file.path).filePath(file.newName)).toLower();
+#elif defined(Q_OS_LINUX)
+            QString lookupKey = QDir::cleanPath(QDir(file.path).filePath(file.newName));
+#endif
+            file.isNameCollision = collidingPaths.contains(lookupKey);
         }
     }
 }

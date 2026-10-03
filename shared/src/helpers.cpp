@@ -324,19 +324,23 @@ namespace Helpers {
             return;
         }
 
-        if (QFile::exists(handlerApp)) {
+        if (!handlerApp.contains('/') && !handlerApp.contains('\\')) {
+            QString localAppPath = QDir(QCoreApplication::applicationDirPath()).filePath(handlerApp);
+            if (QFile::exists(localAppPath)) {
+                QProcess::startDetached(QDir::toNativeSeparators(localAppPath), fileList);
+                return;
+            }
+
+            QString absolutePath = QStandardPaths::findExecutable(handlerApp);
+            if (!absolutePath.isEmpty()) {
+                // bool QProcess::startDetached(const QString &program, const QStringList &arguments = {}, const QString &workingDirectory = QString(), qint64 *pid = nullptr)
+                QProcess::startDetached(QDir::toNativeSeparators(absolutePath), fileList);
+                return;
+            }
+        } else if (QFile::exists(handlerApp)) {
             QProcess::startDetached(QDir::toNativeSeparators(handlerApp), fileList);
             return;
         }
-
-        QString absolutePath = QStandardPaths::findExecutable(handlerApp);
-        if (!absolutePath.isEmpty()) {
-            // bool QProcess::startDetached(const QString &program, const QStringList &arguments = {}, const QString &workingDirectory = QString(), qint64 *pid = nullptr)
-            QProcess::startDetached(QDir::toNativeSeparators(absolutePath), fileList);
-            return;
-        }
-
-        qDebug() << "openFileListWithHandler() No absolute path found for:" << handlerApp;
     }
 
     void launchDesktopFile(const DesktopEntry &info, const QStringList &fileList) {

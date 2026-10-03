@@ -2509,6 +2509,7 @@ void MainWindow::action_WinRarCompress(const QString &archiveExt) {
 #endif
 
 void MainWindow::action_LaunchRenameTool() {
+    qDebug() << "action_LaunchRenameTool() with m_settings.renameTool:" << m_settings.renameTool << " in folder:" << m_currentDirectory;
     if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") return;
 
     if (!m_settings.renameTool.isEmpty()) {
@@ -2874,11 +2875,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
             if (keyEvent->key() == Qt::Key_F) {
                 if (!m_currentDirectory.isEmpty() && m_currentDirectory != "drives://" && !m_settings.searchTool.isEmpty()) {
                     Helpers::openFileListWithHandler(m_settings.searchTool, { m_currentDirectory });
-                }
-                return true;
-            } else if (keyEvent->key() == Qt::Key_R) {
-                if (!m_currentDirectory.isEmpty() && m_currentDirectory != "drives://" && !m_settings.searchTool.isEmpty()) {
-                    Helpers::openFileListWithHandler("mkBatchRename", { m_currentDirectory });
                 }
                 return true;
             }

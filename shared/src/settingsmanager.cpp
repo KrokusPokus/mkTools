@@ -67,7 +67,7 @@ void SettingsManager::getDefaults() {
     DEFAULT_VIDEO_EDITOR = "org.kde.kdenlive.desktop";
     DEFAULT_MERGE_TOOL = "";
     DEFAULT_FILE_MANAGER = "mkFolderWidget";
-    DEFAULT_RENAME_TOOL = "";
+    DEFAULT_RENAME_TOOL = "mkBatchRename";
     DEFAULT_SEARCH_TOOL = "mkFileSearch";
 
 
@@ -95,7 +95,7 @@ void SettingsManager::getDefaults() {
     DEFAULT_VIDEO_EDITOR = "";
     DEFAULT_MERGE_TOOL = "";
     DEFAULT_FILE_MANAGER = "mkFolderWidget";
-    DEFAULT_RENAME_TOOL = "";
+    DEFAULT_RENAME_TOOL = "mkBatchRename";
     DEFAULT_SEARCH_TOOL = "mkFileSearch";
 
     DEFAULT_ALTERNATING_ROW_COLORS = false;

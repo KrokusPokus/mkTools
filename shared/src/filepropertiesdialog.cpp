@@ -163,10 +163,12 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
     QFileIconProvider provider;
     QIcon icon = provider.icon(fileInfo);
     QPixmap pix = icon.pixmap(QSize(48, 48));
-        QPixmap thumb = Helpers::generateThumbnail(fileInfo);
-        if (!thumb.isNull()) {
-            pix = thumb;
-        }
+
+    QPixmap thumb = Helpers::generateThumbnail(fileInfo);
+    if (!thumb.isNull()) {
+        pix = thumb;
+    }
+
     m_iconLabel->setPixmap(pix);
     QString itemName;
     if (isDrive) {
