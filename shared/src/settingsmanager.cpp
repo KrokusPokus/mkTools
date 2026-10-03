@@ -94,9 +94,9 @@ void SettingsManager::getDefaults() {
     DEFAULT_TEXT_EDITOR = "";
     DEFAULT_VIDEO_EDITOR = "";
     DEFAULT_MERGE_TOOL = "";
-    DEFAULT_FILE_MANAGER = "mkFolderWidget";
-    DEFAULT_RENAME_TOOL = "mkBatchRename";
-    DEFAULT_SEARCH_TOOL = "mkFileSearch";
+    DEFAULT_FILE_MANAGER = "mkFolderWidget.exe";
+    DEFAULT_RENAME_TOOL = "mkBatchRename.exe";
+    DEFAULT_SEARCH_TOOL = "mkFileSearch.exe";
 
     DEFAULT_ALTERNATING_ROW_COLORS = false;
     DEFAULT_EXECUTABLE_FILES_RED = true;

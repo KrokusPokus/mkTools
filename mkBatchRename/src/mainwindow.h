@@ -46,7 +46,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(const QString &targetDirectory, QWidget *parent = nullptr);
+    explicit MainWindow(QString targetDirectory, QStringList pathList, QWidget *parent = nullptr);
     ~MainWindow() override;
 
 private slots:
@@ -55,7 +55,7 @@ private slots:
     void onHorizontalBarScrollChange();
     void onListItemDoubleClicked(const QModelIndex &index);
     void onListViewHeaderClicked();
-    void showFolder(QString directoryPath);
+    void showFolder(const QString &directoryPath, const QStringList &externalPathList);
     void onTableCurrentChanged(const QModelIndex &current, const QModelIndex &previous);
     void onTimedUpdateIcons();
     void onToggleListViewHeader();

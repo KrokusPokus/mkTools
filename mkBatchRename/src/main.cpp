@@ -3,54 +3,75 @@
 
 #include <iostream>
 #include <QApplication>
-#include <QCommandLineOption>
-#include <QCommandLineParser>
 #include <QDir>
 #include <QFont>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QMainWindow>
+#include <QSharedMemory>
 #include <QString>
 #include <QTranslator>
 
 int main(int argc, char *argv[])
 {
     QApplication app(argc, argv);
+
     QCoreApplication::setApplicationName("mkBatchRename");
     QCoreApplication::setApplicationVersion("1.0");
 
-    QCommandLineParser parser;
-    parser.setApplicationDescription("Qt6 based batch rename tool");
-    auto helpOption = parser.addHelpOption();
-    auto versionOption = parser.addVersionOption();
-    parser.addPositionalArgument("[searchpath]", QCoreApplication::translate("main", "Path to search"));
+    QString targetDir;
+    QStringList pathList;
 
-    if (!parser.parse(QCoreApplication::arguments())) {
-        std::cerr << qPrintable(parser.errorText()) << std::endl;
-        return 1;
-    }
+    if (argc == 1) {
+        targetDir = QDir::homePath();
+    } else if (argc == 2) {
+            targetDir = argv[1];
 
-    if (parser.isSet(helpOption)) {
-        std::cout << qPrintable(parser.helpText()) << std::endl;
-        return 0;
-    }
+            // Falls der Windows-Parser den Backslash geschluckt und ein " an den String gehängt hat:
+            if (targetDir.endsWith('"')) {
+                targetDir.chop(1);  // Das falsche Anführungszeichen abschneiden
+                targetDir += "/";   // Einen sauberen Ordner-Abschluss hinzufügen
+            }
+            targetDir = QDir::cleanPath(targetDir);
+    } else if (argc == 3) {
+        QString memoryKey = argv[1];
+        int expectedSize = QString(argv[2]).toInt();
+        QByteArray jsonData;
 
-    if (parser.isSet(versionOption)) {
-        std::cout << qPrintable(QCoreApplication::applicationName() + " " + QCoreApplication::applicationVersion()) << std::endl;
-        return 0;
-    }
+        QSharedMemory sharedMemory(memoryKey);
+        if (sharedMemory.attach()) {
+            sharedMemory.lock();
 
-    QString pathToScan;
-    if (!parser.positionalArguments().isEmpty()) {
-        pathToScan = parser.positionalArguments().at(0);
-        // Falls der Windows-Parser den Backslash geschluckt und ein " an den String gehängt hat:
-        if (pathToScan.endsWith('"')) {
-            pathToScan.chop(1);  // Das falsche Anführungszeichen abschneiden
-            pathToScan += "/";   // Einen sauberen Ordner-Abschluss hinzufügen
+            jsonData = QByteArray(static_cast<const char*>(sharedMemory.constData()), expectedSize);
+
+            sharedMemory.unlock();
+            sharedMemory.detach();
+        } else {
+            qDebug() << "[mkBatchRename] Error while accessing shared memory:" << sharedMemory.errorString();
+            return -2;
         }
-        pathToScan = QDir::cleanPath(pathToScan);
+
+        QJsonParseError error;
+        QJsonDocument doc = QJsonDocument::fromJson(jsonData, &error);
+        if (doc.isNull()) {
+            qDebug() << "[mkBatchRename] JSON-Error:" << error.errorString();
+            return -3;
+        }
+
+        QJsonObject jsonObj = doc.object();
+        targetDir = jsonObj["targetDir"].toString();
+
+        QJsonArray pathArray = jsonObj["pathList"].toArray();
+        for (const QJsonValue &value : std::as_const(pathArray)) {
+            pathList.append(value.toString());
+        }
     } else {
-        pathToScan = QDir::homePath();
+        qDebug() << "[mkBatchRename] Unsupported number of command line arguments!";
+        return -1;
     }
 
-    if (!QDir(pathToScan).exists()) {
+    if (!QDir(targetDir).exists()) {
         std::cerr << "Error: Path not found." << std::endl;
         return 1;
     }
@@ -89,7 +110,7 @@ int main(int argc, char *argv[])
 
     //-----------------------------------------------------------------------------------------
 
-    MainWindow w(pathToScan);
+    MainWindow w(targetDir, pathList);
     w.show();
     return QCoreApplication::exec();
 }

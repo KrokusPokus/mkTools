@@ -74,7 +74,7 @@ private:
     void action_SortAscending();
     void action_SortDescending();
     void action_toggleShowHidden();
-    void action_LaunchRenameTool();
+    void action_LaunchRenameTool(const QStringList &pathList);
 
     bool showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly);
     void browseFolder(QString directoryPath, const QString &focusPath = QString(), bool isHistoryNavigation = false);

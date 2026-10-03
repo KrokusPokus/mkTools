@@ -61,8 +61,9 @@
 #include <KOpenWithDialog>
 #endif
 
-MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
-    : QMainWindow(parent), m_currentDirectory(targetDirectory)
+MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QWidget *parent)
+    : QMainWindow(parent)
+    , m_currentDirectory(std::move(targetDirectory))
 {
     setWindowTitle(QDir::toNativeSeparators(m_currentDirectory));
     setWindowIcon(QIcon(":/icons/app.ico"));
@@ -700,7 +701,9 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
 
     setupRenameRuleSignals();
     onRenameRulesChanged();
-    showFolder(m_currentDirectory);
+
+    setWindowTitle(QDir::toNativeSeparators(m_currentDirectory));
+    showFolder(m_currentDirectory, externalPathList);
 }
 
 MainWindow::~MainWindow() = default;
@@ -751,7 +754,7 @@ void MainWindow::scrollToCurrentItem() {
     }
 }
 
-void MainWindow::showFolder(QString directoryPath) {
+void MainWindow::showFolder(const QString &directoryPath, const QStringList &externalPathList) {
     if (directoryPath == "drives://") {
         return;
     }
@@ -776,6 +779,58 @@ void MainWindow::showFolder(QString directoryPath) {
 
     auto *activeView = qobject_cast<QAbstractItemView*>(m_viewStack->currentWidget());
 
+    // --- STORE FOCUS AND SELECTION ---
+    QStringList selectedPathsToRestore;
+    QString focusedPathToRestore;
+    QString pathBelowLastSelectedToRestore;
+    int lastSelectedProxyRow = -1;
+
+    if (m_selectionModel) {
+        if (externalPathList.isEmpty()) {
+            // A) Selektierte Zeilen merken & höchste Zeilennummer ermitteln
+            QModelIndexList selectedProxyIndexes = m_selectionModel->selectedIndexes();
+            for (const QModelIndex &proxyIdx : std::as_const(selectedProxyIndexes)) {
+                if (proxyIdx.column() != 0) {
+                    continue;
+                }
+
+                if (proxyIdx.row() > lastSelectedProxyRow) {
+                    lastSelectedProxyRow = proxyIdx.row();
+                }
+
+                QModelIndex sourceIndex = m_proxyModel->mapToSource(proxyIdx);
+                QString path = m_abstractModel->filePath(sourceIndex);
+                if (!path.isEmpty()) {
+                    selectedPathsToRestore.append(path);
+                }
+            }
+        } else {
+            selectedPathsToRestore = externalPathList;
+        }
+
+        // B) Fokussiertes (Current) Element merken (falls keines via focusPath erzwungen wurde)
+        if (focusedPathToRestore.isEmpty() && activeView) {
+            QModelIndex currentProxyIdx = activeView->currentIndex();
+            if (currentProxyIdx.isValid()) {
+                if (lastSelectedProxyRow == -1) {
+                    lastSelectedProxyRow = currentProxyIdx.row();
+                }
+                QModelIndex sourceIndex = m_proxyModel->mapToSource(currentProxyIdx);
+                focusedPathToRestore = m_abstractModel->filePath(sourceIndex);
+            }
+        }
+
+        // C) Pfad des Elements DIREKT UNTER DEM LETZTEN selektierten/fokussierten Element merken
+        if (lastSelectedProxyRow != -1) {
+            int rowBelow = lastSelectedProxyRow + 1;
+            if (rowBelow < m_proxyModel->rowCount()) {
+                QModelIndex proxyIdxBelow = m_proxyModel->index(rowBelow, 0);
+                QModelIndex sourceIdxBelow = m_proxyModel->mapToSource(proxyIdxBelow);
+                pathBelowLastSelectedToRestore = m_abstractModel->filePath(sourceIdxBelow);
+            }
+        }
+    }
+
     if (m_selectionModel) {
         m_selectionModel->clear();
     }
@@ -789,7 +844,88 @@ void MainWindow::showFolder(QString directoryPath) {
     m_thumbnailView->setRootIndex(QModelIndex());
     m_currentDirectory = directoryPath;
 
-    setWindowTitle(QDir::toNativeSeparators(m_currentDirectory));
+    // --- DISABLE SIGNALS FOR SPEEDUP ---
+    if (m_selectionModel) {
+        m_selectionModel->blockSignals(true);
+    }
+
+    // LOAD PREVIOUS FOCUS AND SELECTION
+    int rowCount = m_proxyModel->rowCount();
+    QItemSelection restoreSelection;
+
+    QModelIndex proxyIndexToFocus;
+    QModelIndex firstStillExistingSelectedProxyIndex;
+    QModelIndex indexBelowLastSelectedProxy;
+
+    const QSet<QString> selectedSet(selectedPathsToRestore.begin(), selectedPathsToRestore.end()); // O(n) instead of O(n²)
+
+    if (rowCount > 0 && m_selectionModel) {
+        int colCount = m_proxyModel->columnCount();
+        for (int i = 0; i < rowCount; ++i) {
+            QModelIndex proxyIdx = m_proxyModel->index(i, 0);
+            QModelIndex sourceIndex = m_proxyModel->mapToSource(proxyIdx);
+            QString currentPath = m_abstractModel->filePath(sourceIndex);
+
+            // Prüfen, ob diese Zeile selektiert war
+            if (selectedSet.contains(currentPath)) {
+                QModelIndex topLeft = proxyIdx;
+                QModelIndex bottomRight = m_proxyModel->index(i, colCount - 1);
+                restoreSelection.select(topLeft, bottomRight);
+
+                // Merken für Prio 2 (Falls Original-Fokus weg ist, aber Markierung existiert)
+                if (!firstStillExistingSelectedProxyIndex.isValid()) {
+                    firstStillExistingSelectedProxyIndex = proxyIdx;
+                }
+            }
+
+            // Prio 1:  Prüfen, ob diese Zeile den Fokus hatte (oder haben soll)
+            if (!focusedPathToRestore.isEmpty() && currentPath == focusedPathToRestore) {
+                proxyIndexToFocus = proxyIdx;
+            }
+
+            // Prio 3: Prüfen, ob dies das Element unterhalb der ehemaligen Selektion ist
+            if (!pathBelowLastSelectedToRestore.isEmpty() && currentPath == pathBelowLastSelectedToRestore) {
+                indexBelowLastSelectedProxy = proxyIdx;
+            }
+        }
+
+        // --- DOLPHIN FOCUS EVALUATION ---
+        if (!proxyIndexToFocus.isValid()) {
+            // Prio 2: Focus auf ein verbliebenes, markiertes Item setzen
+            if (firstStillExistingSelectedProxyIndex.isValid()) {
+                proxyIndexToFocus = firstStillExistingSelectedProxyIndex;
+            }
+            // Prio 3: Focus auf das Item setzen, das vorher UNTER dem letzten markierten lag
+            else if (indexBelowLastSelectedProxy.isValid()) {
+                proxyIndexToFocus = indexBelowLastSelectedProxy;
+            }
+            // Prio 4: Fallback auf die relative Position (Zeilenindex) vor dem Reload
+            else if (lastSelectedProxyRow >= 0) {
+                int targetRow = std::min(lastSelectedProxyRow, rowCount - 1);
+                targetRow = std::max(0, targetRow);
+                proxyIndexToFocus = m_proxyModel->index(targetRow, 0);
+            }
+            // Prio 5: Erstes Element im Ordner
+            else {
+                //proxyIndexToFocus = m_proxyModel->index(0, 0);
+            }
+        }
+
+        // Fokus anwenden
+        if (proxyIndexToFocus.isValid() && activeView) {
+            activeView->setCurrentIndex(proxyIndexToFocus);
+        }
+
+        // Selektion anwenden
+        if (!restoreSelection.isEmpty() && m_selectionModel) {
+            m_selectionModel->select(restoreSelection, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
+        }
+    }
+
+    // --- RE-ENABLE SIGNALS ---
+    if (m_selectionModel) {
+        m_selectionModel->blockSignals(false);
+    }
 
     // --- Update columns of tableView ---
     if (m_viewStack->currentWidget() == m_tableView) {
@@ -2505,7 +2641,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                     return true;
                 }
                 else if (keyEvent->key() == Qt::Key_F5) {
-                    showFolder(m_currentDirectory);
+                    showFolder(m_currentDirectory, QStringList());
                     return true;
                 }
                 else if (keyEvent->key() == Qt::Key_Escape) {

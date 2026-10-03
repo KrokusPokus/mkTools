@@ -14,7 +14,7 @@
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
-    if (argc < 2) {
+    if (argc < 3) {
         qDebug() << "[mkTransactionHandler] Error: No memory key received!";
         return -1;
     }

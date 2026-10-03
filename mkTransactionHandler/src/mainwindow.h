@@ -121,9 +121,12 @@ private:
     bool m_isFinished;
 
     // Daten
+    OperationType m_operationType;
     QList<QUrl> m_urls;
     QString m_targetDir;
-    OperationType m_operationType;
+    // Threading
+    QThread *m_workerThread;
+    FileOperation *m_fileOp;
 
     // UI-Elemente
     CleanLabel *m_headerLabel = nullptr;
@@ -139,10 +142,6 @@ private:
     QPushButton *m_cancelButton = nullptr;
     QWidget *m_errorContainer = nullptr;
     QPlainTextEdit *m_errorTextEdit = nullptr;
-
-    // Threading
-    QThread *m_workerThread;
-    FileOperation *m_fileOp;
 
 #ifdef Q_OS_WIN
     ITaskbarList3* m_taskbarList = nullptr;

@@ -1598,6 +1598,14 @@ void MainWindow::action_ListViewRenameFiles() {
     auto *activeView = qobject_cast<QAbstractItemView*>(m_viewStack->currentWidget());
     if (!activeView) return;
 
+    const QStringList pathList = getActiveViewPathList();
+    if (pathList.isEmpty()) return;
+
+    if (pathList.size() > 1) {
+        action_LaunchRenameTool(pathList);
+        return;
+    }
+
     QModelIndex proxyIndex = activeView->currentIndex();
     if (!proxyIndex.isValid()) return;
 
@@ -1765,33 +1773,34 @@ void MainWindow::fileOperation(OperationType operationType, const QList<QUrl> &u
     QJsonObject jsonObj;
     jsonObj["targetDir"] = targetDir;
     jsonObj["opType"] = static_cast<int>(operationType);
-    jsonObj["fromClipboard"] = fromClipboard;
 
     QJsonArray urlArray;
-    for (const QUrl &url : urlList) {
+    for (const QUrl &url : std::as_const(urlList)) {
         urlArray.append(url.toString());
     }
     jsonObj["urls"] = urlArray;
 
     QByteArray jsonData = QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
 
-    // 2. Einen einzigartigen Schlüssel für den Speicher erzeugen
+    // 2. Einzigartigen Schlüssel erzeugen
     QString memoryKey = "mkTransactionHandler_" + QUuid::createUuid().toString(QUuid::WithoutBraces);
 
-    // 3. Shared Memory reservieren und JSON hineinschreiben
+    // 3. Shared Memory reservieren
     auto *sharedMemory = new QSharedMemory(memoryKey, this);
-    if (sharedMemory->create(jsonData.size())) {
-        sharedMemory->lock();
-        char *to = static_cast<char*>(sharedMemory->data());
-        const char *from = jsonData.data();
-        memcpy(to, from, qMin(sharedMemory->size(), jsonData.size()));
-        sharedMemory->unlock();
-
-        // Hinweis: Wir löschen sharedMemory hier NICHT sofort, da das CopyTool
-        // ein paar Millisekunden braucht, um sich anzudocken.
-        // Es wird automatisch gelöscht, wenn das MainWindow geschlossen wird.
-    } else {
+    if (!sharedMemory->create(jsonData.size())) {
         qCritical() << "Konnte Shared Memory nicht erstellen:" << sharedMemory->errorString();
+        delete sharedMemory; // Objekt im Fehlerfall löschen
+        return;
+    }
+
+    // 4. Daten sicher in den Shared Memory schreiben
+    if (sharedMemory->lock()) {
+        char *to = static_cast<char*>(sharedMemory->data());
+        memcpy(to, jsonData.constData(), jsonData.size());
+        sharedMemory->unlock();
+    } else {
+        qCritical() << "Konnte Shared Memory nicht sperren:" << sharedMemory->errorString();
+        delete sharedMemory; // Objekt im Fehlerfall löschen
         return;
     }
 
@@ -1799,16 +1808,27 @@ void MainWindow::fileOperation(OperationType operationType, const QList<QUrl> &u
     arguments << memoryKey;
     arguments << QString::number(jsonData.size());
 
-    qint64 pid;
-    bool success = QProcess::startDetached(programPath, arguments, QString(), &pid);
+    qint64 pid = 0;
+    bool success = QProcess::startDetached(programPath, arguments, m_currentDirectory, &pid);
 
     if (success) {
-        qDebug() << "mkTransactionHandler erfolgreich im Hintergrund gestartet. PID:" << pid;
+        qDebug() << "mkTransactionHandler erfolgreich gestartet. PID:" << pid;
+
         if (fromClipboard && operationType == OperationType::Move) {
             QApplication::clipboard()->clear();
         }
+
+        // Nach 10 Sekunden den Shared Memory freigeben und das Objekt aufräumen
+        QTimer::singleShot(10000, sharedMemory, [sharedMemory]() {
+            if (sharedMemory->isAttached()) {
+                sharedMemory->detach();
+            }
+            sharedMemory->deleteLater();
+        });
     } else {
         qCritical() << "Fehler beim Starten von mkTransactionHandler!";
+        sharedMemory->detach();
+        delete sharedMemory;
     }
 }
 
@@ -2508,12 +2528,73 @@ void MainWindow::action_WinRarCompress(const QString &archiveExt) {
 }
 #endif
 
-void MainWindow::action_LaunchRenameTool() {
-    qDebug() << "action_LaunchRenameTool() with m_settings.renameTool:" << m_settings.renameTool << " in folder:" << m_currentDirectory;
+void MainWindow::action_LaunchRenameTool(const QStringList &pathList) {
     if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") return;
 
-    if (!m_settings.renameTool.isEmpty()) {
-        Helpers::openFileListWithHandler(m_settings.renameTool, { m_currentDirectory });
+
+    QString programName = "mkBatchRename";
+#if defined(Q_OS_WIN)
+    programName += ".exe";
+#endif
+    QString appDir = QCoreApplication::applicationDirPath();
+    QString programPath = QDir(appDir).filePath(programName);
+
+    if (!QFile::exists(programPath)) {
+        if (!m_settings.renameTool.isEmpty()) {
+            Helpers::openFileListWithHandler(m_settings.renameTool, { m_currentDirectory });
+        }
+        return;
+    }
+
+    // 1. Daten in ein JSON-Objekt verpacken
+    QJsonObject jsonObj;
+    jsonObj["targetDir"] = m_currentDirectory;
+    jsonObj["pathList"] = QJsonArray::fromStringList(pathList);
+    QByteArray jsonData = QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
+
+    // 2. Einzigartigen Schlüssel erzeugen
+    QString memoryKey = "mkBatchRename_" + QUuid::createUuid().toString(QUuid::WithoutBraces);
+
+    // 3. Shared Memory reservieren
+    auto *sharedMemory = new QSharedMemory(memoryKey, this);
+    if (!sharedMemory->create(jsonData.size())) {
+        qCritical() << "Konnte Shared Memory nicht erstellen:" << sharedMemory->errorString();
+        delete sharedMemory; // Objekt im Fehlerfall löschen
+        return;
+    }
+
+    // 4. Daten sicher in den Shared Memory schreiben
+    if (sharedMemory->lock()) {
+        char *to = static_cast<char*>(sharedMemory->data());
+        memcpy(to, jsonData.constData(), jsonData.size());
+        sharedMemory->unlock();
+    } else {
+        qCritical() << "Konnte Shared Memory nicht sperren:" << sharedMemory->errorString();
+        delete sharedMemory; // Objekt im Fehlerfall löschen
+        return;
+    }
+
+    QStringList arguments;
+    arguments << memoryKey;
+    arguments << QString::number(jsonData.size());
+
+    qint64 pid = 0;
+    bool success = QProcess::startDetached(programPath, arguments, m_currentDirectory, &pid);
+
+    if (success) {
+        qDebug() << "mkBatchRename erfolgreich gestartet. PID:" << pid;
+
+        // Nach 10 Sekunden den Shared Memory freigeben und das Objekt aufräumen
+        QTimer::singleShot(10000, sharedMemory, [sharedMemory]() {
+            if (sharedMemory->isAttached()) {
+                sharedMemory->detach();
+            }
+            sharedMemory->deleteLater();
+        });
+    } else {
+        qCritical() << "Fehler beim Starten von mkBatchRename!";
+        sharedMemory->detach();
+        delete sharedMemory;
     }
 }
 
@@ -3011,7 +3092,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                     return true;
                 }
                 else if (keyEvent->key() == Qt::Key_R) {
-                    action_LaunchRenameTool();
+                    action_LaunchRenameTool(getActiveViewPathList());
                     return true;
                 }
                 else if (keyEvent->key() == Qt::Key_V) {
