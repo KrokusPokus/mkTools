@@ -145,7 +145,7 @@ struct PaddingRule {
 struct CaseRule {
     bool enabled = false;
     int target = 0;
-    int mode = 0; // 0: Same, 1: Lower, 2: Upper, 3: Title, 4: Fixed, 5: Extra, 6: Remove
+    int mode = 0; // 0: Same, 1: Lower-Case, 2: Upper-Case, 3: Title-Case, 4: Sentence
 };
 
 // Filters

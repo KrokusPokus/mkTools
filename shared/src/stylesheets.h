@@ -418,7 +418,7 @@ namespace Styles {
             subcontrol-position: top left;
             left: 10px;
             padding: 0 4px;
-            background-color: #222222;
+            background-color: palette(window);
         }
 
         QGroupBox::indicator {

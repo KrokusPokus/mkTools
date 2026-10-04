@@ -199,10 +199,10 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     // --------------------------------------------------------------------
     // --------------------------------------------------------------------
 
-    m_groupBox13 = new QGroupBox("Which part", this);
-    m_groupBox13_RadioButton1 = new QRadioButton("File Name");
-    m_groupBox13_RadioButton2 = new QRadioButton("File Extension");
-    m_groupBox13_RadioButton3 = new QRadioButton("Full Name");
+    m_groupBox13 = new QGroupBox(tr("Apply To"), this);
+    m_groupBox13_RadioButton1 = new QRadioButton(tr("Name"));
+    m_groupBox13_RadioButton2 = new QRadioButton(tr("Extension"));
+    m_groupBox13_RadioButton3 = new QRadioButton(tr("Full"));
     m_groupBox13_RadioButton1->setChecked(true);
     QHBoxLayout *groupBox13Layout = new QHBoxLayout();
     groupBox13Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
@@ -212,11 +212,11 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     groupBox13Layout->addStretch();
     m_groupBox13->setLayout(groupBox13Layout);
 
-    m_groupBox1 = new QGroupBox("RegEx", this);
+    m_groupBox1 = new QGroupBox(tr("RegEx"), this);
     m_groupBox1->setCheckable(true);
-    QLabel *groupBox1_Label1 = new QLabel(tr("Match"));
+    QLabel *groupBox1_Label1 = new QLabel(tr("Find pattern:"));
     m_groupBox1_LineEdit1 = new QLineEdit();
-    QLabel *groupBox1_Label2 = new QLabel(tr("Replace"));
+    QLabel *groupBox1_Label2 = new QLabel(tr("Replace with:"));
     m_groupBox1_LineEdit2 = new QLineEdit();
     QGridLayout *groupBox1Layout = new QGridLayout;
     groupBox1Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
@@ -226,13 +226,13 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     groupBox1Layout->addWidget(m_groupBox1_LineEdit2, 2, 1);
     m_groupBox1->setLayout(groupBox1Layout);
 
-    m_groupBox3 = new QGroupBox("Replace", this);
+    m_groupBox3 = new QGroupBox(tr("Replace"), this);
     m_groupBox3->setCheckable(true);
-    QLabel *groupBox3_Label1 = new QLabel(tr("Replace"));
+    QLabel *groupBox3_Label1 = new QLabel(tr("Find:"));
     m_groupBox3_LineEdit1 = new QLineEdit();
     m_groupBox3_CheckBox = new QCheckBox(tr("Match Case"));
-    m_groupBox3_CheckBox->setChecked(false);
-    QLabel *groupBox3_Label2 = new QLabel(tr("With"));
+    m_groupBox3_CheckBox->setChecked(true);
+    QLabel *groupBox3_Label2 = new QLabel(tr("Replace with:"));
     m_groupBox3_LineEdit2 = new QLineEdit();
     QGridLayout *groupBox3Layout = new QGridLayout();
     groupBox3Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
@@ -243,18 +243,18 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     groupBox3Layout->addWidget(m_groupBox3_LineEdit2, 2, 1, 1, 2);
     m_groupBox3->setLayout(groupBox3Layout);
 
-    m_groupBox5 = new QGroupBox("Remove", this);
+    m_groupBox5 = new QGroupBox(tr("Remove"), this);
     m_groupBox5->setCheckable(true);
-    QLabel *groupBox5_Label1 = new QLabel(tr("First"));
+    QLabel *groupBox5_Label1 = new QLabel(tr("First:"));
     m_groupBox5_SpinBox1 = new ZeroOnEmptySpinBox();
     m_groupBox5_SpinBox1->setRange(0, 255);
-    QLabel *groupBox5_Label2 = new QLabel(tr("Last"));
+    QLabel *groupBox5_Label2 = new QLabel(tr("Last:"));
     m_groupBox5_SpinBox2 = new ZeroOnEmptySpinBox();
     m_groupBox5_SpinBox2->setRange(0, 255);
-    QLabel *groupBox5_Label3 = new QLabel(tr("From"));
+    QLabel *groupBox5_Label3 = new QLabel(tr("From:"));
     m_groupBox5_SpinBox3 = new ZeroOnEmptySpinBox();
     m_groupBox5_SpinBox3->setRange(0, 255);
-    QLabel *groupBox5_Label4 = new QLabel(tr("to"));
+    QLabel *groupBox5_Label4 = new QLabel(tr("to:"));
     m_groupBox5_SpinBox4 = new ZeroOnEmptySpinBox();
     m_groupBox5_SpinBox4->setRange(0, 255);
     QHBoxLayout *groupBox5Layout = new QHBoxLayout();
@@ -272,18 +272,18 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     groupBox5Layout->addStretch();
     m_groupBox5->setLayout(groupBox5Layout);
 
-    m_groupBox6 = new QGroupBox("Move/Copy", this);
+    m_groupBox6 = new QGroupBox(tr("Move/Copy"), this);
     m_groupBox6->setCheckable(true);
     m_groupBox6_ComboBox1 = new QComboBox();
-    m_groupBox6_ComboBox1->addItems({"None", "Copy first n", "Copy last n", "Move first n", "Move last n"});
+    m_groupBox6_ComboBox1->addItems({tr("No action"), tr("Copy first"), tr("Copy last"), tr("Move first"), tr("Move last")});
     m_groupBox6_SpinBox1 = new ZeroOnEmptySpinBox();
     m_groupBox6_SpinBox1->setRange(0, 255);
     QLabel *groupBox6_Label1 = new QLabel(tr("to"));
     m_groupBox6_ComboBox2 = new QComboBox();
-    m_groupBox6_ComboBox2->addItems({"None", "To start", "To end", "To pos."});
+    m_groupBox6_ComboBox2->addItems({tr("Nowhere"), tr("Front"), tr("End"), tr("Position")});
     m_groupBox6_SpinBox2 = new ZeroOnEmptySpinBox();
     m_groupBox6_SpinBox2->setRange(0, 255);
-    QLabel *groupBox6_Label2 = new QLabel(tr("Sep."));
+    QLabel *groupBox6_Label2 = new QLabel(tr("Separator:"));
     m_groupBox6_LineEdit = new QLineEdit();
     m_groupBox6_LineEdit->setFixedWidth(24);
     m_groupBox6_LineEdit->setText("_");
@@ -299,16 +299,16 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     groupBox6Layout->addStretch();
     m_groupBox6->setLayout(groupBox6Layout);
 
-    m_groupBox7 = new QGroupBox("Add", this);
+    m_groupBox7 = new QGroupBox(tr("Add"), this);
     m_groupBox7->setCheckable(true);
-    QLabel *groupBox7_Label1 = new QLabel(tr("Prefix"));
+    QLabel *groupBox7_Label1 = new QLabel(tr("Prefix:"));
     m_groupBox7_LineEdit1 = new QLineEdit();
-    QLabel *groupBox7_Label2 = new QLabel(tr("Insert"));
+    QLabel *groupBox7_Label2 = new QLabel(tr("Insert:"));
     m_groupBox7_LineEdit2 = new QLineEdit();
-    QLabel *groupBox7_Label3 = new QLabel(tr("at pos."));
+    QLabel *groupBox7_Label3 = new QLabel(tr("at pos.:"));
     m_groupBox7_SpinBox = new ZeroOnEmptySpinBox();
     m_groupBox7_SpinBox->setRange(0, 255);
-    QLabel *groupBox7_Label4 = new QLabel(tr("Suffix"));
+    QLabel *groupBox7_Label4 = new QLabel(tr("Suffix:"));
     m_groupBox7_LineEdit3 = new QLineEdit();
     QGridLayout *groupBox7Layout = new QGridLayout();
     groupBox7Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
@@ -322,10 +322,10 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     groupBox7Layout->addWidget(m_groupBox7_LineEdit3, 2, 1, 1, 3);
     m_groupBox7->setLayout(groupBox7Layout);
 
-    m_groupBox2 = new QGroupBox("Add Numbering", this);
+    m_groupBox2 = new QGroupBox(tr("Add Numbering"), this);
     m_groupBox2->setCheckable(true);
     m_groupBox2_ComboBox = new QComboBox();
-    m_groupBox2_ComboBox->addItems({"None", "Prefix", "Suffix"});
+    m_groupBox2_ComboBox->addItems({tr("None"), tr("Prefix"), tr("Suffix")});
     QLabel *groupBox2_Label1 = new QLabel(tr("Start:"));
     m_groupBox2_SpinBox1 = new ZeroOnEmptySpinBox();
     m_groupBox2_SpinBox1->setRange(0, 100000);
@@ -334,7 +334,7 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     m_groupBox2_SpinBox2 = new QSpinBox();
     m_groupBox2_SpinBox2->setRange(1, 100000);
     m_groupBox2_SpinBox2->setValue(1);
-    QLabel *groupBox2_Label3 = new QLabel(tr("Sep."));
+    QLabel *groupBox2_Label3 = new QLabel(tr("Separator:"));
     m_groupBox2_LineEdit = new QLineEdit();
     m_groupBox2_LineEdit->setFixedWidth(24);
     m_groupBox2_LineEdit->setText("_");
@@ -358,15 +358,15 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     m_groupBox8->setLayout(groupBox8Layout);
     */
 
-    m_groupBox9 = new QGroupBox("Add Folder Name", this);
+    m_groupBox9 = new QGroupBox(tr("Add Folder Name"), this);
     m_groupBox9->setCheckable(true);
     m_groupBox9_ComboBox = new QComboBox();
-    m_groupBox9_ComboBox->addItems({"None", "Prefix", "Suffix"});
-    QLabel *groupBox9_Label1 = new QLabel(tr("Sep."));
+    m_groupBox9_ComboBox->addItems({tr("None"), tr("Prefix"), tr("Suffix")});
+    QLabel *groupBox9_Label1 = new QLabel(tr("Separator:"));
     m_groupBox9_LineEdit = new QLineEdit();
     m_groupBox9_LineEdit->setFixedWidth(24);
     m_groupBox9_LineEdit->setText("_");
-    QLabel *groupBox9_Label2 = new QLabel(tr("Levels"));
+    QLabel *groupBox9_Label2 = new QLabel(tr("Levels:"));
     m_groupBox9_SpinBox = new QSpinBox();
     m_groupBox9_SpinBox->setRange(1, 255);
     m_groupBox9_SpinBox->setValue(1);
@@ -380,9 +380,9 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     groupBox9Layout->addStretch();
     m_groupBox9->setLayout(groupBox9Layout);
 
-    m_groupBox10 = new QGroupBox("Number Padding", this);
+    m_groupBox10 = new QGroupBox(tr("Number Padding"), this);
     m_groupBox10->setCheckable(true);
-    m_groupBox10_CheckBox1 = new QCheckBox("Add lead:");
+    m_groupBox10_CheckBox1 = new QCheckBox(tr("Add lead:"));
     m_groupBox10_LineEdit = new QLineEdit();
     m_groupBox10_LineEdit->setText("0");
     m_groupBox10_LineEdit->setMaxLength(1);
@@ -391,7 +391,7 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     m_groupBox10_SpinBox1 = new QSpinBox();
     m_groupBox10_SpinBox1->setRange(1, 255);
     m_groupBox10_SpinBox1->setValue(3);
-    m_groupBox10_CheckBox2 = new QCheckBox("New");
+    m_groupBox10_CheckBox2 = new QCheckBox(tr("New"));
     QLabel *groupBox10_Label2 = new QLabel(tr("Start:"));
     m_groupBox10_SpinBox2 = new ZeroOnEmptySpinBox();
     m_groupBox10_SpinBox2->setRange(0, 100000);
@@ -420,26 +420,24 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     groupBox10Layout->setColumnStretch(6, 1);  // Die allerletzte Spalte bekommt Stretch 1
     m_groupBox10->setLayout(groupBox10Layout);
 
-    m_groupBox11 = new QGroupBox("Case", this);
+    m_groupBox11 = new QGroupBox(tr("Case"), this);
     m_groupBox11->setCheckable(true);
     m_groupBox11_ComboBox = new QComboBox();
-    m_groupBox11_ComboBox->addItems({"Same", "Lower", "Upper", "Title", "Fixed", "Sentence"});
-    m_groupBox11_LineEdit = new QLineEdit();
+    m_groupBox11_ComboBox->addItems({tr("Same"), tr("Lower"), tr("Upper"), tr("Title"), tr("Sentence")});
     QHBoxLayout *groupBox11Layout = new QHBoxLayout;
     groupBox11Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
     groupBox11Layout->addWidget(m_groupBox11_ComboBox);
-    groupBox11Layout->addWidget(m_groupBox11_LineEdit);
     m_groupBox11->setLayout(groupBox11Layout);
 
-    m_groupBox12_CheckBox1 = new QCheckBox("Files");
+    m_groupBox12_CheckBox1 = new QCheckBox(tr("Files"));
     m_groupBox12_CheckBox1->setChecked(true);
-    m_groupBox12_CheckBox2 = new QCheckBox("Folders");
+    m_groupBox12_CheckBox2 = new QCheckBox(tr("Folders"));
     m_groupBox12_CheckBox2->setChecked(true);
-    m_groupBox12_CheckBox3 = new QCheckBox("Recursive");
+    m_groupBox12_CheckBox3 = new QCheckBox(tr("Recursive"));
     m_groupBox12_CheckBox3->setChecked(false);
-    QLabel *groupBox12_Label = new QLabel(tr("Filter"));
+    QLabel *groupBox12_Label = new QLabel(tr("Filter:"));
     m_groupBox12_LineEdit = new QLineEdit();
-    m_groupBox12_CheckBox4 = new QCheckBox("Match case");
+    m_groupBox12_CheckBox4 = new QCheckBox(tr("Match case"));
     m_groupBox12_CheckBox4->setChecked(false);
     QHBoxLayout *groupBox12Layout = new QHBoxLayout();
     groupBox12Layout->setContentsMargins(10, 10, 10, 10);
@@ -453,7 +451,7 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     groupBox12Layout->addWidget(m_groupBox12_CheckBox4);
 
     QHBoxLayout *buttonBoxLayout = new QHBoxLayout;
-    m_buttonDoRename = new QPushButton("Rename", this);
+    m_buttonDoRename = new QPushButton(tr("Rename"), this);
     m_buttonDoRename->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     m_buttonDoRename->setEnabled(false);
     buttonBoxLayout->addStretch();
@@ -930,6 +928,9 @@ void MainWindow::showFolder(const QString &directoryPath, const QStringList &ext
 
         // Selektion anwenden
         if (!restoreSelection.isEmpty() && m_selectionModel) {
+            if (m_selectionModel) {
+                m_selectionModel->blockSignals(false); // Need to do this here so signal QItemSelectionModel::selectionChanged gets processed and setRenameRows() gets called
+            }
             m_selectionModel->select(restoreSelection, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
         }
     }
@@ -2360,91 +2361,65 @@ void MainWindow::updateWidgetStyles() {
         return;
     }
 
-    if (m_currentStyleState != targetState) {
-        m_currentStyleState = targetState;
-        m_StyleLastPalette = currentPalette;
+    m_currentStyleState = targetState;
+    m_StyleLastPalette = currentPalette;
 
 #ifdef Q_OS_WIN
-        if (targetState == StyleState::Elevated) {
-            m_tableView->setStyleSheet(Styles::tableViewElevated);
-            m_listView->setStyleSheet(Styles::listViewElevated);
-            m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevated);
-        } else {
-            m_tableView->setStyleSheet(Styles::tableViewLight);
-            m_listView->setStyleSheet(Styles::listViewLight);
-            m_thumbnailView->setStyleSheet(Styles::thumbnailViewLight);
-        }
+    if (targetState == StyleState::Elevated) {
+        m_tableView->setStyleSheet(Styles::tableViewElevated);
+        m_listView->setStyleSheet(Styles::listViewElevated);
+        m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevated);
+    } else {
+        m_tableView->setStyleSheet(Styles::tableViewLight);
+        m_listView->setStyleSheet(Styles::listViewLight);
+        m_thumbnailView->setStyleSheet(Styles::thumbnailViewLight);
+    }
 #elif defined(Q_OS_LINUX)
-        if (targetState == StyleState::Dark) {
-            this->setStyleSheet(
-                "QMainWindow { background-color: #222222; }"
-                "QHeaderView::section { background-color: #222222; color: #ffffff; }"
-                );
+    if (targetState == StyleState::Dark) {
+        this->setStyleSheet(
+            "QMainWindow { background-color: palette(window); }"
+            "QHeaderView::section { background-color: palette(window); color: palette(window-text); }"
+            );
 
-            m_groupBox1->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            m_groupBox2->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            m_groupBox3->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            m_groupBox5->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            m_groupBox6->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            m_groupBox7->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            //m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            m_groupBox9->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            m_groupBox10->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            m_groupBox11->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            //m_groupBox12->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            m_groupBox13->setStyleSheet(Styles::groupBoxStyleSheetDark);
-        } else {
-            // WICHTIG: Stylesheet leeren, wenn das System auf Light Mode wechselt!
-            // Dadurch schaltet Qt wieder auf das helle Breeze-Standarddesign um.
-            this->setStyleSheet("");
+        m_groupBox1->setStyleSheet(Styles::groupBoxStyleSheetDark);
+        m_groupBox2->setStyleSheet(Styles::groupBoxStyleSheetDark);
+        m_groupBox3->setStyleSheet(Styles::groupBoxStyleSheetDark);
+        m_groupBox5->setStyleSheet(Styles::groupBoxStyleSheetDark);
+        m_groupBox6->setStyleSheet(Styles::groupBoxStyleSheetDark);
+        m_groupBox7->setStyleSheet(Styles::groupBoxStyleSheetDark);
+        //m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheetDark);
+        m_groupBox9->setStyleSheet(Styles::groupBoxStyleSheetDark);
+        m_groupBox10->setStyleSheet(Styles::groupBoxStyleSheetDark);
+        m_groupBox11->setStyleSheet(Styles::groupBoxStyleSheetDark);
+        //m_groupBox12->setStyleSheet(Styles::groupBoxStyleSheetDark);
+        m_groupBox13->setStyleSheet(Styles::groupBoxStyleSheetDark);
+    } else {
+        // WICHTIG: Stylesheet leeren, wenn das System auf Light Mode wechselt!
+        // Dadurch schaltet Qt wieder auf das helle Breeze-Standarddesign um.
+        this->setStyleSheet("");
 
-            m_groupBox1->setStyleSheet(Styles::groupBoxStyleSheet);
-            m_groupBox2->setStyleSheet(Styles::groupBoxStyleSheet);
-            m_groupBox3->setStyleSheet(Styles::groupBoxStyleSheet);
-            m_groupBox5->setStyleSheet(Styles::groupBoxStyleSheet);
-            m_groupBox6->setStyleSheet(Styles::groupBoxStyleSheet);
-            m_groupBox7->setStyleSheet(Styles::groupBoxStyleSheet);
-            //m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheet);
-            m_groupBox9->setStyleSheet(Styles::groupBoxStyleSheet);
-            m_groupBox10->setStyleSheet(Styles::groupBoxStyleSheet);
-            m_groupBox11->setStyleSheet(Styles::groupBoxStyleSheet);
-            //m_groupBox12->setStyleSheet(Styles::groupBoxStyleSheet);
-            m_groupBox13->setStyleSheet(Styles::groupBoxStyleSheet);
-        }
+        m_groupBox1->setStyleSheet(Styles::groupBoxStyleSheet);
+        m_groupBox2->setStyleSheet(Styles::groupBoxStyleSheet);
+        m_groupBox3->setStyleSheet(Styles::groupBoxStyleSheet);
+        m_groupBox5->setStyleSheet(Styles::groupBoxStyleSheet);
+        m_groupBox6->setStyleSheet(Styles::groupBoxStyleSheet);
+        m_groupBox7->setStyleSheet(Styles::groupBoxStyleSheet);
+        //m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheet);
+        m_groupBox9->setStyleSheet(Styles::groupBoxStyleSheet);
+        m_groupBox10->setStyleSheet(Styles::groupBoxStyleSheet);
+        m_groupBox11->setStyleSheet(Styles::groupBoxStyleSheet);
+        //m_groupBox12->setStyleSheet(Styles::groupBoxStyleSheet);
+        m_groupBox13->setStyleSheet(Styles::groupBoxStyleSheet);
+    }
 
-        if (targetState == StyleState::Elevated) {
-            m_tableView->setStyleSheet(Styles::tableViewElevatedLinux);
-            m_listView->setStyleSheet(Styles::listViewElevatedLinux);
-            m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevatedLinux);
-        } else {
-            m_listView->setStyleSheet(Styles::listViewLinux);
-        }
+    if (targetState == StyleState::Elevated) {
+        m_tableView->setStyleSheet(Styles::tableViewElevatedLinux);
+        m_listView->setStyleSheet(Styles::listViewElevatedLinux);
+        m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevatedLinux);
+    } else {
+        m_listView->setStyleSheet(Styles::listViewLinux);
+    }
 #endif
-    }
-    else if (currentPalette != m_StyleLastPalette) {
-        m_currentStyleState = targetState;
-        m_StyleLastPalette = currentPalette;
-
-        if (m_groupBox1_LineEdit1) {
-            m_groupBox1_LineEdit1->style()->unpolish(m_groupBox1_LineEdit1);
-            m_groupBox1_LineEdit1->style()->polish(m_groupBox1_LineEdit1);
-        }
-
-        if (m_tableView) {
-            m_tableView->style()->unpolish(m_tableView);
-            m_tableView->style()->polish(m_tableView);
-        }
-
-        if (m_listView) {
-            m_listView->style()->unpolish(m_listView);
-            m_listView->style()->polish(m_listView);
-        }
-
-        if (m_thumbnailView) {
-            m_thumbnailView->style()->unpolish(m_thumbnailView);
-            m_thumbnailView->style()->polish(m_thumbnailView);
-        }
-    }
 }
 
 //######################################################################################
@@ -2833,7 +2808,6 @@ void MainWindow::setupRenameRuleSignals() {
     // Case
     connect(m_groupBox11, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox11_ComboBox, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
-    connect(m_groupBox11_LineEdit, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
 
     // Filters
     connect(m_groupBox12_CheckBox1, &QCheckBox::checkStateChanged, this, &MainWindow::onRenameRulesChanged);

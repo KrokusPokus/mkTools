@@ -2316,70 +2316,39 @@ void MainWindow::updateWidgetStyles() {
         return;
     }
 
-    if (m_currentStyleState != targetState) {
-        m_currentStyleState = targetState;
-        m_StyleLastPalette = currentPalette;
+    m_currentStyleState = targetState;
+    m_StyleLastPalette = currentPalette;
 
 #ifdef Q_OS_WIN
-        if (targetState == StyleState::Elevated) {
-            m_tableView->setStyleSheet(Styles::tableViewElevated);
-            m_listView->setStyleSheet(Styles::listViewElevated);
-            m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevated);
-        } else {
-            m_tableView->setStyleSheet(Styles::tableViewLight);
-            m_listView->setStyleSheet(Styles::listViewLight);
-            m_thumbnailView->setStyleSheet(Styles::thumbnailViewLight);
-        }
+    if (targetState == StyleState::Elevated) {
+        m_tableView->setStyleSheet(Styles::tableViewElevated);
+        m_listView->setStyleSheet(Styles::listViewElevated);
+        m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevated);
+    } else {
+        m_tableView->setStyleSheet(Styles::tableViewLight);
+        m_listView->setStyleSheet(Styles::listViewLight);
+        m_thumbnailView->setStyleSheet(Styles::thumbnailViewLight);
+    }
 #elif defined(Q_OS_LINUX)
-        if (targetState == StyleState::Dark) {
-            this->setStyleSheet(
-                "QMainWindow { background-color: #222222; }"
-                "QHeaderView::section { background-color: #222222; color: #ffffff; }"
-                );
-        } else {
-            // WICHTIG: Stylesheet leeren, wenn das System auf Light Mode wechselt!
-            // Dadurch schaltet Qt wieder auf das helle Breeze-Standarddesign um.
-            this->setStyleSheet("");
-        }
+    if (targetState == StyleState::Dark) {
+        this->setStyleSheet(
+            "QMainWindow { background-color: palette(window); }"
+            "QHeaderView::section { background-color: palette(window); color: palette(window-text); }"
+            );
+    } else {
+        // WICHTIG: Stylesheet leeren, wenn das System auf Light Mode wechselt!
+        // Dadurch schaltet Qt wieder auf das helle Breeze-Standarddesign um.
+        this->setStyleSheet("");
+    }
 
-        if (targetState == StyleState::Elevated) {
-            m_tableView->setStyleSheet(Styles::tableViewElevatedLinux);
-            m_listView->setStyleSheet(Styles::listViewElevatedLinux);
-            m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevatedLinux);
-        } else {
-            m_listView->setStyleSheet(Styles::listViewLinux);
-        }
+    if (targetState == StyleState::Elevated) {
+        m_tableView->setStyleSheet(Styles::tableViewElevatedLinux);
+        m_listView->setStyleSheet(Styles::listViewElevatedLinux);
+        m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevatedLinux);
+    } else {
+        m_listView->setStyleSheet(Styles::listViewLinux);
+    }
 #endif
-    }
-    else if (currentPalette != m_StyleLastPalette) {
-        m_currentStyleState = targetState;
-        m_StyleLastPalette = currentPalette;
-
-        if (m_LineEdit1) {
-            m_LineEdit1->style()->unpolish(m_LineEdit1);
-            m_LineEdit1->style()->polish(m_LineEdit1);
-        }
-
-        if (m_LineEdit2) {
-            m_LineEdit2->style()->unpolish(m_LineEdit2);
-            m_LineEdit2->style()->polish(m_LineEdit2);
-        }
-
-        if (m_tableView) {
-            m_tableView->style()->unpolish(m_tableView);
-            m_tableView->style()->polish(m_tableView);
-        }
-
-        if (m_listView) {
-            m_listView->style()->unpolish(m_listView);
-            m_listView->style()->polish(m_listView);
-        }
-
-        if (m_thumbnailView) {
-            m_thumbnailView->style()->unpolish(m_thumbnailView);
-            m_thumbnailView->style()->polish(m_thumbnailView);
-        }
-    }
 }
 
 //######################################################################################

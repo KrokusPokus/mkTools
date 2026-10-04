@@ -2331,93 +2331,62 @@ void MainWindow::updateWidgetStyles() {
         return;
     }
 
-    if (m_currentStyleState != targetState) {
-        m_currentStyleState = targetState;
-        m_StyleLastPalette = currentPalette;
+    m_currentStyleState = targetState;
+    m_StyleLastPalette = currentPalette;
 
 #ifdef Q_OS_WIN
+    this->setStyleSheet(
+        "QMainWindow { background-color: #222222; }"
+        "QHeaderView::section { background-color: #222222; color: #ffffff; }"
+        );
+
+    m_LineEdit1->setStyleSheet(lineEdit1StyleDark);
+    m_LineEdit2->setStyleSheet(lineEdit2StyleDark);
+
+    if (targetState == StyleState::Elevated) {
+        m_tableView->setStyleSheet(Styles::tableViewElevated);
+        m_listView->setStyleSheet(Styles::listViewElevated);
+        m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevated);
+    } else {
+        m_tableView->setStyleSheet(Styles::tableViewDark);
+        m_listView->setStyleSheet(Styles::listViewDark);
+        m_thumbnailView->setStyleSheet(Styles::thumbnailViewDark);
+    }
+
+    m_tableView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
+    m_tableView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
+
+    m_listView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
+    m_listView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
+
+    m_thumbnailView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
+    m_thumbnailView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
+#elif defined(Q_OS_LINUX)
+    if (targetState == StyleState::Dark) {
         this->setStyleSheet(
-            "QMainWindow { background-color: #222222; }"
-            "QHeaderView::section { background-color: #222222; color: #ffffff; }"
+            "QMainWindow { background-color: palette(window); }"
+            "QHeaderView::section { background-color: palette(window); color: palette(window-text); }"
             );
 
         m_LineEdit1->setStyleSheet(lineEdit1StyleDark);
         m_LineEdit2->setStyleSheet(lineEdit2StyleDark);
+    } else {
+        // WICHTIG: Stylesheet leeren, wenn das System auf Light Mode wechselt!
+        // Dadurch schaltet Qt wieder auf das helle Breeze-Standarddesign um.
+        this->setStyleSheet("");
 
-        if (targetState == StyleState::Elevated) {
-            m_tableView->setStyleSheet(Styles::tableViewElevated);
-            m_listView->setStyleSheet(Styles::listViewElevated);
-            m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevated);
-        } else {
-            m_tableView->setStyleSheet(Styles::tableViewDark);
-            m_listView->setStyleSheet(Styles::listViewDark);
-            m_thumbnailView->setStyleSheet(Styles::thumbnailViewDark);
-        }
+        m_LineEdit1->setStyleSheet(lineEdit1StyleLight);
+        m_LineEdit2->setStyleSheet(lineEdit2StyleLight);
+    }
 
-        m_tableView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
-        m_tableView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
-
-        m_listView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
-        m_listView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
-
-        m_thumbnailView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
-        m_thumbnailView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
-#elif defined(Q_OS_LINUX)
-        if (targetState == StyleState::Dark) {
-            this->setStyleSheet(
-                "QMainWindow { background-color: #222222; }"
-                "QHeaderView::section { background-color: #222222; color: #ffffff; }"
-                );
-
-            m_LineEdit1->setStyleSheet(lineEdit1StyleDark);
-            m_LineEdit2->setStyleSheet(lineEdit2StyleDark);
-        } else {
-            // WICHTIG: Stylesheet leeren, wenn das System auf Light Mode wechselt!
-            // Dadurch schaltet Qt wieder auf das helle Breeze-Standarddesign um.
-            this->setStyleSheet("");
-
-            m_LineEdit1->setStyleSheet(lineEdit1StyleLight);
-            m_LineEdit2->setStyleSheet(lineEdit2StyleLight);
-        }
-
-        if (targetState == StyleState::Elevated) {
-            m_tableView->setStyleSheet(Styles::tableViewElevatedLinux);
-            m_listView->setStyleSheet(Styles::listViewElevatedLinux);
-            m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevatedLinux);
-        } else {
-            m_listView->setStyleSheet(Styles::listViewLinux);
-        }
+    if (targetState == StyleState::Elevated) {
+        m_tableView->setStyleSheet(Styles::tableViewElevatedLinux);
+        m_listView->setStyleSheet(Styles::listViewElevatedLinux);
+        m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevatedLinux);
+    } else {
+        m_listView->setStyleSheet(Styles::listViewLinux);
+    }
 #endif
-    }
-    else if (currentPalette != m_StyleLastPalette) {
-        m_currentStyleState = targetState;
-        m_StyleLastPalette = currentPalette;
-
-        if (m_LineEdit1) {
-            m_LineEdit1->style()->unpolish(m_LineEdit1);
-            m_LineEdit1->style()->polish(m_LineEdit1);
-        }
-
-        if (m_LineEdit2) {
-            m_LineEdit2->style()->unpolish(m_LineEdit2);
-            m_LineEdit2->style()->polish(m_LineEdit2);
-        }
-
-        if (m_tableView) {
-            m_tableView->style()->unpolish(m_tableView);
-            m_tableView->style()->polish(m_tableView);
-        }
-
-        if (m_listView) {
-            m_listView->style()->unpolish(m_listView);
-            m_listView->style()->polish(m_listView);
-        }
-
-        if (m_thumbnailView) {
-            m_thumbnailView->style()->unpolish(m_thumbnailView);
-            m_thumbnailView->style()->polish(m_thumbnailView);
-        }
-    }
 }
 
 //######################################################################################

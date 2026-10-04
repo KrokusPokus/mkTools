@@ -2603,71 +2603,47 @@ void MainWindow::updateWidgetStyles() {
         return;
     }
 
-    if (m_currentStyleState != targetState) {
-        m_currentStyleState = targetState;
-        m_StyleLastPalette = currentPalette;
+
+    m_currentStyleState = targetState;
+    m_StyleLastPalette = currentPalette;
 
 #ifdef Q_OS_WIN
-        m_LineEdit1->setStyleSheet(lineEditStyleDark);
+    m_LineEdit1->setStyleSheet(lineEditStyleDark);
 
-        if (targetState == StyleState::Elevated) {
-            m_tableView->setStyleSheet(Styles::tableViewElevated);
-            m_listView->setStyleSheet(Styles::listViewElevated);
-            m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevated);
-        } else {
-            m_tableView->setStyleSheet(Styles::tableViewDark);
-            m_listView->setStyleSheet(Styles::listViewDark);
-            m_thumbnailView->setStyleSheet(Styles::thumbnailViewDark);
-        }
+    if (targetState == StyleState::Elevated) {
+        m_tableView->setStyleSheet(Styles::tableViewElevated);
+        m_listView->setStyleSheet(Styles::listViewElevated);
+        m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevated);
+    } else {
+        m_tableView->setStyleSheet(Styles::tableViewDark);
+        m_listView->setStyleSheet(Styles::listViewDark);
+        m_thumbnailView->setStyleSheet(Styles::thumbnailViewDark);
+    }
 
-        m_tableView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
-        m_tableView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
+    m_tableView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
+    m_tableView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
 
-        m_listView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
-        m_listView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
+    m_listView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
+    m_listView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
 
-        m_thumbnailView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
-        m_thumbnailView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
+    m_thumbnailView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
+    m_thumbnailView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
 #elif defined(Q_OS_LINUX)
-        if (targetState == StyleState::Dark) {
-            m_LineEdit1->setStyleSheet(lineEditStyleDark);
-        } else {
-            m_LineEdit1->setStyleSheet(lineEditStyleLight);
-        }
+    if (targetState == StyleState::Dark) {
+        m_LineEdit1->setStyleSheet(lineEditStyleDark);
+    } else {
+        m_LineEdit1->setStyleSheet(lineEditStyleLight);
+    }
 
-        if (targetState == StyleState::Elevated) {
-            m_tableView->setStyleSheet(Styles::tableViewElevatedLinux);
-            m_listView->setStyleSheet(Styles::listViewElevatedLinux);
-            m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevatedLinux);
-        } else {
-            m_listView->setStyleSheet(Styles::listViewLinux);
-        }
+    if (targetState == StyleState::Elevated) {
+        m_tableView->setStyleSheet(Styles::tableViewElevatedLinux);
+        m_listView->setStyleSheet(Styles::listViewElevatedLinux);
+        m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevatedLinux);
+    } else {
+        m_listView->setStyleSheet(Styles::listViewLinux);
+    }
 #endif
-    }
-    else if (currentPalette != m_StyleLastPalette) {
-        m_currentStyleState = targetState;
-        m_StyleLastPalette = currentPalette;
 
-        if (m_LineEdit1) {
-            m_LineEdit1->style()->unpolish(m_LineEdit1);
-            m_LineEdit1->style()->polish(m_LineEdit1);
-        }
-
-        if (m_tableView) {
-            m_tableView->style()->unpolish(m_tableView);
-            m_tableView->style()->polish(m_tableView);
-        }
-
-        if (m_listView) {
-            m_listView->style()->unpolish(m_listView);
-            m_listView->style()->polish(m_listView);
-        }
-
-        if (m_thumbnailView) {
-            m_thumbnailView->style()->unpolish(m_thumbnailView);
-            m_thumbnailView->style()->polish(m_thumbnailView);
-        }
-    }
 }
 
 //######################################################################################
