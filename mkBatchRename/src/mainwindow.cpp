@@ -65,9 +65,12 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     : QMainWindow(parent)
     , m_currentDirectory(std::move(targetDirectory))
 {
-    setWindowTitle(QDir::toNativeSeparators(m_currentDirectory));
+    if (!m_currentDirectory.isEmpty()) {
+        setWindowTitle(QDir::toNativeSeparators(m_currentDirectory));
+    } else {
+        setWindowTitle(QDir::toNativeSeparators("mkBatchRename"));
+    }
     setWindowIcon(QIcon(":/icons/app.ico"));
-    resize(728, 545);
 
     m_processIsElevated = Helpers::isCurrentProcessElevated();
 
@@ -258,12 +261,12 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     groupBox5Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
     groupBox5Layout->addWidget(groupBox5_Label1);
     groupBox5Layout->addWidget(m_groupBox5_SpinBox1);
-    groupBox5Layout->addSpacing(30);
+    groupBox5Layout->addSpacing(15);
     groupBox5Layout->addWidget(groupBox5_Label3);
     groupBox5Layout->addWidget(m_groupBox5_SpinBox3);
     groupBox5Layout->addWidget(groupBox5_Label4);
     groupBox5Layout->addWidget(m_groupBox5_SpinBox4);
-    groupBox5Layout->addSpacing(30);
+    groupBox5Layout->addSpacing(15);
     groupBox5Layout->addWidget(groupBox5_Label2);
     groupBox5Layout->addWidget(m_groupBox5_SpinBox2);
     groupBox5Layout->addStretch();
@@ -283,6 +286,7 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     QLabel *groupBox6_Label2 = new QLabel(tr("Sep."));
     m_groupBox6_LineEdit = new QLineEdit();
     m_groupBox6_LineEdit->setFixedWidth(24);
+    m_groupBox6_LineEdit->setText("_");
     QHBoxLayout *groupBox6Layout = new QHBoxLayout;
     groupBox6Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
     groupBox6Layout->addWidget(m_groupBox6_ComboBox1);
@@ -333,6 +337,7 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     QLabel *groupBox2_Label3 = new QLabel(tr("Sep."));
     m_groupBox2_LineEdit = new QLineEdit();
     m_groupBox2_LineEdit->setFixedWidth(24);
+    m_groupBox2_LineEdit->setText("_");
     QHBoxLayout *groupBox2Layout = new QHBoxLayout;
     groupBox2Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
     groupBox2Layout->addWidget(m_groupBox2_ComboBox);
@@ -345,11 +350,13 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     groupBox2Layout->addStretch();
     m_groupBox2->setLayout(groupBox2Layout);
 
+    /*
     m_groupBox8 = new QGroupBox("Add Date", this);
     m_groupBox8->setCheckable(true);
     QVBoxLayout *groupBox8Layout = new QVBoxLayout;
     groupBox8Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
     m_groupBox8->setLayout(groupBox8Layout);
+    */
 
     m_groupBox9 = new QGroupBox("Add Folder Name", this);
     m_groupBox9->setCheckable(true);
@@ -358,6 +365,7 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     QLabel *groupBox9_Label1 = new QLabel(tr("Sep."));
     m_groupBox9_LineEdit = new QLineEdit();
     m_groupBox9_LineEdit->setFixedWidth(24);
+    m_groupBox9_LineEdit->setText("_");
     QLabel *groupBox9_Label2 = new QLabel(tr("Levels"));
     m_groupBox9_SpinBox = new QSpinBox();
     m_groupBox9_SpinBox->setRange(1, 255);
@@ -392,22 +400,25 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     m_groupBox10_SpinBox3 = new QSpinBox();
     m_groupBox10_SpinBox3->setRange(1, 100000);
     m_groupBox10_SpinBox3->setValue(1);
-    QHBoxLayout *groupBox10Layout1 = new QHBoxLayout;
-    groupBox10Layout1->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
-    groupBox10Layout1->addWidget(m_groupBox10_CheckBox1);
-    groupBox10Layout1->addWidget(m_groupBox10_LineEdit);
-    groupBox10Layout1->addSpacing(20);
-    groupBox10Layout1->addWidget(groupBox10_Label1);
-    groupBox10Layout1->addWidget(m_groupBox10_SpinBox1);
-    groupBox10Layout1->addSpacing(20);
-    groupBox10Layout1->addWidget(m_groupBox10_CheckBox2);
-    groupBox10Layout1->addSpacing(20);
-    groupBox10Layout1->addWidget(groupBox10_Label2);
-    groupBox10Layout1->addWidget(m_groupBox10_SpinBox2);
-    groupBox10Layout1->addWidget(groupBox10_Label3);
-    groupBox10Layout1->addWidget(m_groupBox10_SpinBox3);
-    groupBox10Layout1->addStretch();
-    m_groupBox10->setLayout(groupBox10Layout1);
+    QGridLayout *groupBox10Layout = new QGridLayout();
+    groupBox10Layout->setContentsMargins(50, 7, 7, 7); // (Links, Oben, Rechts, Unten)
+    groupBox10Layout->addWidget(m_groupBox10_CheckBox1, 0, 0);
+    groupBox10Layout->addWidget(m_groupBox10_LineEdit,  0, 1);
+    groupBox10Layout->addWidget(groupBox10_Label1,      0, 2, Qt::AlignRight | Qt::AlignVCenter);
+    groupBox10Layout->addWidget(m_groupBox10_SpinBox1,  0, 3);
+    groupBox10Layout->addWidget(m_groupBox10_CheckBox2, 1, 1);
+    groupBox10Layout->addWidget(groupBox10_Label2,      1, 2, Qt::AlignRight | Qt::AlignVCenter);
+    groupBox10Layout->addWidget(m_groupBox10_SpinBox2,  1, 3);
+    groupBox10Layout->addWidget(groupBox10_Label3,      1, 4, Qt::AlignRight | Qt::AlignVCenter);
+    groupBox10Layout->addWidget(m_groupBox10_SpinBox3,  1, 5);
+    groupBox10Layout->setColumnStretch(0, 0);
+    groupBox10Layout->setColumnStretch(1, 0);
+    groupBox10Layout->setColumnStretch(2, 0);
+    groupBox10Layout->setColumnStretch(3, 0);
+    groupBox10Layout->setColumnStretch(4, 0);
+    groupBox10Layout->setColumnStretch(5, 0);
+    groupBox10Layout->setColumnStretch(6, 1);  // Die allerletzte Spalte bekommt Stretch 1
+    m_groupBox10->setLayout(groupBox10Layout);
 
     m_groupBox11 = new QGroupBox("Case", this);
     m_groupBox11->setCheckable(true);
@@ -459,12 +470,13 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     controlsLayout->addWidget(m_groupBox6);  // Move/Copy
     controlsLayout->addWidget(m_groupBox7);  // Add
     controlsLayout->addWidget(m_groupBox2);  // Add Numbering
-    controlsLayout->addWidget(m_groupBox8);  // Add Date
+    //controlsLayout->addWidget(m_groupBox8);  // Add Date
     controlsLayout->addWidget(m_groupBox9);  // Add Folder Name
     controlsLayout->addWidget(m_groupBox10); // Number Padding
     controlsLayout->addWidget(m_groupBox11); // Case
 
     controlsLayout->addLayout(buttonBoxLayout);
+    controlsLayout->addStretch();
 
     // --------------------------------------------------------------------
 
@@ -475,7 +487,7 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     m_mainLayout = new QHBoxLayout(m_centralWidget);
     m_mainLayout->setContentsMargins(0, 0, 0, 0);
     m_mainLayout->setSpacing(0);
-    m_mainLayout->addLayout(controlsLayout, 0);
+    m_mainLayout->addLayout(controlsLayout,  0);
     m_mainLayout->addLayout(rightSideLayout, 1);
 
     // --------------------------------------------------------------------
@@ -702,7 +714,6 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     setupRenameRuleSignals();
     onRenameRulesChanged();
 
-    setWindowTitle(QDir::toNativeSeparators(m_currentDirectory));
     showFolder(m_currentDirectory, externalPathList);
 }
 
@@ -759,22 +770,24 @@ void MainWindow::showFolder(const QString &directoryPath, const QStringList &ext
         return;
     }
 
-    // Handle non-existing paths
-    QDir dir(directoryPath);
-    if (!dir.exists()) {
-        return;
-    }
+    if (!directoryPath.isEmpty()) {
+        // Handle non-existing paths
+        QDir dir(directoryPath);
+        if (!dir.exists()) {
+            return;
+        }
 
-    // Rechteprüfung (Leserechte vorhanden?)
-    QFileInfo dirInfo(directoryPath);
-    if (!dirInfo.isReadable()) {
-        QMessageBox::warning(
-            this,
-            tr("Access denied"),
-            tr("You don't have the required permissions to access this folder:<br><br>%1")
-                .arg(QDir::toNativeSeparators(directoryPath))
-            );
-        return;
+        // Rechteprüfung (Leserechte vorhanden?)
+        QFileInfo dirInfo(directoryPath);
+        if (!dirInfo.isReadable()) {
+            QMessageBox::warning(
+                this,
+                tr("Access denied"),
+                tr("You don't have the required permissions to access this folder:<br><br>%1")
+                    .arg(QDir::toNativeSeparators(directoryPath))
+                );
+            return;
+        }
     }
 
     auto *activeView = qobject_cast<QAbstractItemView*>(m_viewStack->currentWidget());
@@ -837,12 +850,11 @@ void MainWindow::showFolder(const QString &directoryPath, const QStringList &ext
 
     // --- LOAD NEW FOLDER ---
 
-    m_abstractModel->populateModel_mkBatchRename(directoryPath);
+    m_abstractModel->populateModel_mkBatchRename(directoryPath, externalPathList);
 
     m_tableView->setRootIndex(QModelIndex());
     m_listView->setRootIndex(QModelIndex());
     m_thumbnailView->setRootIndex(QModelIndex());
-    m_currentDirectory = directoryPath;
 
     // --- DISABLE SIGNALS FOR SPEEDUP ---
     if (m_selectionModel) {
@@ -2375,7 +2387,7 @@ void MainWindow::updateWidgetStyles() {
             m_groupBox5->setStyleSheet(Styles::groupBoxStyleSheetDark);
             m_groupBox6->setStyleSheet(Styles::groupBoxStyleSheetDark);
             m_groupBox7->setStyleSheet(Styles::groupBoxStyleSheetDark);
-            m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheetDark);
+            //m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheetDark);
             m_groupBox9->setStyleSheet(Styles::groupBoxStyleSheetDark);
             m_groupBox10->setStyleSheet(Styles::groupBoxStyleSheetDark);
             m_groupBox11->setStyleSheet(Styles::groupBoxStyleSheetDark);
@@ -2392,7 +2404,7 @@ void MainWindow::updateWidgetStyles() {
             m_groupBox5->setStyleSheet(Styles::groupBoxStyleSheet);
             m_groupBox6->setStyleSheet(Styles::groupBoxStyleSheet);
             m_groupBox7->setStyleSheet(Styles::groupBoxStyleSheet);
-            m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheet);
+            //m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheet);
             m_groupBox9->setStyleSheet(Styles::groupBoxStyleSheet);
             m_groupBox10->setStyleSheet(Styles::groupBoxStyleSheet);
             m_groupBox11->setStyleSheet(Styles::groupBoxStyleSheet);
@@ -2801,7 +2813,7 @@ void MainWindow::setupRenameRuleSignals() {
     connect(m_groupBox2_LineEdit,  &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
 
     // Auto Date
-    connect(m_groupBox8, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
+    //connect(m_groupBox8, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
 
     // Append Folder Name
     connect(m_groupBox9, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
@@ -2883,8 +2895,8 @@ void MainWindow::onRenameRulesChanged() {
     rules.num.separator = m_groupBox2_LineEdit->text();
 
     // Add Date
-    rules.dat.enabled = m_groupBox8->isChecked();
-    rules.dat.target = target;
+    //rules.dat.enabled = m_groupBox8->isChecked();
+    //rules.dat.target = target;
 
     // Add Folder Name
     rules.afn.enabled = m_groupBox9->isChecked();

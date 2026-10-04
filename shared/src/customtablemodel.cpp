@@ -577,7 +577,7 @@ void CustomTableModel::setRenameRules(const RenameRules &rules) {
 
     if (rules.flt != m_rules.flt) {
         m_rules = rules;
-        populateModel_mkBatchRename(m_currentDirectoryPath);
+        populateModel_mkBatchRename(m_currentDirectoryPath, m_renameExtPathList);
         return;
     }
 
@@ -1561,7 +1561,8 @@ QPixmap CustomTableModel::generateDummyThumb(const QString &dummyName) const {
     return canvas;
 }
 
-void CustomTableModel::populateModel_mkBatchRename(const QString &dirPath) {
+void CustomTableModel::populateModel_mkBatchRename(const QString &dirPath, const QStringList &externalPathList) {
+    m_renameExtPathList = externalPathList;
     m_abortSearch.store(false);
     std::vector<CustomFileInfo> newFiles;
     m_currentDirectoryPath = dirPath;
@@ -1569,46 +1570,85 @@ void CustomTableModel::populateModel_mkBatchRename(const QString &dirPath) {
     QString searchStringFilename = m_rules.flt.filter;
     QStringList searchStringFilenameSplit = m_rules.flt.filter.split(' ', Qt::SkipEmptyParts);
     bool bSearchStringFilenameEmpty = m_rules.flt.filter.trimmed().isEmpty();
+    Qt::CaseSensitivity caseSensitivityFilename = m_rules.flt.matchCase ? Qt::CaseSensitive : Qt::CaseInsensitive;
 
-    int iAnchorPathLength = dirPath.length();
-    if (!QDir::toNativeSeparators(dirPath).endsWith(QDir::separator())) {
-        iAnchorPathLength++;
-    }
+    if (!dirPath.isEmpty()) {
+        int iAnchorPathLength = dirPath.length();
+        if (!QDir::toNativeSeparators(dirPath).endsWith(QDir::separator())) {
+            iAnchorPathLength++;
+        }
 
-    QDir::Filters dirFilter = QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
+        QDir::Filters dirFilter = QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
 
-    if (m_rules.flt.showFiles) {
-        dirFilter = dirFilter | QDir::Files;
-    }
+        if (m_rules.flt.showFiles) {
+            dirFilter = dirFilter | QDir::Files;
+        }
 
-    if (m_rules.flt.showFolders) {
-        dirFilter = dirFilter | QDir::Dirs;
-    }
+        if (m_rules.flt.showFolders) {
+            dirFilter = dirFilter | QDir::Dirs;
+        }
 
-    QDirIterator::IteratorFlag itFlags = QDirIterator::NoIteratorFlags;
-    if (m_rules.flt.showRecursive) {
-        itFlags = QDirIterator::Subdirectories;
-    }
+        QDirIterator::IteratorFlag itFlags = QDirIterator::NoIteratorFlags;
+        if (m_rules.flt.showRecursive) {
+            itFlags = QDirIterator::Subdirectories;
+        }
 
-    Qt::CaseSensitivity caseSensitivityFilename = Qt::CaseInsensitive;
-    if (m_rules.flt.matchCase) {
-        caseSensitivityFilename = Qt::CaseSensitive;
-    }
+        QDirIterator it(dirPath, dirFilter, itFlags);
+        while (it.hasNext()) {
+            it.next();
 
-    QDirIterator it(dirPath, dirFilter, itFlags);
-    while (it.hasNext()) {
-        it.next();
+            QCoreApplication::processEvents();
 
-        QFileInfo fileInfo = it.fileInfo();
+            if (m_abortSearch.load()) {
+                break;
+            }
 
-        if (!bSearchStringFilenameEmpty) {
-            if (Helpers::getNameMatchQuality(fileInfo.fileName(), fileInfo.path(), searchStringFilename, searchStringFilenameSplit, caseSensitivityFilename) == 0) {
+            QFileInfo fileInfo = it.fileInfo();
+
+            if (!bSearchStringFilenameEmpty) {
+                if (Helpers::getNameMatchQuality(fileInfo.fileName(), fileInfo.path(), searchStringFilename, searchStringFilenameSplit, caseSensitivityFilename) == 0) {
+                    continue;
+                }
+            }
+            CustomFileInfo info = createCustomFileInfo(fileInfo, iAnchorPathLength);
+
+            newFiles.push_back(info);
+        }
+    } else if (!externalPathList.isEmpty()) {
+        for (const QString &filePath : externalPathList) {
+
+            QCoreApplication::processEvents();
+
+            if (m_abortSearch.load()) {
+                break;
+            }
+
+            QFileInfo fileInfo(filePath);
+
+            if (!fileInfo.exists()) {
                 continue;
             }
-        }
-        CustomFileInfo info = createCustomFileInfo(fileInfo, iAnchorPathLength);
 
-        newFiles.push_back(info);
+            // Filterung nach Dateien und Ordnern
+            if (fileInfo.isFile() && !m_rules.flt.showFiles) {
+                continue;
+            }
+            if (fileInfo.isDir() && !m_rules.flt.showFolders) {
+                continue;
+            }
+
+            // Filterung nach Dateinamen/Suchbegriff
+            if (!bSearchStringFilenameEmpty) {
+                if (Helpers::getNameMatchQuality(fileInfo.fileName(), fileInfo.path(), searchStringFilename, searchStringFilenameSplit, caseSensitivityFilename) == 0) {
+                    continue;
+                }
+            }
+
+            // iAnchorPathLength ist 0, da kein gemeinsames Quellverzeichnis (dirPath) existiert
+            CustomFileInfo info = createCustomFileInfo(fileInfo, 0);
+
+            newFiles.push_back(info);
+        }
     }
 
     beginResetModel();

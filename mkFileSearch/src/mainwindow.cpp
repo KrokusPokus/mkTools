@@ -33,7 +33,7 @@
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QSettings>
-#include <QSharedMemory>  // for handing over a file list in fileOperation()
+#include <QSharedMemory>
 #include <QShortcut>
 #include <QSize>
 #include <QStandardPaths>
@@ -1519,6 +1519,14 @@ void MainWindow::action_ListViewRenameFiles() {
     auto *activeView = qobject_cast<QAbstractItemView*>(m_viewStack->currentWidget());
     if (!activeView) return;
 
+    const QStringList pathList = getActiveViewPathList();
+    if (pathList.isEmpty()) return;
+
+    if (pathList.size() > 1) {
+        Helpers::launchRenameTool(QString(), pathList, m_settings.renameTool, this);
+        return;
+    }
+
     QModelIndex proxyIndex = activeView->currentIndex();
     if (!proxyIndex.isValid()) return;
 
@@ -2640,6 +2648,12 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                     navigateToClipboardPath();
                     return true;
                 }
+                */
+                else if (keyEvent->key() == Qt::Key_R) {
+                    Helpers::launchRenameTool(QString(), getActiveViewPathList(), m_settings.renameTool, this);
+                    return true;
+                }
+                /*
                 else if (keyEvent->key() == Qt::Key_V) {
                     action_ListViewPasteFiles();
                     return true;

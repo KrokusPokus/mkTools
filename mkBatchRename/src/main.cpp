@@ -34,6 +34,11 @@ int main(int argc, char *argv[])
                 targetDir += "/";   // Einen sauberen Ordner-Abschluss hinzufügen
             }
             targetDir = QDir::cleanPath(targetDir);
+
+            if (!QDir(targetDir).exists()) {
+                std::cerr << "Error: Path not found." << std::endl;
+                return 1;
+            }
     } else if (argc == 3) {
         QString memoryKey = argv[1];
         int expectedSize = QString(argv[2]).toInt();
@@ -69,11 +74,6 @@ int main(int argc, char *argv[])
     } else {
         qDebug() << "[mkBatchRename] Unsupported number of command line arguments!";
         return -1;
-    }
-
-    if (!QDir(targetDir).exists()) {
-        std::cerr << "Error: Path not found." << std::endl;
-        return 1;
     }
 
     //-----------------------------------------------------------------------------------------
