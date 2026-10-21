@@ -126,6 +126,12 @@ protected:
             option->palette.setColor(QPalette::Text, exeRed);
             option->palette.setColor(QPalette::HighlightedText, exeRed);
         }
+
+        if (index.data(CustomTableModel::UseRedBackgroundRole).toBool()) {
+            static const QColor pureRed(255, 0, 0);
+            option->palette.setColor(QPalette::Highlight, pureRed);
+            option->palette.setColor(QPalette::HighlightedText, Qt::white);
+        }
     }
 };
 
@@ -215,6 +221,12 @@ protected:
             static const QColor exeRed(255, 74, 70);
             option->palette.setColor(QPalette::Text, exeRed);
             option->palette.setColor(QPalette::HighlightedText, exeRed);
+        }
+
+        if (index.data(CustomTableModel::UseRedBackgroundRole).toBool()) {
+            static const QColor pureRed(255, 0, 0);
+            option->palette.setColor(QPalette::Highlight, pureRed);
+            option->palette.setColor(QPalette::HighlightedText, Qt::white);
         }
     }
 };
@@ -389,6 +401,12 @@ protected:
             static const QColor exeRed(255, 74, 70);
             option->palette.setColor(QPalette::Text, exeRed);
             option->palette.setColor(QPalette::HighlightedText, exeRed);
+        }
+
+        if (index.data(CustomTableModel::UseRedBackgroundRole).toBool()) {
+            static const QColor pureRed(255, 0, 0);
+            option->palette.setColor(QPalette::Highlight, pureRed);
+            option->palette.setColor(QPalette::HighlightedText, Qt::white);
         }
     }
 };

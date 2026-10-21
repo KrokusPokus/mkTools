@@ -178,6 +178,12 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
         switch (col) {
             case eColName:
                 return file.isExecutable && !file.isDir && m_settings && m_settings->executableFilesRed;
+            default:
+                return QVariant(false);
+        }
+    }
+    else if (role == CustomTableModel::UseRedBackgroundRole) {
+        switch (col) {
             case eColNewName:
                 return file.isNameCollision;
             default:

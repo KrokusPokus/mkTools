@@ -204,9 +204,10 @@ public:
         IsExecutableRole = Qt::UserRole + 3,
         IsHiddenRole = Qt::UserRole + 4,
         UseRedTextRole = Qt::UserRole + 5,
-        ListViewSizeHintRole = Qt::UserRole + 6,
-        DisplayNameRole = Qt::UserRole + 7,
-        FullFileInfoRole = Qt::UserRole + 8
+        UseRedBackgroundRole = Qt::UserRole + 6,
+        ListViewSizeHintRole = Qt::UserRole + 7,
+        DisplayNameRole = Qt::UserRole + 8,
+        FullFileInfoRole = Qt::UserRole + 9
     };
 
     explicit CustomTableModel(SettingsManager *settings, int columnCount = 8, QObject *parent = nullptr);
