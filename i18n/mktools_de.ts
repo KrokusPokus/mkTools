@@ -161,17 +161,17 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="1914"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="1658"/>
         <source>System Settings:</source>
         <translation>Systemeinstellungen:</translation>
     </message>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="1997"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="1741"/>
         <source>Optical Drive</source>
         <translation>Optisches Laufwerk</translation>
     </message>
     <message>
-        <location filename="../shared/src/customtablemodel.cpp" line="1999"/>
+        <location filename="../shared/src/customtablemodel.cpp" line="1743"/>
         <source>Local Drive</source>
         <translation>Lokaler Datenträger</translation>
     </message>
@@ -657,7 +657,7 @@ Do you have sufficient rights?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="505"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="508"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="294"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="235"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="268"/>
@@ -665,7 +665,7 @@ Do you have sufficient rights?</source>
         <translation>Öffnen</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="508"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="511"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="297"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="238"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="271"/>
@@ -673,14 +673,14 @@ Do you have sufficient rights?</source>
         <translation>Bearbeiten</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="512"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="515"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="301"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="275"/>
         <source>Show in folder</source>
         <translation>In Ordner anzeigen</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="517"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="520"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="306"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="242"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="280"/>
@@ -688,7 +688,7 @@ Do you have sufficient rights?</source>
         <translation>Pfad kopieren</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="522"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="525"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="311"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="247"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="285"/>
@@ -696,7 +696,7 @@ Do you have sufficient rights?</source>
         <translation>Ausschneiden</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="527"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="530"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="316"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="252"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="290"/>
@@ -704,8 +704,8 @@ Do you have sufficient rights?</source>
         <translation>Kopieren</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="532"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2266"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="535"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2273"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="321"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2219"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="257"/>
@@ -716,8 +716,7 @@ Do you have sufficient rights?</source>
         <translation>Löschen</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="454"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="537"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="540"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="326"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="262"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="300"/>
@@ -729,130 +728,153 @@ Do you have sufficient rights?</source>
         <translation type="vanished">Welchen Teil</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="215"/>
-        <source>RegEx</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="217"/>
         <source>Find pattern:</source>
-        <translation>Suche Muster:</translation>
+        <translation type="vanished">Suche Muster:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="219"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="235"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="225"/>
         <source>Replace with:</source>
         <translation>Ersetze mit:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="231"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="219"/>
         <source>Find:</source>
         <translation>Suche nach:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="248"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="239"/>
         <source>First:</source>
-        <translation>Erste:</translation>
+        <translation>Vorne:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="251"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="242"/>
         <source>Last:</source>
-        <translation>Letzte:</translation>
+        <translation>Hinten:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="254"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="245"/>
         <source>From:</source>
         <translation>Mitte:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="257"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="248"/>
         <source>to:</source>
         <translation>bis:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="278"/>
         <source>No action</source>
-        <translation>Keine Aktion</translation>
+        <translation type="vanished">Keine Aktion</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="278"/>
         <source>Copy first</source>
-        <translation>Kopiere erste</translation>
+        <translation type="vanished">Kopiere erste</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="278"/>
         <source>Copy last</source>
-        <translation>Kopiere letzte</translation>
+        <translation type="vanished">Kopiere letzte</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="278"/>
         <source>Move first</source>
-        <translation>Verschiebe erste</translation>
+        <translation type="vanished">Verschiebe erste</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="278"/>
         <source>Move last</source>
-        <translation>Verschiebe letzte</translation>
+        <translation type="vanished">Verschiebe letzte</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="283"/>
         <source>Nowhere</source>
-        <translation>Nirgends</translation>
+        <translation type="vanished">Nirgends</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="283"/>
         <source>Front</source>
-        <translation>Anfang</translation>
+        <translation type="vanished">Anfang</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="283"/>
         <source>End</source>
-        <translation>Ende</translation>
+        <translation type="vanished">Ende</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="283"/>
         <source>Position</source>
-        <translation>Position:</translation>
+        <translation type="vanished">Position:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="286"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="337"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="365"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="332"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="362"/>
         <source>Separator:</source>
         <translation>Trennzeichen:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="304"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="299"/>
         <source>Prefix:</source>
         <translation>Vorne:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="306"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="223"/>
+        <source>RegEx</source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="301"/>
         <source>Insert:</source>
         <translation>Mitte:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="308"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="303"/>
         <source>at pos.:</source>
         <translation>an Position:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="311"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="306"/>
         <source>Suffix:</source>
         <translation>Hinten:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="369"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="336"/>
         <source>Levels:</source>
         <translation>Ebenen:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="438"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="377"/>
+        <source>Number Manipulation</source>
+        <translation>Zahlen-Manipulation</translation>
+    </message>
+    <message>
+        <source>Leading Zeroes:</source>
+        <translation type="vanished">Führende Nullen:</translation>
+    </message>
+    <message>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="389"/>
+        <source>Renumber</source>
+        <translation>Umnumerieren</translation>
+    </message>
+    <message>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="354"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="390"/>
+        <source>Start at:</source>
+        <translation>Startwert:</translation>
+    </message>
+    <message>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="380"/>
+        <source>Group:</source>
+        <translation>Gruppe:</translation>
+    </message>
+    <message>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="384"/>
+        <source>Leading Zeroes</source>
+        <translation>Führende Nullen</translation>
+    </message>
+    <message>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="432"/>
         <source>Filter:</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="542"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="448"/>
+        <source>Start batch</source>
+        <translation>Batch starten</translation>
+    </message>
+    <message>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="545"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="331"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="267"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="305"/>
@@ -860,7 +882,7 @@ Do you have sufficient rights?</source>
         <translation>Eigenschaften</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="547"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="550"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="336"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="299"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="310"/>
@@ -868,7 +890,7 @@ Do you have sufficient rights?</source>
         <translation>Liste</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="553"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="556"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="342"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="305"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="316"/>
@@ -876,7 +898,7 @@ Do you have sufficient rights?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="559"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="562"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="348"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="311"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="322"/>
@@ -884,8 +906,8 @@ Do you have sufficient rights?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="203"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="571"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="205"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="574"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="360"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="336"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="340"/>
@@ -897,7 +919,7 @@ Do you have sufficient rights?</source>
         <translation type="vanished">Ausnahme</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="575"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="578"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="364"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="340"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="344"/>
@@ -905,7 +927,7 @@ Do you have sufficient rights?</source>
         <translation>Größe</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="579"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="582"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="368"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="344"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="348"/>
@@ -913,7 +935,7 @@ Do you have sufficient rights?</source>
         <translation>Datum</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="583"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="586"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="372"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="348"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="352"/>
@@ -921,7 +943,7 @@ Do you have sufficient rights?</source>
         <translation>Typ</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="594"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="597"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="383"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="359"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="363"/>
@@ -929,7 +951,7 @@ Do you have sufficient rights?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="598"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="601"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="387"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="363"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="367"/>
@@ -977,26 +999,26 @@ Do you have sufficient rights?</source>
         <translation>%1 (%2 Treffer innerhalb %3 Dateien von insgesammt %4)</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="204"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="206"/>
         <source>Extension</source>
         <translation>Erweiterung</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="205"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="207"/>
         <source>Full</source>
-        <translation>Komplett</translation>
+        <translation>Name+Erweiterung</translation>
     </message>
     <message>
         <source>Match</source>
         <translation type="obsolete">Finde</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="229"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="216"/>
         <source>Replace</source>
         <translation>Ersetzen</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="233"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="221"/>
         <source>Match Case</source>
         <translation>Groß/Klein</translation>
     </message>
@@ -1005,7 +1027,7 @@ Do you have sufficient rights?</source>
         <translation type="vanished">mit</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="246"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="236"/>
         <source>Remove</source>
         <translation>Entfernen</translation>
     </message>
@@ -1022,18 +1044,16 @@ Do you have sufficient rights?</source>
         <translation type="vanished">Von</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="281"/>
         <source>to</source>
-        <translation>nach</translation>
+        <translation type="vanished">nach</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="275"/>
         <source>Move/Copy</source>
-        <translation>Verschieben/Kopieren</translation>
+        <translation type="vanished">Verschieben/Kopieren</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="328"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="364"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="331"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="353"/>
         <source>None</source>
         <translation>Keine Aktion</translation>
     </message>
@@ -1070,13 +1090,13 @@ Do you have sufficient rights?</source>
         <translation type="vanished">Trenner</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="302"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="296"/>
         <source>Add</source>
         <translation>Hinzufügen</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="328"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="364"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="331"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="353"/>
         <source>Prefix</source>
         <translation>Vorne</translation>
     </message>
@@ -1089,13 +1109,13 @@ Do you have sufficient rights?</source>
         <translation type="vanished">an Position</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="328"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="364"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="331"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="353"/>
         <source>Suffix</source>
         <translation>Hinten</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="325"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="349"/>
         <source>Add Numbering</source>
         <translation>Hinzufügen: Nummerierung</translation>
     </message>
@@ -1105,19 +1125,13 @@ Do you have sufficient rights?</source>
         <translation>Anwenden auf</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="329"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="395"/>
-        <source>Start:</source>
-        <translation></translation>
-    </message>
-    <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="333"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="399"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="358"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="394"/>
         <source>Step:</source>
         <translation>Abstand:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="361"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="327"/>
         <source>Add Folder Name</source>
         <translation>Hinzufügen: Ordnername</translation>
     </message>
@@ -1126,72 +1140,70 @@ Do you have sufficient rights?</source>
         <translation type="vanished">Ebenen</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="383"/>
         <source>Number Padding</source>
-        <translation>Auffüllen von Zahlen</translation>
+        <translation type="vanished">Auffüllen von Zahlen</translation>
+    </message>
+    <message>
+        <source>Add lead:</source>
+        <translation type="vanished">Auffüllen mit:</translation>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="385"/>
-        <source>Add lead:</source>
-        <translation>Ergänze mit:</translation>
-    </message>
-    <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="390"/>
         <source>Digits:</source>
         <translation>Stellen:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="423"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="417"/>
         <source>Case</source>
         <translation>Groß-/Kleinschreibung</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="426"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="421"/>
         <source>Same</source>
         <translation>Keine Änderung</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="426"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="421"/>
         <source>Lower</source>
         <translation>Alles klein</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="426"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="421"/>
         <source>Upper</source>
         <translation>Alles groß</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="426"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="421"/>
         <source>Title</source>
-        <translation>Anfangsbuchstabe groß</translation>
+        <translation>Anfangsbuchstaben groß</translation>
+    </message>
+    <message>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="421"/>
+        <source>Sentence</source>
+        <translation>Satzanfang groß</translation>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="426"/>
-        <source>Sentence</source>
-        <translation>Erstes Wort groß</translation>
-    </message>
-    <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="432"/>
         <source>Files</source>
         <translation>Dateien</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="434"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="428"/>
         <source>Folders</source>
         <translation>Ordner</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="436"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="430"/>
         <source>Recursive</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="440"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="434"/>
         <source>Match case</source>
         <translation>Groß/Klein</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="1003"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="1010"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="948"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="939"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="669"/>
@@ -1199,7 +1211,7 @@ Do you have sufficient rights?</source>
         <translation>Ansichtsmodus</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="1024"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="1031"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="969"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="964"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="692"/>
@@ -1207,7 +1219,7 @@ Do you have sufficient rights?</source>
         <translation>Sortieren nach</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="1075"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="1082"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="1020"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1072"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="743"/>
@@ -1215,7 +1227,7 @@ Do you have sufficient rights?</source>
         <translation>Senden an</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="1182"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="1189"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="1127"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1179"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="850"/>
@@ -1223,8 +1235,8 @@ Do you have sufficient rights?</source>
         <translation>Öffnen mit</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2183"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2193"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2190"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2200"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2136"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2146"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2228"/>
@@ -1235,7 +1247,7 @@ Do you have sufficient rights?</source>
         <translation>Datei löschen</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2184"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2191"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2137"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2229"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2029"/>
@@ -1243,8 +1255,8 @@ Do you have sufficient rights?</source>
         <translation>Möchtest du diese Datei wirklich in den Papierkorb verschieben?</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2186"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2196"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2193"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2203"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2139"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2149"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2231"/>
@@ -1255,7 +1267,7 @@ Do you have sufficient rights?</source>
         <translation>Mehrere Dateien löschen</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2187"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2194"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2140"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2232"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2032"/>
@@ -1263,7 +1275,7 @@ Do you have sufficient rights?</source>
         <translation>Möchtest du diese %1 Dateien wirklich in den Papierkorb verschieben?</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2191"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2198"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2144"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2236"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2036"/>
@@ -1271,7 +1283,7 @@ Do you have sufficient rights?</source>
         <translation>Dieser Vorgang kann nicht rückgängig gemacht werden.</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2194"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2201"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2147"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2239"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2039"/>
@@ -1279,7 +1291,7 @@ Do you have sufficient rights?</source>
         <translation>Möchtest du diese Datei wirklich unwiderruflich löschen?</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2197"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2204"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2150"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2242"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2042"/>
@@ -1287,7 +1299,7 @@ Do you have sufficient rights?</source>
         <translation>Möchtest du diese %1 Dateien wirklich unwiderruflich löschen?</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2253"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2260"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2206"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2298"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2098"/>
@@ -1296,7 +1308,7 @@ Do you have sufficient rights?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2255"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2262"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2208"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2300"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2100"/>
@@ -1304,7 +1316,7 @@ Do you have sufficient rights?</source>
         <translation>Größe:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2257"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2264"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2210"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2302"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2102"/>
@@ -1312,7 +1324,7 @@ Do you have sufficient rights?</source>
         <translation>Datum:</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2267"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2274"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2220"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2312"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2112"/>
@@ -1417,13 +1429,13 @@ Do you have sufficient rights?</source>
         <translation>Fenster duplizieren</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="783"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="760"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="688"/>
         <source>Access denied</source>
         <translation>Zugriff verweigert</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="784"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="761"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="689"/>
         <source>You don&apos;t have the required permissions to access this folder:&lt;br&gt;&lt;br&gt;%1</source>
         <translation>Sie besitzen nicht die erforderlichen Rechte, um auf diesen Ordner zuzugreifen:&lt;br&gt;&lt;br&gt;%1</translation>
@@ -1450,13 +1462,12 @@ Do you have sufficient rights?</source>
         <translation>Navigieren</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="394"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1004"/>
         <source>New</source>
         <translation>Neu</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="1212"/>
+        <location filename="../mkBatchRename/src/mainwindow.cpp" line="1219"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="1157"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1209"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="880"/>
@@ -1468,12 +1479,12 @@ Do you have sufficient rights?</source>
         <translation type="vanished">Komprimieren</translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="3165"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="3140"/>
         <source>New Folder</source>
         <translation>Neuer Ordner</translation>
     </message>
     <message>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="3217"/>
+        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="3192"/>
         <source>New Text Document</source>
         <translation>Neue Text Datei</translation>
     </message>

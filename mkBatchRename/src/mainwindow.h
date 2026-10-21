@@ -56,6 +56,7 @@ private slots:
     void onListItemDoubleClicked(const QModelIndex &index);
     void onListViewHeaderClicked();
     void showFolder(const QString &directoryPath, const QStringList &externalPathList);
+    void updateRenameRowsFromSelection();
     void onTableCurrentChanged(const QModelIndex &current, const QModelIndex &previous);
     void onTimedUpdateIcons();
     void onToggleListViewHeader();
@@ -115,6 +116,7 @@ private:
     static QImage generateThumbnailAsync(const QFileInfo &fileInfo);
     void setupRenameRuleSignals();
     void onRenameRulesChanged();
+    void onResetRules();
 
     CustomTableModel *m_abstractModel = nullptr;
     QItemSelectionModel *m_selectionModel = nullptr;
@@ -128,9 +130,6 @@ private:
     CustomListView *m_thumbnailView = nullptr;
     QStackedWidget *m_viewStack = nullptr;
 
-    QGroupBox *m_groupBox1 = nullptr;
-    QLineEdit *m_groupBox1_LineEdit1 = nullptr;
-    QLineEdit *m_groupBox1_LineEdit2 = nullptr;
     QGroupBox *m_groupBox2 = nullptr;
     QComboBox *m_groupBox2_ComboBox = nullptr;
     ZeroOnEmptySpinBox *m_groupBox2_SpinBox1 = nullptr;
@@ -139,18 +138,21 @@ private:
     QGroupBox *m_groupBox3 = nullptr;
     QLineEdit *m_groupBox3_LineEdit1 = nullptr;
     QLineEdit *m_groupBox3_LineEdit2 = nullptr;
-    QCheckBox *m_groupBox3_CheckBox = nullptr;
+    QCheckBox *m_groupBox3_CheckBox1 = nullptr;
+    QCheckBox *m_groupBox3_CheckBox2 = nullptr;
     QGroupBox *m_groupBox5 = nullptr;
     ZeroOnEmptySpinBox  *m_groupBox5_SpinBox1 = nullptr;
     ZeroOnEmptySpinBox  *m_groupBox5_SpinBox2 = nullptr;
     ZeroOnEmptySpinBox  *m_groupBox5_SpinBox3 = nullptr;
     ZeroOnEmptySpinBox  *m_groupBox5_SpinBox4 = nullptr;
+    /*
     QGroupBox *m_groupBox6 = nullptr;
     QComboBox *m_groupBox6_ComboBox1 = nullptr;
     ZeroOnEmptySpinBox  *m_groupBox6_SpinBox1 = nullptr;
     QComboBox *m_groupBox6_ComboBox2 = nullptr;
     ZeroOnEmptySpinBox  *m_groupBox6_SpinBox2 = nullptr;
     QLineEdit *m_groupBox6_LineEdit = nullptr;
+    */
     QGroupBox *m_groupBox7 = nullptr;
     QLineEdit *m_groupBox7_LineEdit1 = nullptr;
     QLineEdit *m_groupBox7_LineEdit2 = nullptr;
@@ -165,6 +167,7 @@ private:
     QCheckBox *m_groupBox10_CheckBox1 = nullptr;
     QLineEdit *m_groupBox10_LineEdit = nullptr;
     QCheckBox *m_groupBox10_CheckBox2 = nullptr;
+    QSpinBox  *m_groupBox10_SpinBox0 = nullptr;
     QSpinBox  *m_groupBox10_SpinBox1 = nullptr;
     ZeroOnEmptySpinBox  *m_groupBox10_SpinBox2 = nullptr;
     QSpinBox  *m_groupBox10_SpinBox3 = nullptr;
@@ -175,6 +178,7 @@ private:
     QRadioButton *m_groupBox13_RadioButton1 = nullptr;
     QRadioButton *m_groupBox13_RadioButton2 = nullptr;
     QRadioButton *m_groupBox13_RadioButton3 = nullptr;
+    QPushButton *m_buttonDoReset = nullptr;
     QPushButton *m_buttonDoRename = nullptr;
 
     QLineEdit *m_groupBox12_LineEdit = nullptr;

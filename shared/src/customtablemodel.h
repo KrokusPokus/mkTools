@@ -70,7 +70,8 @@ struct ReplaceRule {
     int target = 0;
     QString match;
     QString replace;
-    bool matchCase = false;
+    bool matchCase = true;
+    bool regex = false;
 };
 
 // Remove
@@ -129,16 +130,15 @@ struct AddFolderNameRule {
     int levels = 0;
 };
 
-// Padding
-struct PaddingRule {
+// Number Manipulation
+struct NumberManipulationRule {
     bool enabled = false;
-    int target = 0;
+    int targetGroup = 0;
     bool addLeadEnabled = false;
-    QString addLeadChar;
     int addLeadCount = 0;
-    bool addLeadNewEnabled = false;
-    int addLeadNewStart = 0;
-    int addLeadNewStep = 0;
+    bool newEnabled = false;
+    int newStart = 0;
+    int newStep = 0;
 };
 
 // Case
@@ -162,7 +162,7 @@ struct FilterRule {
 };
 
 struct RenameRules {
-    RegExRule rgx;          // RegEx
+    int target = 0;
     ReplaceRule rpl;        // Replace
     RemoveRule rmv;         // Remove
     MoveCopyRule mcp;       // Move/Copy
@@ -170,9 +170,9 @@ struct RenameRules {
     AddNumberingRule num;
     AddDateRule dat;        // Add Date
     AddFolderNameRule afn;  // Add Folder Name
-    PaddingRule pad;        // Number Padding
+    NumberManipulationRule man; // Number Manipulation
     CaseRule cas;           // Extension (11)
-    FilterRule flt;     // Selections (12)
+    FilterRule flt;         // Selections (12)
 };
 
 
@@ -290,7 +290,6 @@ private:
     void recalculateNewNames();
     QString computeNewName(const CustomFileInfo &item, int seqIndex) const;
 
-    QString applyRegExRule(const QString &input, const RegExRule &rule) const;
     QString applyReplaceRule(const QString &input, const ReplaceRule &rule) const;
     QString applyRemoveRule(const QString &input, const RemoveRule &rule) const;
     QString applyMoveCopyRule(const QString &input, const MoveCopyRule &rule) const;
@@ -298,7 +297,7 @@ private:
     QString applyAddNumberingRule(const QString &input, const AddNumberingRule &rule, int seqIndex) const;
     QString applyAddDateRule(const QString &input, const AddDateRule &rule) const;
     QString applyAddFolderNameRule(const QString &input, const AddFolderNameRule &rule, const QString &path) const;
-    QString applyPaddingRule(const QString &input, const PaddingRule &rule) const;
+    QString applyNumberManipulationRule(const QString &input, const NumberManipulationRule &rule, int seqIndex) const;
     QString applyCaseRule(const QString &input, const CaseRule &rule) const;
 
     SettingsManager *m_settings;

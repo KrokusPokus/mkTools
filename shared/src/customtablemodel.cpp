@@ -267,7 +267,6 @@ QVariant CustomTableModel::headerData(int section, Qt::Orientation orientation, 
 Qt::ItemFlags CustomTableModel::flags(const QModelIndex &index) const {
     if (!index.isValid()) {                             // No index -> no item -> background!
         if (!m_currentDirectoryPath.isEmpty() && m_currentDirectoryPath != "drives://") {
-            qDebug() << "m_currentDirectoryPath:" << m_currentDirectoryPath;
         	return Qt::NoItemFlags | Qt::ItemIsDropEnabled;  // Background needs to have Qt::ItemIsDropEnabled to become a valid drop target.
     	}
         return Qt::NoItemFlags;
@@ -569,10 +568,12 @@ void CustomTableModel::recalculateNewNames() {
 }
 
 void CustomTableModel::setRenameRules(const RenameRules &rules) {
-
-    if (rules.rgx.match != m_rules.rgx.match) {
-        // Only recompile QRegularExpression when RegEx rules specifically change!
-        m_RegexRulesCompiled = QRegularExpression(rules.rgx.match);
+    if (rules.rpl.regex == true && (rules.rpl.match != m_rules.rpl.match || rules.rpl.regex != m_rules.rpl.regex)) {
+        QRegularExpression::PatternOptions regexOptions = QRegularExpression::NoPatternOption;
+        if (rules.rpl.matchCase == false) {
+            regexOptions |= QRegularExpression::CaseInsensitiveOption;
+        }
+        m_RegexRulesCompiled = QRegularExpression(rules.rpl.match);
     }
 
     if (rules.flt != m_rules.flt) {
@@ -592,20 +593,54 @@ void CustomTableModel::setRenameRules(const RenameRules &rules) {
 }
 
 QString CustomTableModel::computeNewName(const CustomFileInfo &item, int seqIndex) const {
-    QString result = item.name;
+    QString fileName = item.name;
+    QString fileExt;
 
-    result = applyRegExRule(result, m_rules.rgx);
-    result = applyReplaceRule(result, m_rules.rpl);
-    result = applyRemoveRule(result, m_rules.rmv);
-    result = applyMoveCopyRule(result, m_rules.mcp);
-    result = applyAddRule(result, m_rules.add);
-    result = applyAddNumberingRule(result, m_rules.num, seqIndex);
-    result = applyAddDateRule(result, m_rules.dat);
-    result = applyAddFolderNameRule(result, m_rules.afn, item.path);
-    result = applyPaddingRule(result, m_rules.pad);
-    result = applyCaseRule(result, m_rules.cas);
+    QString workingCopy;
+    if (m_rules.target == 2) {
+        workingCopy = item.name;
+    } else {
+        int lastDot = item.name.lastIndexOf('.');
+        if (lastDot > 0) {
+            fileName = item.name.sliced(0, lastDot);
+            fileExt  = item.name.sliced(lastDot + 1);
+        }
 
-    return result;
+        if (m_rules.target == 0) {
+            workingCopy = fileName;
+        } else if (m_rules.target == 1) {
+            workingCopy = fileExt;
+        }
+    }
+
+    //---------------------------------------------------------------------
+    workingCopy = applyReplaceRule(workingCopy, m_rules.rpl);
+    workingCopy = applyRemoveRule(workingCopy, m_rules.rmv);
+    //workingCopy = applyMoveCopyRule(workingCopy, m_rules.mcp);
+    workingCopy = applyAddRule(workingCopy, m_rules.add);
+    //workingCopy = applyAddDateRule(workingCopy, m_rules.dat);
+    workingCopy = applyAddFolderNameRule(workingCopy, m_rules.afn, item.path);
+    workingCopy = applyAddNumberingRule(workingCopy, m_rules.num, seqIndex);
+    workingCopy = applyNumberManipulationRule(workingCopy, m_rules.man, seqIndex);
+    workingCopy = applyCaseRule(workingCopy, m_rules.cas);
+    //---------------------------------------------------------------------
+
+    if (m_rules.target == 2) {
+        return workingCopy;
+    }
+
+    if (m_rules.target == 0) {
+        fileName = workingCopy;
+    } else if (m_rules.target == 1) {
+        fileExt = workingCopy;
+    }
+
+
+    if (!fileExt.isEmpty()) {
+        return fileName + '.' + fileExt;
+    }
+
+    return fileName;
 }
 
 void CustomTableModel::applyBatchRename() {
@@ -643,144 +678,43 @@ void CustomTableModel::applyBatchRename() {
     }
 }
 
-QString CustomTableModel::applyRegExRule(const QString &input, const RegExRule &rule) const {
-    if (!rule.enabled || rule.match.isEmpty()) {
-        return input;
-    }
-
-    // int rule.target = 0;  // 0: Name, 1: Extension, 2: Full
+QString CustomTableModel::applyReplaceRule(const QString &input, const ReplaceRule &rule) const {
     // QString rule.match
     // QString rule.replace
-    // bool rule.includeExtension
-
-    if (!m_RegexRulesCompiled.isValid()) {
+    // bool rule.matchCase
+    // bool rule.regex
+    if (rule.match.isEmpty()) {
         return input;
     }
 
-    QString fileName = input;
-    QString fileExt;
-
     QString workingCopy;
-    if (rule.target == 2) {
-        workingCopy = input;
-    } else {
-        int lastDot = input.lastIndexOf('.');
-        if (lastDot > 0) {
-            fileName = input.sliced(0, lastDot);
-            fileExt  = input.sliced(lastDot + 1);
-        }
-
-        if (rule.target == 0) {
-            workingCopy = fileName;
-        } else if (rule.target == 1) {
-            workingCopy = fileExt;
-        }
-    }
+    workingCopy = input;
 
     if (!workingCopy.isEmpty()) {
         //---------------------------------------------------------------------
-        workingCopy.replace(m_RegexRulesCompiled, rule.replace);
-        //---------------------------------------------------------------------
-    }
-
-    if (rule.target == 2) {
-        return workingCopy;
-    }
-
-    if (rule.target == 0) {
-        fileName = workingCopy;
-    } else if (rule.target == 1) {
-        fileExt = workingCopy;
-    }
-
-    if (!fileExt.isEmpty()) {
-        return fileName + '.' + fileExt;
-    }
-
-    return fileName;
-}
-
-QString CustomTableModel::applyReplaceRule(const QString &input, const ReplaceRule &rule) const {
-    if (!rule.enabled || rule.match.isEmpty()) {
-        return input;
-    }
-
-    // int rule.target = 0;  // 0: Name, 1: Extension, 2: Full
-
-    QString fileName = input;
-    QString fileExt;
-
-    QString workingCopy;
-    if (rule.target == 2) {
-        workingCopy = input;
-    } else {
-        int lastDot = input.lastIndexOf('.');
-        if (lastDot > 0) {
-            fileName = input.sliced(0, lastDot);
-            fileExt  = input.sliced(lastDot + 1);
+        if (rule.regex == false) {
+            const Qt::CaseSensitivity cs = rule.matchCase ? Qt::CaseSensitive : Qt::CaseInsensitive;
+            workingCopy.replace(rule.match, rule.replace, cs);
+        } else {
+            if (!m_RegexRulesCompiled.isValid()) {
+                return input;
+            }
+            workingCopy.replace(m_RegexRulesCompiled, rule.replace);
         }
-
-        if (rule.target == 0) {
-            workingCopy = fileName;
-        } else if (rule.target == 1) {
-            workingCopy = fileExt;
-        }
-    }
-
-    if (!workingCopy.isEmpty()) {
-        //---------------------------------------------------------------------
-        const Qt::CaseSensitivity cs = rule.matchCase ? Qt::CaseSensitive : Qt::CaseInsensitive;
-        workingCopy.replace(rule.match, rule.replace, cs);
         //---------------------------------------------------------------------
     }
 
-    if (rule.target == 2) {
-        return workingCopy;
-    }
-
-    if (rule.target == 0) {
-        fileName = workingCopy;
-    } else if (rule.target == 1) {
-        fileExt = workingCopy;
-    }
-
-    if (!fileExt.isEmpty()) {
-        return fileName + '.' + fileExt;
-    }
-
-    return fileName;
+    return workingCopy;
 }
 
 QString CustomTableModel::applyRemoveRule(const QString &input, const RemoveRule &rule) const {
-    if (!rule.enabled) {
-        return input;
-    }
-
-    // int rule.target = 0;  // 0: Name, 1: Extension, 2: Full
     // int rule.firstN
     // int rule.lastN
     // int rule.fromN
     // int rule.toN
 
-    QString fileName = input;
-    QString fileExt;
-
     QString workingCopy;
-    if (rule.target == 2) {
-        workingCopy = input;
-    } else {
-        int lastDot = input.lastIndexOf('.');
-        if (lastDot > 0) {
-            fileName = input.sliced(0, lastDot);
-            fileExt  = input.sliced(lastDot + 1);
-        }
-
-        if (rule.target == 0) {
-            workingCopy = fileName;
-        } else if (rule.target == 1) {
-            workingCopy = fileExt;
-        }
-    }
+    workingCopy = input;
 
     if (!workingCopy.isEmpty()) {
         //---------------------------------------------------------------------
@@ -805,54 +739,22 @@ QString CustomTableModel::applyRemoveRule(const QString &input, const RemoveRule
         //---------------------------------------------------------------------
     }
 
-    if (rule.target == 2) {
-        return workingCopy;
-    }
-
-    if (rule.target == 0) {
-        fileName = workingCopy;
-    } else if (rule.target == 1) {
-        fileExt = workingCopy;
-    }
-
-    if (!fileExt.isEmpty()) {
-        return fileName + '.' + fileExt;
-    }
-
-    return fileName;
+    return workingCopy;
 }
 
 QString CustomTableModel::applyMoveCopyRule(const QString &input, const MoveCopyRule &rule) const {
-    if (!rule.enabled || rule.fromMode == 0 || rule.toMode == 0 || rule.fromPos <= 0 || input.isEmpty()) {
+    if (rule.fromMode == 0 || rule.toMode == 0 || rule.fromPos <= 0 || input.isEmpty()) {
         return input;
     }
 
-    // int rule.target = 0;  // 0: Name, 1: Extension, 2: Full
     // int rule.fromMode     // 0: None, 1: Copy first n, 2: Copy last n, 3: Move first n, 4: Move last n
     // int rule.fromPos
     // int rule.toMode       // 0: None, 1: To start, 2: To end, 3: To pos.
     // int rule.toPos
     // QString rule.separator
 
-    QString fileName = input;
-    QString fileExt;
-
     QString workingCopy;
-    if (rule.target == 2) {
-        workingCopy = input;
-    } else {
-        int lastDot = input.lastIndexOf('.');
-        if (lastDot > 0) {
-            fileName = input.sliced(0, lastDot);
-            fileExt  = input.sliced(lastDot + 1);
-        }
-
-        if (rule.target == 0) {
-            workingCopy = fileName;
-        } else if (rule.target == 1) {
-            workingCopy = fileExt;
-        }
-    }
+    workingCopy = input;
 
     if (!workingCopy.isEmpty()) {
         //---------------------------------------------------------------------
@@ -927,49 +829,12 @@ QString CustomTableModel::applyMoveCopyRule(const QString &input, const MoveCopy
         //---------------------------------------------------------------------
     }
 
-    if (rule.target == 2) {
-        return workingCopy;
-    }
-
-    if (rule.target == 0) {
-        fileName = workingCopy;
-    } else if (rule.target == 1) {
-        fileExt = workingCopy;
-    }
-
-    if (!fileExt.isEmpty()) {
-        return fileName + '.' + fileExt;
-    }
-
-    return fileName;
+    return workingCopy;
 }
 
 QString CustomTableModel::applyAddRule(const QString &input, const AddRule &rule) const {
-    if (!rule.enabled) {
-        return input;
-    }
-
-    // int rule.target = 0;  // 0: Name, 1: Extension, 2: Full
-
-    QString fileName = input;
-    QString fileExt;
-
     QString workingCopy;
-    if (rule.target == 2) {
-        workingCopy = input;
-    } else {
-        int lastDot = input.lastIndexOf('.');
-        if (lastDot > 0) {
-            fileName = input.sliced(0, lastDot);
-            fileExt  = input.sliced(lastDot + 1);
-        }
-
-        if (rule.target == 0) {
-            workingCopy = fileName;
-        } else if (rule.target == 1) {
-            workingCopy = fileExt;
-        }
-    }
+    workingCopy = input;
 
     //---------------------------------------------------------------------
     if (!rule.prefix.isEmpty()) {
@@ -989,60 +854,28 @@ QString CustomTableModel::applyAddRule(const QString &input, const AddRule &rule
     }
     //---------------------------------------------------------------------
 
-    if (rule.target == 2) {
-        return workingCopy;
-    }
-
-    if (rule.target == 0) {
-        fileName = workingCopy;
-    } else if (rule.target == 1) {
-        fileExt = workingCopy;
-    }
-
-    if (!fileExt.isEmpty()) {
-        return fileName + '.' + fileExt;
-    }
-
-    return fileName;
+    return workingCopy;
 }
 
 QString CustomTableModel::applyAddNumberingRule(const QString &input, const AddNumberingRule &rule, int seqIndex) const {
-    if (!rule.enabled || rule.mode == 0) {
+    if (rule.mode == 0) {
         return input;
     }
 
-    // int rule.target = 0;  // 0: Name, 1: Extension, 2: Full
     // int rule.mode = 0;    // 0: None, 1: Prefix, 2: Suffix
     // int rule.start = 1;
     // int rule.step = 1;
     // QString separator;
 
-    QString fileName = input;
-    QString fileExt;
-
     QString workingCopy;
-    if (rule.target == 2) {
-        workingCopy = input;
-    } else {
-        int lastDot = input.lastIndexOf('.');
-        if (lastDot > 0) {
-            fileName = input.sliced(0, lastDot);
-            fileExt  = input.sliced(lastDot + 1);
-        }
-
-        if (rule.target == 0) {
-            workingCopy = fileName;
-        } else if (rule.target == 1) {
-            workingCopy = fileExt;
-        }
-    }
+    workingCopy = input;
 
     //---------------------------------------------------------------------
 
     int currentNumber = rule.start + (seqIndex * rule.step);
     QString numberStr = QString::number(currentNumber);
 
-    // Todo: Implement padding
+    // Todo: Implement padding? Probably not needed, since can be solved by chained number manipulation step
     // QString numberStr = QString("%1").arg(currentNumber, rule.padding, 10, QChar('0'));
 
     if (rule.mode == 1) {
@@ -1053,43 +886,25 @@ QString CustomTableModel::applyAddNumberingRule(const QString &input, const AddN
 
     //---------------------------------------------------------------------
 
-    if (rule.target == 2) {
-        return workingCopy;
-    }
-
-    if (rule.target == 0) {
-        fileName = workingCopy;
-    } else if (rule.target == 1) {
-        fileExt = workingCopy;
-    }
-
-    if (!fileExt.isEmpty()) {
-        return fileName + '.' + fileExt;
-    }
-
-    return fileName;
+    return workingCopy;
 }
 
 QString CustomTableModel::applyAddDateRule(const QString &input, const AddDateRule &rule) const {
-    if (!rule.enabled) {
-        return input;
-    }
+    QString workingCopy;
+    workingCopy = input;
 
-    // int rule.target = 0;  // 0: Name, 1: Extension, 2: Full
+    //---------------------------------------------------------------------
 
-    QString newName = input;
+    //---------------------------------------------------------------------
 
-
-
-    return newName;
+    return workingCopy;
 }
 
 QString CustomTableModel::applyAddFolderNameRule(const QString &input, const AddFolderNameRule &rule, const QString &path) const {
-    if (!rule.enabled || rule.mode == 0 || rule.levels <= 0 || path.isEmpty()) {
+    if (rule.mode == 0 || rule.levels <= 0 || path.isEmpty()) {
         return input;
     }
 
-    // int rule.target = 0;     // 0: Name, 1: Extension, 2: Full
     // int rule.mode            // 0: None, 1: Prefix, 2: Suffix
     // QString rule.separator
     // int rule.levels
@@ -1112,26 +927,8 @@ QString CustomTableModel::applyAddFolderNameRule(const QString &input, const Add
         return input;
     }
 
-    // Aufsplittung in fileName und fileExt
-    QString fileName = input;
-    QString fileExt;
-
     QString workingCopy;
-    if (rule.target == 2) {
-        workingCopy = input;
-    } else {
-        int lastDot = input.lastIndexOf('.');
-        if (lastDot > 0) {
-            fileName = input.sliced(0, lastDot);
-            fileExt  = input.sliced(lastDot + 1);
-        }
-
-        if (rule.target == 0) {
-            workingCopy = fileName;
-        } else if (rule.target == 1) {
-            workingCopy = fileExt;
-        }
-    }
+    workingCopy = input;
 
     //---------------------------------------------------------------------
     // 1: Prefix (Voranstellen)
@@ -1152,134 +949,78 @@ QString CustomTableModel::applyAddFolderNameRule(const QString &input, const Add
     }
     //---------------------------------------------------------------------
 
-    if (rule.target == 2) {
-        return workingCopy;
-    }
-
-    if (rule.target == 0) {
-        fileName = workingCopy;
-    } else if (rule.target == 1) {
-        fileExt = workingCopy;
-    }
-
-    if (!fileExt.isEmpty()) {
-        return fileName + '.' + fileExt;
-    }
-
-    return fileName;
+    return workingCopy;
 }
 
 
-QString CustomTableModel::applyPaddingRule(const QString &input, const PaddingRule &rule) const {
-    if (!rule.enabled || rule.addLeadEnabled == false) {
+QString CustomTableModel::applyNumberManipulationRule(const QString &input, const NumberManipulationRule &rule, int seqIndex) const {
+    if (!rule.newEnabled && !rule.addLeadEnabled) {
         return input;
     }
 
-    // int rule.target = 0;  // 0: Name, 1: Extension, 2: Full
+    // int rule.targetGroup
     // bool rule.addLeadEnabled
-    // QString rule.addLeadChar
     // int rule.addLeadCount
-    // bool rule.addLeadNewEnabled
-    // int rule.addLeadNewStart
-    // int rule.addLeadNewStep
+    // bool rule.newEnabled
+    // int rule.newStart
+    // int rule.newStep
 
-
-    QString fileName = input;
-    QString fileExt;
-
-    QString workingCopy;
-    if (rule.target == 2) {
-        workingCopy = input;
-    } else {
-        int lastDot = input.lastIndexOf('.');
-        if (lastDot > 0) {
-            fileName = input.sliced(0, lastDot);
-            fileExt  = input.sliced(lastDot + 1);
-        }
-
-        if (rule.target == 0) {
-            workingCopy = fileName;
-        } else if (rule.target == 1) {
-            workingCopy = fileExt;
-        }
-    }
+    QString workingCopy = input;
 
     if (!workingCopy.isEmpty()) {
-        //---------------------------------------------------------------------
-        // Ersten Ziffernblock im Dateinamen suchen
         static const QRegularExpression digitRegex(QStringLiteral("\\d+"));
-        QRegularExpressionMatch match = digitRegex.match(workingCopy);
+        QRegularExpressionMatchIterator it = digitRegex.globalMatch(workingCopy);
+
+        int currentGroup = 1;
+        QRegularExpressionMatch match;
+
+        while (it.hasNext()) {
+            QRegularExpressionMatch m = it.next();
+            if (currentGroup == rule.targetGroup) {
+                match = m;
+                break;
+            }
+            currentGroup++;
+        }
 
         if (match.hasMatch()) {
             QString numStr = match.captured(0);
 
-            // Füllzeichen festlegen (Standard auf '0', falls kein Zeichen übergeben wurde)
-            QChar padChar = rule.addLeadChar.isEmpty() ? QChar('0') : rule.addLeadChar.at(0);
-
-            // 1. Ziffernfolge ist kürzer -> mit Füllzeichen auffüllen
-            if (numStr.length() < rule.addLeadCount) {
-                numStr = numStr.rightJustified(rule.addLeadCount, padChar);
+            if (rule.newEnabled) {
+                int newNumber = rule.newStart + (seqIndex * rule.newStep);
+                numStr = QString::number(newNumber);
             }
-            // 2. Ziffernfolge ist länger -> führende Nullen entfernen, um zu kürzen
-            else if (numStr.length() > rule.addLeadCount) {
-                while (numStr.length() > rule.addLeadCount && numStr.startsWith('0')) {
-                    numStr.remove(0, 1);
+
+            // 2. Führende Nullen anwenden / Länge anpassen (falls aktiviert)
+            if (rule.addLeadEnabled && rule.addLeadCount > 0) {
+                if (numStr.length() < rule.addLeadCount) {
+                    numStr = numStr.rightJustified(rule.addLeadCount, QChar('0'));
+                } else if (numStr.length() > rule.addLeadCount) {
+                    // Führende Nullen entfernen, solange die Solllänge überschritten ist
+                    while (numStr.length() > rule.addLeadCount && numStr.startsWith('0')) {
+                        numStr.remove(0, 1);
+                    }
                 }
             }
 
             // Ersetze die ursprüngliche Ziffernfolge im Dateinamen
             workingCopy.replace(match.capturedStart(), match.capturedLength(), numStr);
         }
-
-        // ToDo: use addLeadNewEnabled, addLeadNewStart, addLeadNewStep
-        // Maybe use global variable to keep track of index?
-        //---------------------------------------------------------------------
     }
 
-    if (rule.target == 2) {
-        return workingCopy;
-    }
-
-    if (rule.target == 0) {
-        fileName = workingCopy;
-    } else if (rule.target == 1) {
-        fileExt = workingCopy;
-    }
-
-    if (!fileExt.isEmpty()) {
-        return fileName + '.' + fileExt;
-    }
-
-    return fileName;
+    return workingCopy;
 }
 
+
 QString CustomTableModel::applyCaseRule(const QString &input, const CaseRule &rule) const {
-    if (!rule.enabled || rule.mode == 0) {
+    if (rule.mode == 0) {
         return input;
     }
 
-    // int rule.target = 0;     // 0: Name, 1: Extension, 2: Full
     // int rule.mode            // 0: Same, 1: Lower-Case, 2: Upper-Case, 3: Title-Case, 4: Sentence
 
-    QString fileName = input;
-    QString fileExt;
-
     QString workingCopy;
-    if (rule.target == 2) {
-        workingCopy = input;
-    } else {
-        int lastDot = input.lastIndexOf('.');
-        if (lastDot > 0) {
-            fileName = input.sliced(0, lastDot);
-            fileExt  = input.sliced(lastDot + 1);
-        }
-
-        if (rule.target == 0) {
-            workingCopy = fileName;
-        } else if (rule.target == 1) {
-            workingCopy = fileExt;
-        }
-    }
+    workingCopy = input;
 
     if (!workingCopy.isEmpty()) {
         //---------------------------------------------------------------------
@@ -1302,21 +1043,7 @@ QString CustomTableModel::applyCaseRule(const QString &input, const CaseRule &ru
         //---------------------------------------------------------------------
     }
 
-    if (rule.target == 2) {
-        return workingCopy;
-    }
-
-    if (rule.target == 0) {
-        fileName = workingCopy;
-    } else if (rule.target == 1) {
-        fileExt = workingCopy;
-    }
-
-    if (!fileExt.isEmpty()) {
-        return fileName + '.' + fileExt;
-    }
-
-    return fileName;
+    return workingCopy;
 }
 
 bool CustomTableModel::isDirectory(int row) const {
@@ -1566,6 +1293,8 @@ void CustomTableModel::populateModel_mkBatchRename(const QString &dirPath, const
     m_abortSearch.store(false);
     std::vector<CustomFileInfo> newFiles;
     m_currentDirectoryPath = dirPath;
+    m_renameRowsList.clear();
+    m_renameRowsSet.clear();
 
     QString searchStringFilename = m_rules.flt.filter;
     QStringList searchStringFilenameSplit = m_rules.flt.filter.split(' ', Qt::SkipEmptyParts);
@@ -1650,6 +1379,8 @@ void CustomTableModel::populateModel_mkBatchRename(const QString &dirPath, const
             newFiles.push_back(info);
         }
     }
+
+    recalculateNewNames();
 
     beginResetModel();
     m_files = std::move(newFiles);

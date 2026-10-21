@@ -2884,14 +2884,13 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                 return true;
             }
             else if (keyEvent->key() == Qt::Key_F) {
-                if (m_LineEdit1->hasFocus()) {
-                    m_LineEdit1->clear();
-                    m_topControlsContainerWidget->hide();
-                } else {
+                if (m_topControlsContainerWidget->isHidden()) {
                     m_topControlsContainerWidget->show();
-                    m_LineEdit1->setFocus();
-                    m_LineEdit1->selectAll();
                 }
+                if (!m_LineEdit1->hasFocus()) {
+                    m_LineEdit1->setFocus();
+                }
+                m_LineEdit1->selectAll();
                 return true;
             }
             else if (keyEvent->key() == Qt::Key_H) {
