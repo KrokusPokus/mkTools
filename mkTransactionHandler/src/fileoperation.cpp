@@ -32,6 +32,61 @@
 
 #endif
 
+#ifndef Q_OS_WIN
+#include <sys/stat.h>
+#endif
+
+namespace {
+
+// Liefert eine eindeutige Identität des Dateisystem-Objekts (folgt Symlinks), oder einen leeren String bei Fehler.
+// Unix: Gerät + Inode, Windows: Volume-Seriennummer + File-Index.
+QString fileIdentity(const QString &path) {
+    if (path.isEmpty()) return QString();
+
+#ifdef Q_OS_WIN
+    HANDLE h = CreateFileW(reinterpret_cast<const wchar_t *>(QDir::toNativeSeparators(path).utf16()),
+                           FILE_READ_ATTRIBUTES,
+                           FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                           nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+    if (h == INVALID_HANDLE_VALUE) return QString();
+    BY_HANDLE_FILE_INFORMATION info;
+    const BOOL ok = GetFileInformationByHandle(h, &info);
+    CloseHandle(h);
+    if (!ok) return QString();
+    return QStringLiteral("%1:%2:%3").arg(info.dwVolumeSerialNumber).arg(info.nFileIndexHigh).arg(info.nFileIndexLow);
+#else
+    struct stat st;
+    if (::stat(QFile::encodeName(path).constData(), &st) != 0) return QString();
+    return QStringLiteral("%1:%2").arg(static_cast<quint64>(st.st_dev)).arg(static_cast<quint64>(st.st_ino));
+#endif
+}
+
+// Prüft, ob zwei Pfade auf DASSELBE Dateisystem-Objekt zeigen (folgt Symlinks).
+// Erkennt damit auch Symlink-Pfade, Bind-Mounts und abweichende Groß-/Kleinschreibung
+// auf case-insensitiven Dateisystemen, die ein reiner String-Vergleich übersieht.
+bool isSameFile(const QString &pathA, const QString &pathB) {
+    const QString idA = fileIdentity(pathA);
+    return !idA.isEmpty() && idA == fileIdentity(pathB);
+}
+
+// Liefert true, wenn 'path' (muss nicht existieren) gleich 'dir' ist oder irgendwo darunter liegt.
+// Läuft dazu von 'path' aufwärts und vergleicht jeden existierenden Vorfahren per isSameFile().
+bool isSameOrInsideDir(const QString &dir, const QString &path) {
+    QString current = QDir::cleanPath(QFileInfo(path).absoluteFilePath());
+
+    while (!current.isEmpty()) {
+        if (QFileInfo::exists(current) && isSameFile(current, dir)) {
+            return true;
+        }
+        const QString parent = QFileInfo(current).path();
+        if (parent == current) break; // Wurzel erreicht
+        current = parent;
+    }
+    return false;
+}
+
+} // namespace
+
 #ifdef Q_OS_WIN
 // RAII-Klasse: Aktiviert den Hintergrundmodus beim Erstellen
 // und deaktiviert ihn automatisch beim Verlassen des Scopes (auch bei Fehlern/Abbrüchen).
@@ -134,7 +189,20 @@ void FileOperation::run() {
 
         if (m_operationType == OperationType::Copy || m_operationType == OperationType::Move) {
             QString dstPath;
-            if (srcInfo.absolutePath() == m_targetDir) {
+            // Identitätsvergleich statt String-Vergleich: Erkennt denselben Ordner auch über
+            // Symlinks, Bind-Mounts oder abweichende Groß-/Kleinschreibung.
+            if (isSameFile(srcInfo.absolutePath(), m_targetDir)) {
+                if (m_operationType == OperationType::Move) {
+                    // Verschieben in den eigenen Ordner ist ein No-Op -> überspringen
+                    auto skipStats = std::make_pair(srcInfo.size(), 1);
+                    if (srcInfo.isDir() && !srcInfo.isSymbolicLink() && !srcInfo.isJunction()) {
+                        skipStats = calculateStats({srcPath});
+                    }
+                    m_stats.filesSkipped += skipStats.second;
+                    m_stats.bytesWritten += skipStats.first;
+                    updateProgress();
+                    continue;
+                }
                 dstPath = generateUniqueCopyName(srcInfo, m_targetDir);
             } else {
                 dstPath = QDir(m_targetDir).filePath(srcInfo.fileName());
@@ -316,6 +384,18 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
 
     qint64 fileSizeSource = isSymlinkSource ? 0 : srcInfo.size(); // Symlinks verbrauchen keinen Platz im globalen Byte-Zähler
 
+    // SCHUTZ: Quelle und Ziel sind physisch dieselbe Datei (z.B. über Symlink-Pfad, Bind-Mount,
+    // Groß-/Kleinschreibung oder ein Quell-Symlink, der auf das Ziel zeigt).
+    // Ohne diesen Schutz würde der Vergleich "identisch" ergeben und bei Move die einzige Kopie gelöscht,
+    // bzw. bei Overwrite das Ziel (= die Quelle bzw. das Link-Ziel) zerstört.
+    // Ist das Ziel selbst ein Symlink, wird nur der Link ersetzt -> unkritisch, daher ausgenommen.
+    if (!isSymlinkTarget && dstInfo.exists() && isSameFile(src, dst)) {
+        m_stats.filesError++;
+        updateProgress();
+        m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("Source and target are the same file")});
+        return FileOpResult::Error;
+    }
+
     // Ein Konflikt besteht, wenn das Ziel existiert ODER ein (ggf. defekter) Symlink dort liegt
     if (dstInfo.exists() || isSymlinkTarget) {
         ConflictResolution resolution = m_applyToAll ? m_applyToAllResolution : ConflictResolution::Skip;
@@ -369,34 +449,26 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                     }
                 }
 
-                // Only check crc for files up to 128 MiB which have the same size
+                // Only compare content for files up to 128 MiB which have the same size.
+                // Byte-for-byte comparison instead of CRC32: same I/O cost (both files are read completely
+                // either way), but exact - a CRC32 collision must never lead to deleting a move source.
                 if (fileSizeSource == fileSizeTarget && fileSizeSource <= 134217728) {
-                    auto crcSource = calculateCRC32_interruptable(src);
-                    if (!crcSource) {
+                    auto identical = filesAreIdentical_interruptable(src, dst);
+                    if (!identical) {
                         if (!checkInterruption()) return FileOpResult::Cancelled;
                         m_stats.filesError++;
                         updateProgress();
-                        m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("CRC32 calculation failed for source")});
+                        m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("Content comparison of source and target failed")});
                         return FileOpResult::Error;
                     }
 
-                    auto crcTarget = calculateCRC32_interruptable(dst);
-                    if (!crcTarget) {
-                        if (!checkInterruption()) return FileOpResult::Cancelled;
-                        m_stats.filesError++;
-                        updateProgress();
-                        m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("CRC32 calculation failed for target")});
-                        return FileOpResult::Error;
-                    }
-
-                    // If the target file has the same crc as the source file (so same content), just skip.
+                    // If the target file has the same content as the source file, just skip.
                     // No point wasting the user's time and attention on a unneccessary MessageBox.
-                    // Regarding "std::optional<quint32>" if both exist, "==" compares the inner quint32.
-                    if (crcSource == crcTarget) {
+                    if (*identical) {
                         if (isMove) {
                             // MOVE-MODUS: Source needs to be deleted since identical target exists
                             if (QFile::remove(src)) {
-                                qDebug() << "Move-source with identical CRC deleted:" << src;
+                                qDebug() << "Move-source with identical content deleted:" << src;
 
                                 m_stats.filesDuplicate++;
                                 m_stats.filesWritten++; // Zählt als erfolgreich verarbeitete Datei
@@ -517,6 +589,38 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
 
     m_stats.currentName = calculateRelativeDisplayPath(srcInfo);
     updateProgress();
+
+    // SCHUTZ: Ziel ist der Quellordner selbst oder liegt darin (z.B. /A nach /A/B kopieren,
+    // per Einfügen, Drop auf den Hintergrund oder über Symlink-Pfade).
+    // Ohne diesen Schutz: endlose Rekursion (Platte läuft voll) bzw. bei Merge-Move Datenverlust.
+    if (isSameOrInsideDir(src, dst)) {
+        m_stats.filesError++;
+        updateProgress();
+        m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("Cannot copy or move a folder into itself")});
+        return FileOpResult::Error;
+    }
+
+    // SCHUTZ: Symlink-Schleife bei Deep Copy (Ziel ohne Symlink-Support).
+    // Liegt z.B. in /A ein Symlink, der auf /A (oder einen Vorfahren) zurückzeigt, würde die Rekursion
+    // denselben Ordner endlos erneut betreten. Wir merken uns daher alle Ordner auf dem AKTUELLEN
+    // Rekursionspfad. Derselbe Ordner in getrennten Zweigen (zwei Links auf ein Ziel) bleibt erlaubt.
+    const QString srcDirId = fileIdentity(src);
+    if (!srcDirId.isEmpty() && m_activeDirIds.contains(srcDirId)) {
+        m_stats.filesError++;
+        updateProgress();
+        m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("Symlink loop detected, folder skipped")});
+        return FileOpResult::Error;
+    }
+
+    if (!srcDirId.isEmpty()) {
+        m_activeDirIds.insert(srcDirId);
+    }
+    // Beim Verlassen der Funktion (egal über welches return) wieder vom Rekursionspfad entfernen
+    struct ActiveDirGuard {
+        QSet<QString> &set;
+        QString id;
+        ~ActiveDirGuard() { if (!id.isEmpty()) set.remove(id); }
+    } activeDirGuard{m_activeDirIds, srcDirId};
 
     // Wenn wir einen Ordner auf demselben Laufwerk verschieben, können wir uns die komplette Rekursion sparen!
     // Aber NUR, wenn das Ziel noch nicht existiert und wir NICHT im forceCopyOnly-Modus sind!
@@ -997,39 +1101,50 @@ QString FileOperation::calculateRelativeDisplayPath(const QFileInfo &info) {
     return info.fileName();
 }
 
-std::optional<quint32> FileOperation::calculateCRC32_interruptable(const QString &filePath) {
-    QFile file(filePath);
-    if (!file.open(QIODevice::ReadOnly)) {
-        qWarning() << "CRC32 fehlgeschlagen: Datei konnte nicht geöffnet werden:" << filePath;
+// Vergleicht zwei Dateien Byte für Byte.
+// Rückgabe: true = identisch, false = unterschiedlich, std::nullopt = Lesefehler oder Abbruch.
+std::optional<bool> FileOperation::filesAreIdentical_interruptable(const QString &fileA, const QString &fileB) {
+    QFile a(fileA);
+    QFile b(fileB);
+    if (!a.open(QIODevice::ReadOnly)) {
+        qWarning() << "Vergleich fehlgeschlagen: Datei konnte nicht geöffnet werden:" << fileA;
+        return std::nullopt;
+    }
+    if (!b.open(QIODevice::ReadOnly)) {
+        qWarning() << "Vergleich fehlgeschlagen: Datei konnte nicht geöffnet werden:" << fileB;
         return std::nullopt;
     }
 
-    // Initialize the CRC value
-    uLong crc = crc32(0L, Z_NULL, 0);
+    if (a.size() != b.size()) {
+        return false;
+    }
 
     // Read in chunks to be memory efficient
-    const int bufferSize = 1024 * 1024; // 1 MB buffer
-    QByteArray buffer(bufferSize, Qt::Uninitialized);
+    constexpr qint64 bufferSize = 1024 * 1024; // 1 MiB buffer
+    QByteArray bufA(bufferSize, Qt::Uninitialized);
+    QByteArray bufB(bufferSize, Qt::Uninitialized);
 
-    while (!file.atEnd()) {
+    while (true) {
         if (!checkInterruption()) {
-            file.close();
             return std::nullopt;
         }
 
-        qint64 bytesRead = file.read(buffer.data(), bufferSize);
-        if (bytesRead <= 0) {
-            if (bytesRead < 0) {
-                return std::nullopt;
-            }
-            break;
-        }
-        // Update the CRC with the current chunk
-        crc = crc32(crc, reinterpret_cast<const Bytef*>(buffer.data()), bytesRead);
-    }
+        const qint64 readA = a.read(bufA.data(), bufferSize);
+        const qint64 readB = b.read(bufB.data(), bufferSize);
 
-    file.close();
-    return static_cast<quint32>(crc);
+        if (readA < 0 || readB < 0) {
+            return std::nullopt; // Echter Lesefehler
+        }
+        if (readA != readB) {
+            return false; // Datei hat sich während des Lesens verändert o.ä.
+        }
+        if (readA == 0) {
+            return true; // Beide gleichzeitig am Ende -> identisch
+        }
+        if (memcmp(bufA.constData(), bufB.constData(), static_cast<size_t>(readA)) != 0) {
+            return false;
+        }
+    }
 }
 
 ConflictResolution FileOperation::askUserForResolution(const Conflict &conflict) {
@@ -1412,22 +1527,43 @@ void FileOperation::startKioAsync() {
         updateProgress();
     });
 
+    // Merken, welche Ziele dieser Job nachweislich selbst neu angelegt hat.
+    // Nur diese dürfen bei einem Abbruch wieder entfernt werden - niemals bereits vorher existierende
+    // Dateien gleichen Namens (übersprungene Konflikte) oder fertig verschobene Dateien.
+    m_kioCreatedTargets.clear();
+
+    connect(job, &KIO::CopyJob::copyingDone, this, [this](KIO::Job *, const QUrl &, const QUrl &to, const QDateTime &, bool directory, bool) {
+        if (!directory && to.isLocalFile()) {
+            m_kioCreatedTargets.append(to.toLocalFile());
+        }
+    });
+
+    connect(job, &KIO::CopyJob::copyingLinkDone, this, [this](KIO::Job *, const QUrl &, const QString &, const QUrl &to) {
+        if (to.isLocalFile()) {
+            m_kioCreatedTargets.append(to.toLocalFile());
+        }
+    });
+
     connect(job, &KJob::result, this, [this](KJob *kjob) {
         bool cancelled = m_isCancelled.load() || (kjob && kjob->error() == KJob::KilledJobError);
 
         if (cancelled) {
-            // Falls KIO die Datei bereits umbenannt hat oder die .part-Datei noch existiert: Löschen!
+            // 1. Unvollständige .part-Fragmente entfernen (werden ausschließlich von KIO selbst erzeugt)
             for (const QUrl &srcUrl : std::as_const(m_urls)) {
-                QString targetFilePath = QDir(m_targetDir).filePath(srcUrl.fileName());
-                QString partFilePath = targetFilePath + ".part";
-
+                const QString partFilePath = QDir(m_targetDir).filePath(srcUrl.fileName()) + ".part";
                 if (QFile::exists(partFilePath)) {
                     QFile::remove(partFilePath);
                 }
-                if (QFile::exists(targetFilePath)) {
-                    QFile::remove(targetFilePath);
+            }
+
+            // 2. Bei Copy/Link: nur die von DIESEM Job fertig angelegten Ziele zurückrollen.
+            //    Bei Move NIEMALS: Dort ist die Quelle bereits gelöscht - das Ziel ist die einzige Kopie!
+            if (m_operationType != OperationType::Move) {
+                for (const QString &createdPath : std::as_const(m_kioCreatedTargets)) {
+                    QFile::remove(createdPath); // Bei Symlinks wird nur der Link entfernt
                 }
             }
+            m_kioCreatedTargets.clear();
         } else if (kjob && kjob->error()) {
             m_stats.filesError++;
             m_failedItems.append({m_urls.first().toString(), m_targetDir, m_operationType, kjob->errorString()});

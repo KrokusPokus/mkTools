@@ -8,6 +8,7 @@
 #include <QMutex>
 #include <QObject>
 #include <QSemaphore>
+#include <QSet>
 #include <QStorageInfo>
 #include <QString>
 #include <QUrl>
@@ -95,7 +96,7 @@ private:
     std::pair<qint64, int> calculateStats(const QStringList &filePaths);
     bool copyFileInChunks(const QString &src, const QString &dst);
     void updateProgress(bool force = false);
-    std::optional<quint32> calculateCRC32_interruptable(const QString &filePath);
+    std::optional<bool> filesAreIdentical_interruptable(const QString &fileA, const QString &fileB);
     ConflictResolution askUserForResolution(const Conflict &conflict);
     bool removeReadOnlyAttribute(const QString &path);
     void runRetryList(const QList<FailedItem> &itemsToRetry);
@@ -104,6 +105,7 @@ private:
 
 #if defined(Q_OS_LINUX)
     KIO::CopyJob *m_currentKioJob = nullptr;
+    QStringList m_kioCreatedTargets; // Vom KIO-Job nachweislich neu angelegte Ziel-Dateien/Links (für Cleanup bei Abbruch)
 #endif
 
     CopyStats m_stats;
@@ -116,6 +118,7 @@ private:
     OperationType m_operationType;
     QList<FailedItem> m_failedItems;
     mutable std::optional<bool> m_targetSupportsSymlinks;
+    QSet<QString> m_activeDirIds; // Identitäten der Ordner auf dem aktuellen copyOrMoveDir-Rekursionspfad (Schleifenschutz)
 
     bool m_applyToAll = false;
     ConflictResolution m_pendingResolution;
