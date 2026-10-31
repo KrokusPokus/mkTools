@@ -108,6 +108,9 @@ private:
 #if defined(Q_OS_LINUX)
     KIO::CopyJob *m_currentKioJob = nullptr;
     QStringList m_kioCreatedTargets; // Vom KIO-Job nachweislich neu angelegte Ziel-Dateien/Links (für Cleanup bei Abbruch)
+    bool m_isKioMode = false;        // Operation läuft über KIO (GUI-Thread) statt über den lokalen Worker-Thread
+    QString m_kioCurrentSource;      // Element, das KIO gerade überträgt (für eine korrekte Fehlerzuordnung)
+    QString m_kioCurrentTarget;
 #endif
 
     CopyStats m_stats;

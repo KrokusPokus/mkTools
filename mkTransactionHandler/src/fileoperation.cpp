@@ -6,6 +6,7 @@
 #include <QFileInfo>
 #include <QRandomGenerator>
 #include <QStack>
+#include <QThread>
 
 #include <zlib.h>
 
@@ -1178,6 +1179,15 @@ ConflictResolution FileOperation::askUserForResolution(const Conflict &conflict)
         return ConflictResolution::Cancel;
     }
 
+    // SCHUTZ: Diese Funktion blockiert, bis der GUI-Thread den Konfliktdialog beantwortet.
+    // Läuft sie selbst im GUI-Thread, kann der Dialog nie erscheinen -> Deadlock (eingefrorenes Fenster).
+    // Statt einzufrieren: laut melden und sicher überspringen (Skip verändert nichts am Ziel).
+    if (QThread::currentThread() == QCoreApplication::instance()->thread()) {
+        qCritical() << "askUserForResolution() im GUI-Thread aufgerufen - Konflikt wird übersprungen:" << conflict.sourcePath << "->" << conflict.targetPath;
+        Q_ASSERT_X(false, "FileOperation::askUserForResolution", "must not be called from the GUI thread");
+        return ConflictResolution::Skip;
+    }
+
     {
         QMutexLocker locker(&m_mutex);
 
@@ -1281,6 +1291,18 @@ void FileOperation::doRetry() {
     m_isCancelled.store(false);
     m_isPaused.store(false);
     m_applyToAll = false;
+
+#if defined(Q_OS_LINUX)
+    // KIO-Operationen (nicht-lokale URLs) NICHT über den lokalen Retry-Code wiederholen: Dort würden
+    // URL-Strings wie lokale Pfade behandelt. Stattdessen den KIO-Job mit der ursprünglichen Liste neu starten;
+    // bereits übertragene Dateien behandelt KIO selbst über seinen Konfliktdialog (z.B. "Alle überspringen").
+    if (m_isKioMode) {
+        QMetaObject::invokeMethod(this, [this]() {
+            startKioAsync();
+        }, Qt::QueuedConnection);
+        return;
+    }
+#endif
 
     // 3. Einen gezielten Retry-Durchlauf anfordern
     // FALSCH: run(); -> Würde den GUI-Thread blockieren
@@ -1528,6 +1550,28 @@ void FileOperation::startKioAsync() {
 
     job->setWriteIntoExistingDirectories(true);
 
+    m_isKioMode = true;
+    m_kioCurrentSource.clear();
+    m_kioCurrentTarget.clear();
+
+    // Merken, welches Element KIO gerade überträgt - KJob::result() verrät das bei einem Fehler nicht
+    auto trackCurrent = [this](const QUrl &from, const QUrl &to) {
+        m_kioCurrentSource = from.toDisplayString(QUrl::PreferLocalFile);
+        m_kioCurrentTarget = to.toDisplayString(QUrl::PreferLocalFile);
+    };
+    connect(job, &KIO::CopyJob::copying, this, [trackCurrent](KIO::Job *, const QUrl &from, const QUrl &to) { trackCurrent(from, to); });
+    connect(job, &KIO::CopyJob::moving,  this, [trackCurrent](KIO::Job *, const QUrl &from, const QUrl &to) { trackCurrent(from, to); });
+    connect(job, &KIO::CopyJob::linking, this, [this](KIO::Job *, const QString &target, const QUrl &to) {
+        m_kioCurrentSource = target;
+        m_kioCurrentTarget = to.toDisplayString(QUrl::PreferLocalFile);
+    });
+    // KIO legt zuerst alle Zielordner an und kopiert erst danach die Dateien. Scheitert das Anlegen,
+    // gab es noch kein copying()-Signal -> den betroffenen Zielordner merken (KIO nennt dabei keine Quelle).
+    connect(job, &KIO::CopyJob::creatingDir, this, [this](KIO::Job *, const QUrl &dir) {
+        m_kioCurrentSource.clear();
+        m_kioCurrentTarget = dir.toDisplayString(QUrl::PreferLocalFile);
+    });
+
     m_currentKioJob = job;
     job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
 
@@ -1590,7 +1634,19 @@ void FileOperation::startKioAsync() {
             m_kioCreatedTargets.clear();
         } else if (kjob && kjob->error()) {
             m_stats.filesError++;
-            m_failedItems.append({m_urls.first().toString(), m_targetDir, m_operationType, kjob->errorString()});
+            // Fehler dem Element zuordnen, das KIO zuletzt bearbeitet hat. Tritt der Fehler auf, bevor die
+            // erste Übertragung begann (z.B. Verbindung schon beim Start weg), gibt es kein solches Element:
+            // dann eine einzelne Quelle direkt nennen bzw. bei mehreren Quellen den Zielordner.
+            QString failedSource = m_kioCurrentSource;
+            QString failedTarget = m_kioCurrentTarget;
+            if (failedSource.isEmpty() && !failedTarget.isEmpty()) {
+                failedSource = failedTarget; // Fehler beim Anlegen eines Zielordners: den Ordner selbst nennen
+            } else if (failedSource.isEmpty()) {
+                failedSource = (m_urls.size() == 1) ? m_urls.first().toDisplayString(QUrl::PreferLocalFile)
+                                                    : QDir::toNativeSeparators(m_targetDir);
+                failedTarget = QDir::toNativeSeparators(m_targetDir);
+            }
+            m_failedItems.append({failedSource, failedTarget, m_operationType, kjob->errorString()});
         }
 
         m_currentKioJob = nullptr;
