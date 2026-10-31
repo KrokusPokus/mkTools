@@ -57,6 +57,7 @@ private slots:
     void onListViewHeaderClicked();
     void showFolder(const QString &directoryPath, const QStringList &externalPathList);
     void updateRenameRowsFromSelection();
+    void updateRenameButtonState();
     void onTableCurrentChanged(const QModelIndex &current, const QModelIndex &previous);
     void onTimedUpdateIcons();
     void onToggleListViewHeader();

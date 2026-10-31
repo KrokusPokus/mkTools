@@ -37,6 +37,7 @@ struct CustomFileInfo {
     bool isExecutable;
     bool isHidden;
     bool isNameCollision = false;
+    QString nameCollisionReason; // Grund für isNameCollision (Tooltip in der Vorschau)
 };
 
 Q_DECLARE_METATYPE(CustomFileInfo)
@@ -183,6 +184,7 @@ signals:
     void filesDropped(const QList<QUrl> &urls, const QString &targetDirectory, Qt::DropAction action);
     void searchProgress(uint itemsFound, uint nameMatched, uint contentMatched);
     void searchFinished(uint itemsFound, uint nameMatched, uint contentMatched, bool searchInterrupted);
+    void renameConflictsChanged(int conflictCount);
 
 public:
     enum Column {
@@ -264,10 +266,13 @@ public:
 
     void setRenameRows(const QSet<int> &rowSet, const QList<int> &rowList);
     void setRenameRules(const RenameRules &rules);
-    void applyBatchRename();
+    bool applyBatchRename(QString *errorMessage = nullptr);
+    int renameConflictCount() const { return m_renameConflictCount; }
+    bool hasRenameRows() const { return !m_renameRowsList.isEmpty(); }
 
 private:
     bool renameFileInternal(int row, const QString &rawNewName);
+    void applyRenamedFileInfo(int row, const QString &newName, const QString &newPath);
     QPixmap generateDummyThumb(const QString &dummyName) const;
     CustomFileInfo createCustomFileInfo(const QFileInfo &fileInfo, int anchorPathLength = 0) const;
 
@@ -275,6 +280,7 @@ private:
     QString m_currentDirectoryPath;
     ViewMode m_viewMode;
     int m_columnCount;
+    int m_renameConflictCount = 0;
     std::atomic<bool> m_abortSearch{false};
 
     QFileIconProvider m_iconProvider;

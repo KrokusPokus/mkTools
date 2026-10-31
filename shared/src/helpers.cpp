@@ -22,6 +22,10 @@
 
 #include <zlib.h>
 
+#ifndef Q_OS_WIN
+#include <sys/stat.h>
+#endif
+
 #ifdef Q_OS_WIN
 #include <QSystemTrayIcon>
 #include <shlwapi.h>
@@ -195,6 +199,37 @@ namespace Helpers {
 #endif
 
         return cleanedName;
+    }
+
+    // Liefert eine eindeutige Identität des Dateisystem-Objekts (folgt Symlinks), oder einen leeren String bei Fehler.
+    // Unix: Gerät + Inode, Windows: Volume-Seriennummer + File-Index.
+    QString fileIdentity(const QString &path) {
+        if (path.isEmpty()) return QString();
+
+#ifdef Q_OS_WIN
+        HANDLE h = CreateFileW(reinterpret_cast<const wchar_t *>(QDir::toNativeSeparators(path).utf16()),
+                               FILE_READ_ATTRIBUTES,
+                               FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                               nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
+        if (h == INVALID_HANDLE_VALUE) return QString();
+        BY_HANDLE_FILE_INFORMATION info;
+        const BOOL ok = GetFileInformationByHandle(h, &info);
+        CloseHandle(h);
+        if (!ok) return QString();
+        return QStringLiteral("%1:%2:%3").arg(info.dwVolumeSerialNumber).arg(info.nFileIndexHigh).arg(info.nFileIndexLow);
+#else
+        struct stat st;
+        if (::stat(QFile::encodeName(path).constData(), &st) != 0) return QString();
+        return QStringLiteral("%1:%2").arg(static_cast<quint64>(st.st_dev)).arg(static_cast<quint64>(st.st_ino));
+#endif
+    }
+
+    // Prüft, ob zwei Pfade auf DASSELBE Dateisystem-Objekt zeigen (folgt Symlinks).
+    // Erkennt damit auch Symlink-Pfade, Bind-Mounts und abweichende Groß-/Kleinschreibung
+    // auf case-insensitiven Dateisystemen, die ein reiner String-Vergleich übersieht.
+    bool isSameFile(const QString &pathA, const QString &pathB) {
+        const QString idA = fileIdentity(pathA);
+        return !idA.isEmpty() && idA == fileIdentity(pathB);
     }
 
     QString formatAdaptiveSize(quint64 bytes) {

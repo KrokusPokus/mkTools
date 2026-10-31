@@ -32,50 +32,15 @@
 
 #endif
 
-#ifndef Q_OS_WIN
-#include <sys/stat.h>
-#endif
-
 namespace {
 
-// Liefert eine eindeutige Identität des Dateisystem-Objekts (folgt Symlinks), oder einen leeren String bei Fehler.
-// Unix: Gerät + Inode, Windows: Volume-Seriennummer + File-Index.
-QString fileIdentity(const QString &path) {
-    if (path.isEmpty()) return QString();
-
-#ifdef Q_OS_WIN
-    HANDLE h = CreateFileW(reinterpret_cast<const wchar_t *>(QDir::toNativeSeparators(path).utf16()),
-                           FILE_READ_ATTRIBUTES,
-                           FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                           nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
-    if (h == INVALID_HANDLE_VALUE) return QString();
-    BY_HANDLE_FILE_INFORMATION info;
-    const BOOL ok = GetFileInformationByHandle(h, &info);
-    CloseHandle(h);
-    if (!ok) return QString();
-    return QStringLiteral("%1:%2:%3").arg(info.dwVolumeSerialNumber).arg(info.nFileIndexHigh).arg(info.nFileIndexLow);
-#else
-    struct stat st;
-    if (::stat(QFile::encodeName(path).constData(), &st) != 0) return QString();
-    return QStringLiteral("%1:%2").arg(static_cast<quint64>(st.st_dev)).arg(static_cast<quint64>(st.st_ino));
-#endif
-}
-
-// Prüft, ob zwei Pfade auf DASSELBE Dateisystem-Objekt zeigen (folgt Symlinks).
-// Erkennt damit auch Symlink-Pfade, Bind-Mounts und abweichende Groß-/Kleinschreibung
-// auf case-insensitiven Dateisystemen, die ein reiner String-Vergleich übersieht.
-bool isSameFile(const QString &pathA, const QString &pathB) {
-    const QString idA = fileIdentity(pathA);
-    return !idA.isEmpty() && idA == fileIdentity(pathB);
-}
-
 // Liefert true, wenn 'path' (muss nicht existieren) gleich 'dir' ist oder irgendwo darunter liegt.
-// Läuft dazu von 'path' aufwärts und vergleicht jeden existierenden Vorfahren per isSameFile().
+// Läuft dazu von 'path' aufwärts und vergleicht jeden existierenden Vorfahren per Helpers::isSameFile().
 bool isSameOrInsideDir(const QString &dir, const QString &path) {
     QString current = QDir::cleanPath(QFileInfo(path).absoluteFilePath());
 
     while (!current.isEmpty()) {
-        if (QFileInfo::exists(current) && isSameFile(current, dir)) {
+        if (QFileInfo::exists(current) && Helpers::isSameFile(current, dir)) {
             return true;
         }
         const QString parent = QFileInfo(current).path();
@@ -191,7 +156,7 @@ void FileOperation::run() {
             QString dstPath;
             // Identitätsvergleich statt String-Vergleich: Erkennt denselben Ordner auch über
             // Symlinks, Bind-Mounts oder abweichende Groß-/Kleinschreibung.
-            if (isSameFile(srcInfo.absolutePath(), m_targetDir)) {
+            if (Helpers::isSameFile(srcInfo.absolutePath(), m_targetDir)) {
                 if (m_operationType == OperationType::Move) {
                     // Verschieben in den eigenen Ordner ist ein No-Op -> überspringen
                     auto skipStats = std::make_pair(srcInfo.size(), 1);
@@ -389,7 +354,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
     // Ohne diesen Schutz würde der Vergleich "identisch" ergeben und bei Move die einzige Kopie gelöscht,
     // bzw. bei Overwrite das Ziel (= die Quelle bzw. das Link-Ziel) zerstört.
     // Ist das Ziel selbst ein Symlink, wird nur der Link ersetzt -> unkritisch, daher ausgenommen.
-    if (!isSymlinkTarget && dstInfo.exists() && isSameFile(src, dst)) {
+    if (!isSymlinkTarget && dstInfo.exists() && Helpers::isSameFile(src, dst)) {
         m_stats.filesError++;
         updateProgress();
         m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("Source and target are the same file")});
@@ -610,7 +575,7 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
     // Liegt z.B. in /A ein Symlink, der auf /A (oder einen Vorfahren) zurückzeigt, würde die Rekursion
     // denselben Ordner endlos erneut betreten. Wir merken uns daher alle Ordner auf dem AKTUELLEN
     // Rekursionspfad. Derselbe Ordner in getrennten Zweigen (zwei Links auf ein Ziel) bleibt erlaubt.
-    const QString srcDirId = fileIdentity(src);
+    const QString srcDirId = Helpers::fileIdentity(src);
     if (!srcDirId.isEmpty() && m_activeDirIds.contains(srcDirId)) {
         m_stats.filesError++;
         updateProgress();

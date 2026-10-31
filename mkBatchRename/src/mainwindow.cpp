@@ -682,9 +682,13 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     
     connect(m_groupBox3_LineEdit1, &QLineEdit::textChanged, this, &MainWindow::validateInputBoxRegex);
     connect(m_buttonDoRename, &QPushButton::clicked, this, [this]() {
-        m_abstractModel->applyBatchRename();
+        QString errorMessage;
+        if (!m_abstractModel->applyBatchRename(&errorMessage)) {
+            QMessageBox::warning(this, tr("Batch rename"), errorMessage);
+        }
         onRenameRulesChanged(); // force recalculation of newName
     });
+    connect(m_abstractModel, &CustomTableModel::renameConflictsChanged, this, &MainWindow::updateRenameButtonState);
     connect(m_buttonDoReset, &QPushButton::clicked, this, [this]() {
         onResetRules();
     });
@@ -966,9 +970,18 @@ void MainWindow::updateRenameRowsFromSelection() {
 
     m_abstractModel->setRenameRows(seenSourceRows, orderedSourceRows);
     qDebug() << "updateRenameRowsFromSelection() orderedSourceRows:" << orderedSourceRows;
-    if (m_buttonDoRename) {
-        m_buttonDoRename->setEnabled(!orderedSourceRows.isEmpty());
-    }
+    updateRenameButtonState();
+}
+
+// Der Umbenennen-Knopf ist nur aktiv, wenn Zeilen ausgewählt sind UND kein Namenskonflikt besteht
+void MainWindow::updateRenameButtonState() {
+    if (!m_buttonDoRename || !m_abstractModel) return;
+
+    const int conflicts = m_abstractModel->renameConflictCount();
+    m_buttonDoRename->setEnabled(m_abstractModel->hasRenameRows() && conflicts == 0);
+    m_buttonDoRename->setToolTip(conflicts > 0
+        ? tr("Renaming is blocked: %n name conflict(s), see the entries marked red.", nullptr, conflicts)
+        : QString());
 }
 
 void MainWindow::updateColumns() {

@@ -3,6 +3,7 @@
 
 #include <QApplication>
 #include <QDirIterator>
+#include <QRandomGenerator>
 #include <QElapsedTimer>
 #include <QMimeData>
 #include <QPainter>
@@ -190,6 +191,9 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
                 return QVariant(false);
         }
     }
+    else if (role == Qt::ToolTipRole && col == eColNewName && !file.nameCollisionReason.isEmpty()) {
+        return file.nameCollisionReason;
+    }
     else if (role == CustomTableModel::IsCutRole) {
         return QVariant(file.isCut);
     }
@@ -335,6 +339,12 @@ bool CustomTableModel::renameFileInternal(int row, const QString &rawNewName) {
     }
 
     // 2. Struct im Speicher aktualisieren
+    applyRenamedFileInfo(row, newName, newPath);
+    return true;
+}
+
+// Aktualisiert die Metadaten einer Zeile, nachdem die Datei auf der Platte umbenannt wurde
+void CustomTableModel::applyRenamedFileInfo(int row, const QString &newName, const QString &newPath) {
     CustomFileInfo &info = m_files[row];
     info.name = newName;
     info.displayName = newName;
@@ -357,8 +367,6 @@ bool CustomTableModel::renameFileInternal(int row, const QString &rawNewName) {
 #ifdef Q_OS_WIN
     info.isExecutable = (ext == "exe" || ext == "scr");
 #endif
-
-    return true;
 }
 
 void CustomTableModel::sort(int column, Qt::SortOrder order) {
@@ -533,53 +541,97 @@ void CustomTableModel::setRenameRows(const QSet<int> &rowSet, const QList<int> &
     emit dataChanged(createIndex(0, eColNewName), createIndex(rowCount() - 1, eColNewName), {Qt::DisplayRole});
 }
 
+namespace {
+// Vergleichsschlüssel für Pfade: unter Windows ist das Dateisystem case-insensitiv
+QString renameKey(const QString &path) {
+#ifdef Q_OS_WIN
+    return QDir::cleanPath(path).toLower();
+#else
+    return QDir::cleanPath(path);
+#endif
+}
+
+// Noch nicht existierender temporärer Name neben 'path' (zum Auflösen von Umbenennungs-Zyklen)
+QString uniqueTempRenamePath(const QString &path) {
+    while (true) {
+        const QString candidate = QStringLiteral("%1.mkren-%2").arg(path).arg(QRandomGenerator::global()->generate(), 8, 16, QChar('0'));
+        const QFileInfo info(candidate);
+        if (!info.exists() && !info.isSymLink()) return candidate;
+    }
+}
+} // namespace
+
 void CustomTableModel::recalculateNewNames() {
+    // 1. Neue Namen berechnen - bereits bereinigt, damit Vorschau, Konfliktprüfung und Ausführung
+    //    garantiert denselben Namen sehen (vorher wurde erst beim Umbenennen bereinigt).
     int seqIndex = 0;
-
-    QSet<QString> seenPaths;
-    QSet<QString> collidingPaths;
-
     for (int row : std::as_const(m_renameRowsList)) {
         if (row >= 0 && row < static_cast<int>(m_files.size())) {
             auto &file = m_files[row];
-            file.newName = computeNewName(file, seqIndex);
-
-#ifdef Q_OS_WIN
-            QString lookupKey = QDir::cleanPath(QDir(file.path).filePath(file.newName)).toLower();
-#elif defined(Q_OS_LINUX)
-            QString lookupKey = QDir::cleanPath(QDir(file.path).filePath(file.newName));
-#endif
-            if (seenPaths.contains(lookupKey)) {
-                collidingPaths.insert(lookupKey);
-            } else {
-                seenPaths.insert(lookupKey);
-            }
-
+            file.newName = Helpers::cleanFileName(computeNewName(file, seqIndex).trimmed());
+            file.isNameCollision = false;
+            file.nameCollisionReason.clear();
             seqIndex++;
         }
     }
 
+    // 2. Welche Quellen geben ihren Namen frei, und wie oft wird jedes Ziel beansprucht?
+    QSet<QString> movingSources;
+    QHash<QString, int> targetUseCount;
     for (int row : std::as_const(m_renameRowsList)) {
         if (row >= 0 && row < static_cast<int>(m_files.size())) {
-            auto &file = m_files[row];
-
-#ifdef Q_OS_WIN
-            QString lookupKey = QDir::cleanPath(QDir(file.path).filePath(file.newName)).toLower();
-#elif defined(Q_OS_LINUX)
-            QString lookupKey = QDir::cleanPath(QDir(file.path).filePath(file.newName));
-#endif
-            file.isNameCollision = collidingPaths.contains(lookupKey);
+            const auto &file = m_files[row];
+            if (file.newName == file.name) continue; // unverändert -> belegt seinen Namen weiterhin
+            movingSources.insert(renameKey(file.filePath));
+            targetUseCount[renameKey(QDir(file.path).filePath(file.newName))]++;
         }
     }
+
+    // 3. Konflikte bestimmen
+    int conflicts = 0;
+    for (int row : std::as_const(m_renameRowsList)) {
+        if (row < 0 || row >= static_cast<int>(m_files.size())) continue;
+        auto &file = m_files[row];
+        if (file.newName == file.name) continue;
+
+        const QString target = QDir::cleanPath(QDir(file.path).filePath(file.newName));
+        const QString targetKey = renameKey(target);
+        QString reason;
+
+        if (file.newName.isEmpty() || file.newName == "." || file.newName == "..") {
+            reason = tr("Invalid file name");
+        } else if (targetUseCount.value(targetKey) > 1) {
+            reason = tr("Several files would get this name");
+        } else {
+            // Ziel existiert auf der Platte (auch herausgefilterte Dateien!) und wird nicht durch eine
+            // andere Umbenennung im Stapel frei. Ausnahme: reine Groß-/Kleinschreibungs-Änderung auf einem
+            // case-insensitiven Dateisystem (Ziel ist physisch die Datei selbst).
+            const QFileInfo targetInfo(target);
+            const bool occupied = targetInfo.exists() || targetInfo.isSymLink();
+            const bool caseOnlyRename = target.compare(file.filePath, Qt::CaseInsensitive) == 0 && Helpers::isSameFile(file.filePath, target);
+            if (occupied && !movingSources.contains(targetKey) && !caseOnlyRename) {
+                reason = tr("A file with this name already exists");
+            }
+        }
+
+        if (!reason.isEmpty()) {
+            file.isNameCollision = true;
+            file.nameCollisionReason = reason;
+            conflicts++;
+        }
+    }
+
+    m_renameConflictCount = conflicts;
+    emit renameConflictsChanged(conflicts);
 }
 
 void CustomTableModel::setRenameRules(const RenameRules &rules) {
-    if (rules.rpl.regex == true && (rules.rpl.match != m_rules.rpl.match || rules.rpl.regex != m_rules.rpl.regex)) {
+    if (rules.rpl.regex == true && (rules.rpl.match != m_rules.rpl.match || rules.rpl.regex != m_rules.rpl.regex || rules.rpl.matchCase != m_rules.rpl.matchCase)) {
         QRegularExpression::PatternOptions regexOptions = QRegularExpression::NoPatternOption;
         if (rules.rpl.matchCase == false) {
             regexOptions |= QRegularExpression::CaseInsensitiveOption;
         }
-        m_RegexRulesCompiled = QRegularExpression(rules.rpl.match);
+        m_RegexRulesCompiled = QRegularExpression(rules.rpl.match, regexOptions);
     }
 
     if (rules.flt != m_rules.flt) {
@@ -649,39 +701,136 @@ QString CustomTableModel::computeNewName(const CustomFileInfo &item, int seqInde
     return fileName;
 }
 
-void CustomTableModel::applyBatchRename() {
+// Führt die Stapel-Umbenennung als "alles oder nichts" aus:
+//  - Bei Konflikten (siehe recalculateNewNames) wird gar nicht erst begonnen.
+//  - Reihenfolge nach Abhängigkeiten: Wer ein Ziel braucht, das noch von einer anderen Quelle belegt ist,
+//    wartet, bis diese umbenannt wurde. Ketten wie 1->2, 2->3 funktionieren so ohne Zwischennamen.
+//  - Echte Zyklen (a<->b, a->b->c->a) werden aufgelöst, indem ein Eintrag kurz auf einen temporären Namen ausweicht.
+//  - Schlägt eine Umbenennung fehl, werden alle bisherigen in umgekehrter Reihenfolge zurückgedreht.
+bool CustomTableModel::applyBatchRename(QString *errorMessage) {
     if (m_files.empty() || m_renameRowsList.isEmpty())
-        return;
+        return true;
 
-    int minRow = -1;
-    int maxRow = -1;
-    bool anyRenamed = false;
+    // Mit aktuellem Plattenzustand neu prüfen (seit der Vorschau kann sich etwas geändert haben)
+    recalculateNewNames();
+    if (m_renameConflictCount > 0) {
+        if (errorMessage) *errorMessage = tr("Renaming was not started because of %n name conflict(s).", nullptr, m_renameConflictCount);
+        return false;
+    }
 
+    struct Op { int row; QString from; QString to; QString finalName; bool done = false; };
+    std::vector<Op> ops;
     for (int row : std::as_const(m_renameRowsList)) {
-        if (row < 0 || row >= static_cast<int>(m_files.size()))
-            continue;
+        if (row < 0 || row >= static_cast<int>(m_files.size())) continue;
+        const auto &file = m_files[row];
+        if (file.newName == file.name) continue;
+        ops.push_back({row, file.filePath, QDir::cleanPath(QDir(file.path).filePath(file.newName)), file.newName});
+    }
+    if (ops.empty()) return true;
 
-        // Nutzt den bereits vorausberechneten newName
-        if (renameFileInternal(row, m_files[row].newName)) {
-            anyRenamed = true;
-
-            if (minRow == -1 || row < minRow) {
-                minRow = row;
-            }
-
-            if (row > maxRow) {
-                maxRow = row;
-            }
+    // Abhängigkeitsgraph: pendingSource[key(Quelle)] = Op; waiterFor[key(Quelle)] = Op, dessen Ziel diese Quelle ist
+    QHash<QString, int> pendingSource;
+    QHash<QString, int> waiterFor;
+    QList<int> ready;
+    for (int i = 0; i < static_cast<int>(ops.size()); ++i) {
+        pendingSource.insert(renameKey(ops[i].from), i);
+    }
+    for (int i = 0; i < static_cast<int>(ops.size()); ++i) {
+        const QString targetKey = renameKey(ops[i].to);
+        auto it = pendingSource.constFind(targetKey);
+        if (it != pendingSource.constEnd() && it.value() != i) {
+            waiterFor.insert(targetKey, i);
+        } else {
+            ready.append(i);
         }
     }
 
-    // Nur ein einziges dataChanged-Signal für den gesamten betroffenen Zeilenbereich aussenden
-    if (anyRenamed && minRow != -1 && maxRow != -1) {
-        QModelIndex topLeft = index(minRow, 0);
-        QModelIndex bottomRight = index(maxRow, columnCount() - 1);
+    auto releaseSource = [&](const QString &sourcePath) {
+        const QString key = renameKey(sourcePath);
+        pendingSource.remove(key);
+        auto w = waiterFor.find(key);
+        if (w != waiterFor.end()) {
+            ready.append(w.value());
+            waiterFor.erase(w);
+        }
+    };
 
-        emit dataChanged(topLeft, bottomRight);
+    QList<QPair<QString, QString>> journal; // Durchgeführte Umbenennungen (von, nach) für das Zurückdrehen
+    QString failedFrom, failedTo, failedReason;
+    int remaining = static_cast<int>(ops.size());
+
+    while (remaining > 0) {
+        if (ready.isEmpty()) {
+            // Zyklus: Einen wartenden Eintrag, auf dessen Quelle jemand wartet, temporär ausweichen lassen
+            int c = -1;
+            for (int i = 0; i < static_cast<int>(ops.size()); ++i) {
+                if (!ops[i].done && waiterFor.contains(renameKey(ops[i].from))) { c = i; break; }
+            }
+            if (c == -1) { // Darf nicht vorkommen - sicherheitshalber abbrechen statt Endlosschleife
+                failedReason = tr("Internal error while ordering the renames");
+                break;
+            }
+
+            const QString tempPath = uniqueTempRenamePath(ops[c].from);
+            QFile f(ops[c].from);
+            if (!f.rename(tempPath)) {
+                failedFrom = ops[c].from; failedTo = tempPath; failedReason = f.errorString();
+                break;
+            }
+            journal.append({ops[c].from, tempPath});
+            const QString oldFrom = ops[c].from;
+            ops[c].from = tempPath;
+            releaseSource(oldFrom);
+            continue;
+        }
+
+        const int i = ready.takeFirst();
+        QFile f(ops[i].from);
+        if (!f.rename(ops[i].to)) {
+            failedFrom = ops[i].from; failedTo = ops[i].to; failedReason = f.errorString();
+            break;
+        }
+        journal.append({ops[i].from, ops[i].to});
+        ops[i].done = true;
+        remaining--;
+        releaseSource(ops[i].from);
     }
+
+    if (remaining > 0) {
+        // FEHLER -> alles in umgekehrter Reihenfolge zurückdrehen
+        QStringList notReverted;
+        for (int k = static_cast<int>(journal.size()) - 1; k >= 0; --k) {
+            if (!QFile::rename(journal[k].second, journal[k].first)) {
+                notReverted << QDir::toNativeSeparators(journal[k].second);
+            }
+        }
+
+        if (errorMessage) {
+            QString msg;
+            if (!failedFrom.isEmpty()) {
+                msg = tr("Renaming \"%1\" to \"%2\" failed: %3").arg(QDir::toNativeSeparators(failedFrom), QFileInfo(failedTo).fileName(), failedReason);
+            } else {
+                msg = failedReason;
+            }
+            if (notReverted.isEmpty()) {
+                msg += "\n\n" + tr("No files were renamed, all changes have been reverted.");
+            } else {
+                msg += "\n\n" + tr("The following files could not be reverted and still have their new or temporary name:") + "\n" + notReverted.join('\n');
+            }
+            *errorMessage = msg;
+        }
+        return false;
+    }
+
+    // ERFOLG -> Metadaten aller Zeilen aktualisieren, ein einziges dataChanged-Signal
+    int minRow = -1, maxRow = -1;
+    for (const Op &op : ops) {
+        applyRenamedFileInfo(op.row, op.finalName, op.to);
+        if (minRow == -1 || op.row < minRow) minRow = op.row;
+        if (op.row > maxRow) maxRow = op.row;
+    }
+    emit dataChanged(index(minRow, 0), index(maxRow, columnCount() - 1));
+    return true;
 }
 
 QString CustomTableModel::applyReplaceRule(const QString &input, const ReplaceRule &rule) const {
@@ -1301,6 +1450,10 @@ void CustomTableModel::populateModel_mkBatchRename(const QString &dirPath, const
     m_currentDirectoryPath = dirPath;
     m_renameRowsList.clear();
     m_renameRowsSet.clear();
+    if (m_renameConflictCount != 0) {
+        m_renameConflictCount = 0;
+        emit renameConflictsChanged(0);
+    }
 
     QString searchStringFilename = m_rules.flt.filter;
     QStringList searchStringFilenameSplit = m_rules.flt.filter.split(' ', Qt::SkipEmptyParts);

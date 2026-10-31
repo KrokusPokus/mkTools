@@ -41,6 +41,8 @@ struct LnkInfo {
 namespace Helpers {
 
     QString cleanFileName(const QString &fileName);
+    QString fileIdentity(const QString &path);
+    bool isSameFile(const QString &pathA, const QString &pathB);
     QString formatAdaptiveSize(quint64 bytes);
     quint32 calculateCRC32(const QString &filePath);
 
