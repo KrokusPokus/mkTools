@@ -93,6 +93,8 @@ private:
     QString calculateRelativeDisplayPath(const QFileInfo &info);
     bool isOnSameDevice(const QString &src, const QString &dst) const;
     QString generateUniqueCopyName(const QFileInfo &srcInfo, const QString &targetDir);
+    QString uniqueSiblingPath(const QString &path, const QString &tag) const;
+    bool swapIntoPlace(const QString &replacement, const QString &target);
     std::pair<qint64, int> calculateStats(const QStringList &filePaths);
     bool copyFileInChunks(const QString &src, const QString &dst);
     void updateProgress(bool force = false);

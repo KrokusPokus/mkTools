@@ -3,6 +3,7 @@
 
 #include "fileoperation.h"
 
+#include <QCloseEvent>
 #include <QFontMetrics>
 #include <QLabel>
 #include <QLabel>
@@ -98,6 +99,9 @@ public:
     explicit MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir, QWidget *parent = nullptr);
     ~MainWindow();
 
+protected:
+    void closeEvent(QCloseEvent *event) override;
+
 private slots:
     void onThreadStarted();
     void onProgressUpdated(const CopyStats &stats);
@@ -119,6 +123,7 @@ private:
 
     QLocale m_locale;
     bool m_isFinished;
+    bool m_closeRequested = false; // Nutzer hat das Fenster während einer laufenden Operation geschlossen
 
     // Daten
     OperationType m_operationType;

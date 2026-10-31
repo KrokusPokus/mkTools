@@ -86,6 +86,11 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
 
 MainWindow::~MainWindow() {
     if (m_workerThread && m_workerThread->isRunning()) {
+        // Falls die Operation noch läuft (z.B. Session-Ende), erst abbrechen. Sonst würde wait()
+        // auf einen Worker warten, der weiterkopiert oder in einem Konfliktdialog ohne GUI hängt.
+        if (m_fileOp && !m_isFinished) {
+            m_fileOp->doCancel();
+        }
         m_workerThread->quit();
         m_workerThread->wait();
     }
@@ -97,6 +102,22 @@ MainWindow::~MainWindow() {
         m_taskbarList->Release();
     }
 #endif
+}
+
+void MainWindow::closeEvent(QCloseEvent *event) {
+    if (m_isFinished) {
+        event->accept();
+        return;
+    }
+
+    // Operation läuft noch: Schließen bedeutet Abbrechen. Das Fenster bleibt offen, bis der Worker
+    // sauber gestoppt hat, und schließt sich dann selbst (siehe onOperationCanceled/-Finished).
+    event->ignore();
+    m_closeRequested = true;
+
+    if (m_cancelButton->isEnabled()) {
+        onCancelRequested();
+    }
 }
 
 void MainWindow::setupUi() {
@@ -429,6 +450,12 @@ void MainWindow::onOperationFinished(const CopyStats &stats, const QList<FailedI
     m_isFinished = true;
     setTaskbarProgress(0.0, false);
 
+    if (m_closeRequested) {
+        // Nutzer wollte schließen, die Operation war aber schon fertig, bevor der Abbruch griff
+        close();
+        return;
+    }
+
     if (stats.filesError > 0) {
         if (!isVisible()) show();
 
@@ -480,6 +507,12 @@ void MainWindow::onOperationFinished(const CopyStats &stats, const QList<FailedI
 void MainWindow::onOperationCanceled(int errorCount, const QList<FailedItem> &failedItems) {
     m_isFinished = true;
     setTaskbarProgress(0.0, false);
+
+    if (m_closeRequested) {
+        // Abbruch wurde durch Schließen des Fensters ausgelöst -> jetzt wirklich schließen
+        close();
+        return;
+    }
 
     if (errorCount > 0) {
         if (!isVisible()) show();
@@ -541,6 +574,7 @@ void MainWindow::onPauseRequested() {
 }
 
 void MainWindow::onRetryRequested() {
+    m_isFinished = false; // Retry startet eine neue laufende Operation (wichtig für closeEvent)
     m_errorContainer->hide();
     m_pauseButton->setEnabled(false);
 

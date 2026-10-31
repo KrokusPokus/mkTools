@@ -396,6 +396,10 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
         return FileOpResult::Error;
     }
 
+    // true = Ziel existiert und soll ersetzt werden. Das alte Ziel bleibt bis zum erfolgreichen
+    // Abschluss erhalten und wird erst dann per swapIntoPlace() ausgetauscht.
+    bool replaceExisting = false;
+
     // Ein Konflikt besteht, wenn das Ziel existiert ODER ein (ggf. defekter) Symlink dort liegt
     if (dstInfo.exists() || isSymlinkTarget) {
         ConflictResolution resolution = m_applyToAll ? m_applyToAllResolution : ConflictResolution::Skip;
@@ -415,13 +419,8 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
             case ConflictResolution::Cancel:
                 return FileOpResult::Cancelled;
             case ConflictResolution::Overwrite:
-                if (!QDir(dst).removeRecursively()) {
-                    if (!checkInterruption()) return FileOpResult::Cancelled;
-                    m_stats.filesError++;
-                    updateProgress();
-                    m_failedItems.append({src, dst, m_operationType, tr("Target folder deletion failed")});
-                    return FileOpResult::Error;
-                }
+                // Ordner NICHT vorab löschen: Er wird erst nach erfolgreichem Kopieren ersetzt (siehe swapIntoPlace)
+                replaceExisting = true;
                 break;
             }
         }
@@ -511,13 +510,8 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
             case ConflictResolution::Cancel:
                 return FileOpResult::Cancelled;
             case ConflictResolution::Overwrite:
-                if (!QFile::remove(dst)) {
-                    if (!checkInterruption()) return FileOpResult::Cancelled;
-                    m_stats.filesError++;
-                    updateProgress();
-                    m_failedItems.append({src, dst, m_operationType, tr("Destination deletion failed")});
-                    return FileOpResult::Error;
-                }
+                // Ziel NICHT vorab löschen: Es wird erst ersetzt, wenn die neue Version vollständig geschrieben ist
+                replaceExisting = true;
                 break;
             }
         }
@@ -527,21 +521,33 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
     bool movedViaRename = false;
 
     if (isMove && !isCrossDevice) {
-        ok = QFile::rename(src, dst);           // Verschieben auf demselben Laufwerk durch einfaches Umbenennen
+        // Verschieben auf demselben Laufwerk durch einfaches Umbenennen
+        // (bei Überschreiben: altes Ziel wird erst nach erfolgreichem Umbenennen entfernt)
+        ok = replaceExisting ? swapIntoPlace(src, dst) : QFile::rename(src, dst);
         if (ok) {
             movedViaRename = true;
-        } else {                                // Fallback falls Umbenennen fehlschlägt
-            if (isSymlinkSource) {
-                ok = QFile::link(srcInfo.symLinkTarget(), dst);
-            } else {
-                ok = copyFileInChunks(src, dst);
-            }
         }
-    } else { // OperationType::Copy ODER Cross-Device Move ODER forceCopyOnly
+    }
+
+    if (!ok) { // OperationType::Copy ODER Cross-Device Move ODER forceCopyOnly ODER Fallback, falls Umbenennen fehlschlug
+        // Beim Überschreiben zuerst in eine temporäre Datei neben dem Ziel schreiben.
+        // Schlägt das Kopieren fehl (Platte voll, Lesefehler, Abbruch), bleibt das alte Ziel unangetastet.
+        const QString writePath = replaceExisting ? uniqueSiblingPath(dst, QStringLiteral(".mkpart")) : dst;
+
         if (isSymlinkSource) {
-            ok = QFile::link(srcInfo.symLinkTarget(), dst);
+            ok = QFile::link(srcInfo.symLinkTarget(), writePath);
         } else {
-            ok = copyFileInChunks(src, dst);
+            ok = copyFileInChunks(src, writePath);
+        }
+
+        if (ok && replaceExisting && !swapIntoPlace(writePath, dst)) {
+            QFile::remove(writePath);
+            if (!isSymlinkSource) {
+                // copyFileInChunks hat die Datei bereits als geschrieben gezählt -> zurücknehmen
+                m_stats.filesWritten--;
+                m_stats.bytesWritten -= fileSizeSource;
+            }
+            ok = false;
         }
     }
 
@@ -872,6 +878,59 @@ bool FileOperation::isOnSameDevice(const QString &src, const QString &dst) const
     return storageSrc.isValid() && storageSrc.isReady() &&
            storageDst.isValid() && storageDst.isReady() &&
            (storageSrc == storageDst);
+}
+
+// Liefert einen noch nicht existierenden Pfad neben 'path', z.B. "datei.txt.mkpart-1a2b3c4d".
+QString FileOperation::uniqueSiblingPath(const QString &path, const QString &tag) const {
+    while (true) {
+        const QString candidate = QStringLiteral("%1%2-%3").arg(path, tag).arg(QRandomGenerator::global()->generate(), 8, 16, QChar('0'));
+        const QFileInfo info(candidate);
+        if (!info.exists() && !info.isSymbolicLink()) {
+            return candidate;
+        }
+    }
+}
+
+// Ersetzt 'target' durch 'replacement' (beide im selben Ordner bzw. auf demselben Laufwerk).
+// Das alte Ziel wird zuerst beiseite umbenannt und erst NACH dem erfolgreichen Austausch gelöscht.
+// Scheitert der Austausch, wird das alte Ziel wiederhergestellt. 'target' darf eine Datei,
+// ein Symlink oder ein Ordner sein.
+bool FileOperation::swapIntoPlace(const QString &replacement, const QString &target) {
+    const QFileInfo targetInfo(target);
+    if (!targetInfo.exists() && !targetInfo.isSymbolicLink()) {
+        return QFile::rename(replacement, target);
+    }
+
+    const QString backupPath = uniqueSiblingPath(target, QStringLiteral(".mkbak"));
+    if (!QFile::rename(target, backupPath)) {
+        qWarning() << "swapIntoPlace(): Ziel konnte nicht beiseite gelegt werden:" << target;
+        return false;
+    }
+
+    if (!QFile::rename(replacement, target)) {
+        qWarning() << "swapIntoPlace(): Ersatz konnte nicht an Zielposition verschoben werden:" << replacement << "->" << target;
+        if (!QFile::rename(backupPath, target)) {
+            m_stats.filesError++;
+            m_failedItems.append({backupPath, target, m_operationType, tr("Could not restore original target from backup")});
+        }
+        return false;
+    }
+
+    // Austausch erfolgreich -> altes Ziel endgültig entfernen
+    const QFileInfo backupInfo(backupPath);
+    bool removed = false;
+    if (backupInfo.isDir() && !backupInfo.isSymbolicLink() && !backupInfo.isJunction()) {
+        removed = QDir(backupPath).removeRecursively();
+    } else {
+        removeReadOnlyAttribute(backupPath);
+        removed = QFile::remove(backupPath);
+    }
+
+    if (!removed) {
+        m_stats.filesError++;
+        m_failedItems.append({backupPath, target, m_operationType, tr("Could not remove backup of replaced target")});
+    }
+    return true;
 }
 
 QString FileOperation::generateUniqueCopyName(const QFileInfo &srcInfo, const QString &targetDir) {

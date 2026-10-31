@@ -20,15 +20,31 @@ int main(int argc, char *argv[]) {
     }
 
     QString memoryKey = argv[1];
-    int expectedSize = QString(argv[2]).toInt();
+    bool sizeOk = false;
+    const qsizetype expectedSize = QString(argv[2]).toLongLong(&sizeOk);
+    if (!sizeOk || expectedSize <= 0) {
+        qDebug() << "[mkTransactionHandler] Error: Invalid data size argument:" << argv[2];
+        return -2;
+    }
     QByteArray jsonData;
 
     QSharedMemory sharedMemory(memoryKey);
-    if (sharedMemory.attach()) {
-        sharedMemory.lock();
-        
+    if (sharedMemory.attach(QSharedMemory::ReadOnly)) {
+        // Niemals über das Segment hinaus lesen: Die Größe aus argv ist nicht vertrauenswürdig
+        if (expectedSize > sharedMemory.size()) {
+            qDebug() << "[mkTransactionHandler] Error: Data size" << expectedSize << "exceeds shared memory size" << sharedMemory.size();
+            sharedMemory.detach();
+            return -2;
+        }
+
+        if (!sharedMemory.lock()) {
+            qDebug() << "[mkTransactionHandler] Error while locking shared memory:" << sharedMemory.errorString();
+            sharedMemory.detach();
+            return -2;
+        }
+
         jsonData = QByteArray(static_cast<const char*>(sharedMemory.constData()), expectedSize);
-        
+
         sharedMemory.unlock();
         sharedMemory.detach();
     } else {
