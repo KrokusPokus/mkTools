@@ -98,6 +98,7 @@ private:
     void updateWidgetStyles();
     QPixmap generateThumbnailIcon(const QFileInfo &fileInfo);
     static QImage generateThumbnailAsync(const QFileInfo &fileInfo);
+    void setVisibilityBasedOnPath(const QString &path);
 
     CustomTableModel *m_abstractModel = nullptr;
     QItemSelectionModel *m_selectionModel = nullptr;

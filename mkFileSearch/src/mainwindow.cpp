@@ -566,7 +566,7 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     connect(m_abstractModel, &CustomTableModel::searchProgress, this, &MainWindow::onSearchProgress);
     connect(m_abstractModel, &CustomTableModel::searchFinished, this, &MainWindow::onSearchFinished);
 
-    qDebug() << "Unterstützte Formate:" << QImageReader::supportedImageFormats();
+    //qDebug() << "Unterstützte Formate:" << QImageReader::supportedImageFormats();
 }
 
 MainWindow::~MainWindow() = default;

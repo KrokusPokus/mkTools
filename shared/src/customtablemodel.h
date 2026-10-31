@@ -254,6 +254,8 @@ public:
     bool isDirectory(int row) const;
     void removeFilePaths(const QSet<QString> &paths);
 
+    void setShowFileExtensions(bool showFileExtensions) { m_settings->showFileExtensions = showFileExtensions; };
+
     const QString &currentDirectoryPath() const { return m_currentDirectoryPath; }
 
     void setModelViewMode(ViewMode nIndex) {

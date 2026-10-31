@@ -304,10 +304,10 @@ bool CustomListView::interceptInvalidFileTarget(QDragMoveEvent *event, bool isEn
 
             // 3. Trick anwenden: Fake-Event mit (-1, -1) an die korrekte Basis-Funktion senden
             if (isEnterEvent) {
-                QDragEnterEvent fakeEvent(QPoint(-1, -1), event->possibleActions(), event->mimeData(), event->buttons(), event->modifiers());
+                QDragEnterEvent fakeEvent(QPointF(-1, -1), event->possibleActions(), event->mimeData(), event->buttons(), event->modifiers());
                 QAbstractItemView::dragEnterEvent(&fakeEvent);
             } else {
-                QDragMoveEvent fakeEvent(QPoint(-1, -1), event->possibleActions(), event->mimeData(), event->buttons(), event->modifiers());
+                QDragMoveEvent fakeEvent(QPointF(-1, -1), event->possibleActions(), event->mimeData(), event->buttons(), event->modifiers());
                 QAbstractItemView::dragMoveEvent(&fakeEvent);
             }
 

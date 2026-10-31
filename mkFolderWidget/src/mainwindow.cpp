@@ -582,8 +582,9 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
         }
     });
 
-    //qDebug() << "Unterstützte Formate:" << QImageReader::supportedImageFormats();
+    //qDebug() << "QImageReader::supportedImageFormats() " << QImageReader::supportedImageFormats();
 
+    setVisibilityBasedOnPath(targetDirectory);
     browseFolder(targetDirectory, focusPath);
 }
 
@@ -2646,6 +2647,29 @@ void MainWindow::updateWidgetStyles() {
 
 }
 
+void MainWindow::setVisibilityBasedOnPath(const QString &path) {
+    if (path.isEmpty()) return;
+
+#if defined(Q_OS_LINUX)
+    bool isHiddenPath = false;
+
+    // Pfad in seine Einzelteile zerlegen (ignoriert doppelte Slashes)
+    QDir dir(path);
+    QStringList pathComponents = dir.absolutePath().split('/', Qt::SkipEmptyParts);
+
+    for (const QString &component : std::as_const(pathComponents)) {
+        if (component.startsWith('.') && component != "." && component != "..") {
+            isHiddenPath = true;
+            break;
+        }
+    }
+
+    m_bShowHiddenFiles = isHiddenPath;
+    m_proxyModel->setShowHiddenFiles(m_bShowHiddenFiles);
+    m_abstractModel->setShowFileExtensions(m_bShowHiddenFiles);
+#endif
+}
+
 //######################################################################################
 // Functions to receive data from other applications
 
@@ -2655,8 +2679,9 @@ void MainWindow::updateWidgetStyles() {
 void MainWindow::openPath(const QString &path) {
     if (path.isEmpty()) return;
 
-    QDir targetDir(path);
-    if (targetDir.exists()) {
+    QDir targetDirectory(path);
+    if (targetDirectory.exists()) {
+        setVisibilityBasedOnPath(path);
         browseFolder(path);
     }
 }
