@@ -970,6 +970,12 @@ namespace Helpers {
     }
 
     uint getContentMatchCount(const QFileInfo &fileInfo, const QString &searchStringContent, Qt::CaseSensitivity caseSensitivity, const QSet<QString> &FileExtTextSet) {
+        // Nur reguläre Dateien lesen: FIFOs, Sockets und Gerätedateien (von QDir::System mitgelistet)
+        // würden QFile::open() bzw. read() dauerhaft blockieren und damit die ganze GUI einfrieren.
+        // isFile() ist auch für Symlinks auf reguläre Dateien true.
+        if (!fileInfo.isFile()) {
+            return 0;
+        }
         //if (!isTextFile(fileInfo.filePath())) {   // much, MUCH slower...
 
         QString sFileExt = fileInfo.suffix().toLower(); // since contains() is CaseSensitive by default
@@ -1007,6 +1013,12 @@ namespace Helpers {
     }
 
     uint getRegExContentMatchCount(const QFileInfo &fileInfo, const QRegularExpression &re, const QSet<QString> &FileExtTextSet) {
+        // Nur reguläre Dateien lesen: FIFOs, Sockets und Gerätedateien (von QDir::System mitgelistet)
+        // würden QFile::open() bzw. read() dauerhaft blockieren und damit die ganze GUI einfrieren.
+        // isFile() ist auch für Symlinks auf reguläre Dateien true.
+        if (!fileInfo.isFile()) {
+            return 0;
+        }
         //if (!isTextFile(fileInfo.filePath())) {   // much, MUCH slower...
 
         QString sFileExt = fileInfo.suffix().toLower(); // since contains() is CaseSensitive by default

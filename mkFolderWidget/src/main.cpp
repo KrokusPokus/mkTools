@@ -56,7 +56,6 @@ int main(int argc, char *argv[])
     QCommandLineOption yOpt("Y", "y-position of window", "PosY");
     QCommandLineOption wOpt("W", "window width", "WinW");
     QCommandLineOption hOpt("H", "window height", "WinH");
-    QCommandLineOption pOpt("p", "target directory", "sPathDir");
     QCommandLineOption fOpt("f", "filepath to focus", "sPathFocus");
 
     parser.addOptions({xOpt, yOpt, wOpt, hOpt, fOpt});

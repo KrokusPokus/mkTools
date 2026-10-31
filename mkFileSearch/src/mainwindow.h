@@ -9,6 +9,7 @@
 #include "settingsmanager.h"
 
 #include <QCheckBox>
+#include <QCloseEvent>
 #include <QElapsedTimer>
 #include <QFileIconProvider>
 #include <QItemSelectionModel>
@@ -186,6 +187,7 @@ private:
 
 protected:
     void changeEvent(QEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
     bool eventFilter(QObject *watched, QEvent *event) override;
 };
 #endif // MAINWINDOW_H

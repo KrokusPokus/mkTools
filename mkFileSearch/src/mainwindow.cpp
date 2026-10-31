@@ -836,6 +836,15 @@ void MainWindow::onSearchProgress(uint iItemsFound, uint iNameMatched, uint iCon
     setWindowTitle(newTitle);
 }
 
+// Die Suche läuft synchron im GUI-Thread (mit processEvents()). Ohne Abbruch würde sie nach dem
+// Schließen des Fensters unsichtbar weiterlaufen, bis sie fertig ist, und den Prozess so lange am Leben halten.
+void MainWindow::closeEvent(QCloseEvent *event) {
+    if (m_bSearchActive.load() && m_abstractModel) {
+        m_abstractModel->abort();
+    }
+    QMainWindow::closeEvent(event);
+}
+
 void MainWindow::onSearchFinished(uint iItemsFound, uint iNameMatched, uint iContentMatched, bool bSearchInterrupted) {
     qDebug() << "finalizeUI() entry point. m_BenchmarkTimer:" << m_BenchmarkTimer.elapsed() << " ms elapsed since start of search.  bSearchInterrupted =" << bSearchInterrupted;
 
