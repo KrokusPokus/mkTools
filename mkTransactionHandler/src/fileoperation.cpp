@@ -10,6 +10,12 @@
 
 #include <zlib.h>
 
+#ifndef Q_OS_WIN
+#include <cerrno>
+#include <sys/stat.h> // stat(), mkfifo(), S_ISFIFO ...
+#include <cstdio>     // ::rename()
+#endif
+
 #ifdef Q_OS_WIN
 #include <qt_windows.h>
 #elif defined(Q_OS_LINUX)
@@ -34,6 +40,25 @@
 #endif
 
 namespace {
+
+// Sonderdateien (nur Unix): FIFO, Socket, Zeichen- oder Blockgerät. Sie melden alle die Größe 0 und dürfen
+// NIEMALS wie eine Datei gelesen werden: open() einer FIFO blockiert für immer, ein Gerät wie "zero" liefert
+// endlos Daten (Zieldatei wächst bis die Platte voll ist).
+enum class SpecialFileKind { None, Fifo, Other };
+
+SpecialFileKind specialFileKind(const QString &path, unsigned int *permissions = nullptr) {
+#ifdef Q_OS_WIN
+    Q_UNUSED(path);
+    Q_UNUSED(permissions);
+    return SpecialFileKind::None;
+#else
+    struct stat st;
+    if (::stat(QFile::encodeName(path).constData(), &st) != 0) return SpecialFileKind::None;
+    if (S_ISREG(st.st_mode) || S_ISDIR(st.st_mode)) return SpecialFileKind::None;
+    if (permissions) *permissions = st.st_mode & 07777;
+    return S_ISFIFO(st.st_mode) ? SpecialFileKind::Fifo : SpecialFileKind::Other;
+#endif
+}
 
 // Liefert true, wenn 'path' (muss nicht existieren) gleich 'dir' ist oder irgendwo darunter liegt.
 // Läuft dazu von 'path' aufwärts und vergleicht jeden existierenden Vorfahren per Helpers::isSameFile().
@@ -350,6 +375,21 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
 
     qint64 fileSizeSource = isSymlinkSource ? 0 : srcInfo.size(); // Symlinks verbrauchen keinen Platz im globalen Byte-Zähler
 
+    // Sonderdateien erkennen (Symlinks selbst sind keine - sie werden als Link behandelt)
+    unsigned int specialPermissions = 0;
+    const SpecialFileKind specialKind = isSymlinkSource ? SpecialFileKind::None : specialFileKind(src, &specialPermissions);
+    const bool isSpecialSource = (specialKind != SpecialFileKind::None);
+    const bool canMoveSpecialByRename = isMove && !isCrossDevice;
+
+    // Geräte und Sockets lassen sich nicht sinnvoll kopieren (Gerät neu anlegen nur als root, ein Socket ist ohne
+    // seinen Prozess wertlos). Nur ein Verschieben per Umbenennen auf demselben Laufwerk ist möglich.
+    if (specialKind == SpecialFileKind::Other && !canMoveSpecialByRename) {
+        m_stats.filesError++;
+        updateProgress();
+        m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("Special file (device or socket) cannot be copied, skipped")});
+        return FileOpResult::Error;
+    }
+
     // SCHUTZ: Quelle und Ziel sind physisch dieselbe Datei (z.B. über Symlink-Pfad, Bind-Mount,
     // Groß-/Kleinschreibung oder ein Quell-Symlink, der auf das Ziel zeigt).
     // Ohne diesen Schutz würde der Vergleich "identisch" ergeben und bei Move die einzige Kopie gelöscht,
@@ -391,7 +431,10 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
             }
         }
         else {
-            if (!isSymlinkSource && !isSymlinkTarget) {
+            // Abkürzung "beide 0 Byte" und Inhaltsvergleich NUR, wenn beide Seiten reguläre Dateien sind:
+            // Sonderdateien melden immer 0 Byte (sind aber nicht "identisch"), und ein Vergleich würde eine
+            // FIFO am Ziel öffnen und damit für immer blockieren. Sonst -> normaler Konfliktdialog.
+            if (!isSymlinkSource && !isSymlinkTarget && srcInfo.isFile() && dstInfo.isFile() && !isSpecialSource) {
                 qint64 fileSizeTarget = dstInfo.size();
 
                 if (fileSizeSource == 0 && fileSizeTarget == 0) {
@@ -486,7 +529,32 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
     bool ok = false;
     bool movedViaRename = false;
 
-    if (isMove && !isCrossDevice) {
+    QString failReason;
+
+    if (isSpecialSource) {
+#ifndef Q_OS_WIN
+        // Sonderdatei: niemals über QFile::rename (fällt bei EXDEV still auf Kopieren = Lesen zurück)
+        // und niemals über copyFileInChunks.
+        if (canMoveSpecialByRename && !replaceExisting) {
+            ok = (::rename(QFile::encodeName(src).constData(), QFile::encodeName(dst).constData()) == 0);
+            movedViaRename = ok;
+        }
+
+        if (!ok && specialKind == SpecialFileKind::Fifo) {
+            // FIFO am Ziel mit denselben Rechten neu anlegen (wie "cp -a"); bei Überschreiben erst daneben
+            const QString writePath = replaceExisting ? uniqueSiblingPath(dst, QStringLiteral(".mkpart")) : dst;
+            ok = (::mkfifo(QFile::encodeName(writePath).constData(), static_cast<mode_t>(specialPermissions)) == 0);
+            if (!ok) {
+                failReason = tr("Could not create FIFO at target");
+            } else if (replaceExisting && !swapIntoPlace(writePath, dst)) {
+                QFile::remove(writePath);
+                ok = false;
+            }
+        } else if (!ok) {
+            failReason = tr("Special file (device or socket) cannot be copied, skipped");
+        }
+#endif
+    } else if (isMove && !isCrossDevice) {
         // Verschieben auf demselben Laufwerk durch einfaches Umbenennen
         // (bei Überschreiben: altes Ziel wird erst nach erfolgreichem Umbenennen entfernt)
         ok = replaceExisting ? swapIntoPlace(src, dst) : QFile::rename(src, dst);
@@ -495,7 +563,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
         }
     }
 
-    if (!ok) { // OperationType::Copy ODER Cross-Device Move ODER forceCopyOnly ODER Fallback, falls Umbenennen fehlschlug
+    if (!ok && !isSpecialSource) { // OperationType::Copy ODER Cross-Device Move ODER forceCopyOnly ODER Fallback, falls Umbenennen fehlschlug
         // Beim Überschreiben zuerst in eine temporäre Datei neben dem Ziel schreiben.
         // Schlägt das Kopieren fehl (Platte voll, Lesefehler, Abbruch), bleibt das alte Ziel unangetastet.
         const QString writePath = replaceExisting ? uniqueSiblingPath(dst, QStringLiteral(".mkpart")) : dst;
@@ -530,7 +598,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
     if (ok && !sourceDeleteFailed) {
         // Hinweis: copyFileInChunks erhöht filesWritten/bytesWritten bereits intern!
         // Wir erhöhen hier nur, wenn es via rename() oder link() ging.
-        if (movedViaRename || isSymlinkSource) {
+        if (movedViaRename || isSymlinkSource || isSpecialSource) {
             m_stats.bytesWritten += fileSizeSource;
             m_stats.filesWritten++;
         }
@@ -540,7 +608,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
         updateProgress();
 
         if (!ok) {
-            m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("CopyOrMove failed")});
+            m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, failReason.isEmpty() ? tr("CopyOrMove failed") : failReason});
         }
 
         if (sourceDeleteFailed) {

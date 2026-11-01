@@ -237,122 +237,133 @@
 <context>
     <name>FileOperation</name>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="123"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="149"/>
         <source>Scanning files...</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="185"/>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="711"/>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="1350"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="211"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="780"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="1440"/>
         <source>Symlink target does not exist</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="202"/>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="727"/>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="1365"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="228"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="796"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="1455"/>
         <source>Could not remove source symlink after move</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="235"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="261"/>
         <source>moveToTrash() failed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="249"/>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="793"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="275"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="862"/>
         <source>File deletion failed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="281"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="307"/>
         <source>Link creation failed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="406"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="450"/>
         <source>Source deletion during move failed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="447"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="491"/>
         <source>CRC-Twin source deletion during move failed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="360"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="401"/>
         <source>Source and target are the same file</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="425"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="389"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="554"/>
+        <source>Special file (device or socket) cannot be copied, skipped</source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="469"/>
         <source>Content comparison of source and target failed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="542"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="548"/>
+        <source>Could not create FIFO at target</source>
+        <translation></translation>
+    </message>
+    <message>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="611"/>
         <source>CopyOrMove failed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="546"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="615"/>
         <source>Source deletion after successful move failed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="570"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="639"/>
         <source>Cannot copy or move a folder into itself</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="582"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="651"/>
         <source>Symlink loop detected, folder skipped</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="638"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="707"/>
         <source>Failed to remove blocking file for directory creation</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="646"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="715"/>
         <source>Failed to create directory</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="682"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="751"/>
         <source>Failed to create target directory</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="811"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="880"/>
         <source>Empty folder deletion failed</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="879"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="948"/>
         <source>Could not restore original target from backup</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="896"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="965"/>
         <source>Could not remove backup of replaced target</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="911"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="980"/>
         <source> (Copy)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="911"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="980"/>
         <source> (Copy %1)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="1303"/>
+        <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="1393"/>
         <source>Scanning files for retry...</source>
         <translation></translation>
     </message>
@@ -741,7 +752,7 @@ Do you have sufficient rights?</source>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="540"/>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2294"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="321"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2219"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2228"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="257"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2312"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="297"/>
@@ -950,17 +961,17 @@ Do you have sufficient rights?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="871"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="880"/>
         <source>Search aborted...</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="873"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="882"/>
         <source>%1 (%2 hits in %3 items)</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="875"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="884"/>
         <source>%1 (%2 matches spread across %3 files of %4 searched)</source>
         <translation></translation>
     </message>
@@ -1124,7 +1135,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="1031"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="948"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="957"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="940"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="673"/>
         <source>View</source>
@@ -1132,7 +1143,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="1052"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="969"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="978"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="965"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="696"/>
         <source>Sort by</source>
@@ -1140,7 +1151,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="1103"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1020"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1029"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1073"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="747"/>
         <source>Send to</source>
@@ -1148,7 +1159,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="1210"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1127"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1136"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1180"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="854"/>
         <source>Open with</source>
@@ -1157,8 +1168,8 @@ Do you have sufficient rights?</source>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2211"/>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2221"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2136"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2146"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2145"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2155"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2229"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2239"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2032"/>
@@ -1168,7 +1179,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2212"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2137"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2146"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2230"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2033"/>
         <source>Do you really want to move this file into the recycle bin?</source>
@@ -1177,8 +1188,8 @@ Do you have sufficient rights?</source>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2214"/>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2224"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2139"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2149"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2148"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2158"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2232"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2242"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2035"/>
@@ -1188,7 +1199,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2215"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2140"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2149"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2233"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2036"/>
         <source>Do you really want to move these %1 files into the recycle bin?</source>
@@ -1196,7 +1207,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2219"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2144"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2153"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2237"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2040"/>
         <source>This process cannot be undone.</source>
@@ -1204,7 +1215,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2222"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2147"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2156"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2240"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2043"/>
         <source>Are you sure you want to delete this file permanently?</source>
@@ -1212,7 +1223,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2225"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2150"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2159"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2243"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2046"/>
         <source>Are you sure you want to delete these %1 files permanently?</source>
@@ -1220,7 +1231,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2281"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2206"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2215"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2299"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2102"/>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="166"/>
@@ -1229,7 +1240,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2283"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2208"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2217"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2301"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2104"/>
         <source>Size:</source>
@@ -1237,7 +1248,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2285"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2210"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2219"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2303"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2106"/>
         <source>Date:</source>
@@ -1245,7 +1256,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2295"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2220"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2229"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2313"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="2116"/>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="250"/>
@@ -1378,7 +1389,7 @@ Do you have sufficient rights?</source>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="1240"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1157"/>
+        <location filename="../mkFileSearch/src/mainwindow.cpp" line="1166"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="1210"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="884"/>
         <source>Other Application...</source>
