@@ -22,6 +22,8 @@
 
 #include <zlib.h>
 
+#include <algorithm>
+
 #ifndef Q_OS_WIN
 #include <sys/stat.h>
 #endif
@@ -1016,29 +1018,49 @@ namespace Helpers {
     }
 
 
+    // Baut aus einer Argumentliste eine Windows-Kommandozeile, die CommandLineToArgvW bzw. die C-Laufzeit
+    // des gestarteten Programms wieder exakt in dieselbe Liste zerlegt. Microsoft-Regeln:
+    //  - n Backslashes direkt vor einem "  -> 2n+1 Backslashes + \"
+    //  - n Backslashes am Argumentende     -> 2n Backslashes (sonst würde das schließende " maskiert)
+    //  - Backslashes an anderer Stelle bleiben unverändert (C:\Pfad\Datei braucht keine Verdopplung)
+    // Ein Argument wird nur in Anführungszeichen gesetzt, wenn es leer ist oder Leerraum bzw. " enthält.
     QString argumentsToWinString(const QStringList &args) {
         QStringList escapedArgs;
 
-        for (QString arg : args) {
-            // Falls das Argument Leerzeichen enthält oder leer ist, müssen wir es quoten
-            if (arg.contains(' ') || arg.contains('\t') || arg.isEmpty()) {
+        for (const QString &arg : args) {
+            const bool needsQuotes = arg.isEmpty()
+                || std::any_of(arg.cbegin(), arg.cend(), [](QChar c) {
+                       return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '"';
+                   });
 
-                // Fiese Windows-Falle: Wenn das Argument auf einen Backslash endet,
-                // würde das abschließende " durch den Backslash maskiert werden.
-                // Lösung: Den letzten Backslash verdoppeln!
-                if (arg.endsWith('\\')) {
-                    arg += '\\';
-                }
-
-                // In Anführungszeichen packen
-                escapedArgs << QString("\"%1\"").arg(arg);
-            } else {
-                // Keine Leerzeichen? Einfach so übernehmen
+            if (!needsQuotes) {
                 escapedArgs << arg;
+                continue;
             }
+
+            QString quoted = QStringLiteral("\"");
+            qsizetype backslashes = 0;
+
+            for (const QChar c : arg) {
+                if (c == '\\') {
+                    ++backslashes;
+                    continue;
+                }
+                if (c == '"') {
+                    quoted += QString(backslashes * 2 + 1, '\\');
+                    quoted += '"';
+                } else {
+                    quoted += QString(backslashes, '\\');
+                    quoted += c;
+                }
+                backslashes = 0;
+            }
+
+            quoted += QString(backslashes * 2, '\\'); // Backslashes vor dem schließenden "
+            quoted += '"';
+            escapedArgs << quoted;
         }
 
-        // Alle Argumente mit einem Leerzeichen dazwischen zusammenfügen
         return escapedArgs.join(' ');
     }
 #endif
