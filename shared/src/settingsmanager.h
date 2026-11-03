@@ -36,6 +36,7 @@ public:
     bool showIconsInMenu;
 	bool showPlaceholderText;
     bool showShortcutsInMenu;
+    bool allowLauncherShrink;
     bool showFileExtensions;
     int fontSizeOverride;
     QString fontNameOverride;
@@ -78,6 +79,7 @@ private:
     bool DEFAULT_SHOW_ICONS_IN_MENU;
     bool DEFAULT_SHOW_PLACEHOLDER_TEXT;
     bool DEFAULT_SHOW_SHORTCUTS_IN_MENU;
+    bool DEFAULT_ALLOW_LAUNCHER_SHRINK;
     bool DEFAULT_SHOW_FILE_EXTENSIONS;
     int DEFAULT_FONT_SIZE_OVERRIDE;
     QString DEFAULT_FONT_NAME_OVERRIDE;

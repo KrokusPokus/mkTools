@@ -46,6 +46,7 @@ void SettingsManager::load() {
     showIconsInMenu      = s.value("Interface/ShowIconsInMenu", DEFAULT_SHOW_ICONS_IN_MENU).toBool();
     showPlaceholderText  = s.value("Interface/ShowPlaceholderText", DEFAULT_SHOW_PLACEHOLDER_TEXT).toBool();
     showShortcutsInMenu  = s.value("Interface/ShowShortcutsInMenu", DEFAULT_SHOW_SHORTCUTS_IN_MENU).toBool();
+    allowLauncherShrink  = s.value("Interface/AllowLauncherShrink", DEFAULT_ALLOW_LAUNCHER_SHRINK).toBool();
 
     // mkLauncher specific
     searchFolders = importSearchFolders(s.value("mkLauncher/UserFolders", DEFAULT_SEARCH_FOLDERS).toString());
@@ -81,6 +82,7 @@ void SettingsManager::getDefaults() {
     DEFAULT_SHOW_ICONS_IN_MENU = true;
     DEFAULT_SHOW_PLACEHOLDER_TEXT = true;
     DEFAULT_SHOW_SHORTCUTS_IN_MENU = true;
+    DEFAULT_ALLOW_LAUNCHER_SHRINK = true;
 
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
@@ -108,6 +110,7 @@ void SettingsManager::getDefaults() {
     DEFAULT_SHOW_ICONS_IN_MENU = false;
     DEFAULT_SHOW_PLACEHOLDER_TEXT = true;
     DEFAULT_SHOW_SHORTCUTS_IN_MENU = false;
+    DEFAULT_ALLOW_LAUNCHER_SHRINK = true;
 
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
@@ -154,6 +157,7 @@ void SettingsManager::saveSettings() {
     safeSetValue(s, "Interface/ShowPlaceholderText", showPlaceholderText);
     safeSetValue(s, "Interface/ShowIconsInMenu", showIconsInMenu);
     safeSetValue(s, "Interface/ShowShortcutsInMenu", showShortcutsInMenu);
+    safeSetValue(s, "Interface/AllowLauncherShrink", allowLauncherShrink);
     safeSetValue(s, "Interface/ShowFileExtensions", showFileExtensions);
 
     // mkLauncher specific
@@ -189,7 +193,7 @@ QSet<QString> SettingsManager::parseExtensions(const QString &input) {
 }
 
 QString SettingsManager::getSettingsPath() {
-    QString iniFilePath = QDir(QCoreApplication::applicationDirPath()).filePath("/settings.ini");
+    QString iniFilePath = QDir(QCoreApplication::applicationDirPath()).filePath("settings.ini");
     if (!QFile::exists(iniFilePath)) {
         QString toolsDirPath = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)).filePath("mkTools");
         if (!QDir(toolsDirPath).exists()) {

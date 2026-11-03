@@ -240,9 +240,10 @@ MainWindow::MainWindow(QWidget *parent)
     m_viewStack->setCurrentIndex(1);
     m_abstractModel->setModelViewMode(ViewMode::Detail);
 
-    /* Todo: Reenable after bug gets fixed -- https://bugs.kde.org/show_bug.cgi?id=527602
-    m_viewStack->hide();
-    */
+    if (m_settings.allowLauncherShrink) {
+        m_viewStack->hide();
+    }
+
     m_mainLayout->activate();
 
     // --------------------------------------------------------------------
@@ -515,13 +516,16 @@ void MainWindow::startSearch() {
 
     if (InputBox1Text.trimmed().isEmpty()) {
         m_abstractModel->clear();
-        /* Todo: Reenable after bug gets fixed -- https://bugs.kde.org/show_bug.cgi?id=527602
-        if (!m_viewStack->isHidden()) {
-        m_viewStack->hide();
-        m_mainLayout->activate();
-        this->adjustSize();
-        this->resize(this->width(), this->layout()->minimumSize().height());
-        */
+
+        if (m_settings.allowLauncherShrink) {
+            if (!m_viewStack->isHidden()) {
+                m_viewStack->hide();
+                m_mainLayout->activate();
+                this->adjustSize();
+                this->resize(this->width(), this->layout()->minimumSize().height());
+            }
+        }
+
         m_bSearchActive.store(false);
         return;
     }
@@ -557,14 +561,16 @@ void MainWindow::onSearchFinished(uint iItemsFound, uint iNameMatched, uint iCon
 
     if (iNameMatched == 0) {
         m_abstractModel->clear();
-        /* Todo: Reenable after bug gets fixed -- https://bugs.kde.org/show_bug.cgi?id=527602
-        if (!m_viewStack->isHidden()) {
-            m_viewStack->hide();
-            m_mainLayout->activate();
-            this->adjustSize();
-            this->resize(this->width(), this->layout()->minimumSize().height());
+
+        if (m_settings.allowLauncherShrink) {
+            if (!m_viewStack->isHidden()) {
+                m_viewStack->hide();
+                m_mainLayout->activate();
+                this->adjustSize();
+                this->resize(this->width(), this->layout()->minimumSize().height());
+            }
         }
-        */
+
         m_bSearchActive.store(false);
         return;
     } else {

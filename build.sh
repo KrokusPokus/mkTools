@@ -11,7 +11,12 @@ cmake --build . --parallel
 if [ ! -d "$HOME/.local/bin" ]; then
 	mkdir "$HOME/.local/bin"
 fi
-	
+
+if [ -f "./bin/mkBatchRename" ]; then
+    strip ./bin/mkBatchRename
+    cp ./bin/mkBatchRename $HOME/.local/bin/
+fi
+
 if [ -f "./bin/mkFileSearch" ]; then
     strip ./bin/mkFileSearch
     cp ./bin/mkFileSearch $HOME/.local/bin/
