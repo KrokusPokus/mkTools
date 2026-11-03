@@ -10,6 +10,7 @@
 #include <QRegularExpression>
 #include <QStandardPaths>
 #include <QStorageInfo>
+#include <QStyle>
 
 #include <algorithm>        // needed for std::reverse();
 
@@ -133,6 +134,16 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
             }
         }
         else {
+            // SymLinks haben Vorrang vor Datei/Ordner und vor individuellen Icons:
+            // ein festes Icon, einmalig erzeugt und im allgemeinen Cache abgelegt.
+            if (file.isSymbolicLink) {
+                auto it = m_iconCache.find("//symlink//");
+                if (it == m_iconCache.end()) {
+                    it = m_iconCache.insert("//symlink//", symlinkIcon());
+                }
+                return it.value();
+            }
+
             auto itPath = m_individualIconCache.find(absolutePath);
             if (itPath != m_individualIconCache.end()) {
                 return itPath.value().icon;
@@ -413,6 +424,17 @@ QString CustomTableModel::filePath(const QModelIndex &index) const {
     {
         return file.filePath;
     }
+}
+
+// Festes Icon für SymLinks (Dateien und Ordner gleichermaßen).
+// Einzige Stelle, an der die Icon-Quelle festgelegt wird.
+QIcon CustomTableModel::symlinkIcon() {
+    // PROVISORISCH: Theme-Emblem (Linux), Fallback auf das Qt-Style-Icon (u.a. Windows).
+    QIcon icon = QIcon::fromTheme("emblem-symbolic-link");
+    if (icon.isNull()) {
+        icon = QApplication::style()->standardIcon(QStyle::SP_FileLinkIcon);
+    }
+    return icon;
 }
 
 bool CustomTableModel::isPathIconUpToDate(const QString &path, const QDateTime &currentDate) const {

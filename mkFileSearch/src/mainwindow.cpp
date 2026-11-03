@@ -1945,6 +1945,11 @@ void MainWindow::onTimedUpdateIcons() {
             }
         }
         else {
+            // SymLinks bekommen ein festes Icon direkt aus dem allgemeinen Cache des Modells
+            if (fileInfo.isSymbolicLink()) {
+                continue;
+            }
+
             // Prüfen, ob das Icon im Cache existiert UND noch aktuell ist
             if (m_abstractModel->isPathIconUpToDate(fullPath, fileInfo.lastModified())) {
                 continue;

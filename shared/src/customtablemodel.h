@@ -274,6 +274,7 @@ private:
     bool renameFileInternal(int row, const QString &rawNewName);
     void applyRenamedFileInfo(int row, const QString &newName, const QString &newPath);
     QPixmap generateDummyThumb(const QString &dummyName) const;
+    static QIcon symlinkIcon();
     CustomFileInfo createCustomFileInfo(const QFileInfo &fileInfo, int anchorPathLength = 0) const;
 
     std::vector<CustomFileInfo> m_files;
