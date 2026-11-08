@@ -43,6 +43,9 @@ public:
 
     void saveHistory();
     QStringList searchFolders;
+
+    // mkTransactionHandler specific
+    bool useKdeFileOperations;
     QStringList recentOpenList;
     QStringList recentInputList;
 
@@ -84,6 +87,7 @@ private:
     int DEFAULT_FONT_SIZE_OVERRIDE;
     QString DEFAULT_FONT_NAME_OVERRIDE;
     QString DEFAULT_SEARCH_FOLDERS;
+    bool DEFAULT_USE_KDE_FILE_OPERATIONS;
 };
 
 #endif // SETTINGSMANAGER_H

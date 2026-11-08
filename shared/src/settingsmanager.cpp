@@ -51,6 +51,9 @@ void SettingsManager::load() {
     // mkLauncher specific
     searchFolders = importSearchFolders(s.value("mkLauncher/UserFolders", DEFAULT_SEARCH_FOLDERS).toString());
 
+    // mkTransactionHandler specific
+    useKdeFileOperations = s.value("mkTransactionHandler/UseKdeFileOperations", DEFAULT_USE_KDE_FILE_OPERATIONS).toBool();
+
     QSettings h(getHistoryPath(), QSettings::IniFormat);
     recentInputList = h.value("History/InputList").toStringList();
     recentOpenList = h.value("History/OpenList").toStringList();
@@ -123,6 +126,10 @@ void SettingsManager::getDefaults() {
     searchPaths << "%PUBLIC%/Desktop";    // "C:/Users/Public/Desktop"
 #endif
 
+    // Linux: Kopieren/Verschieben/Löschen komplett an KIO abgeben (KDE-Dialoge und Plasma-Fortschrittsanzeige)
+    // Windows: wird ignoriert
+    DEFAULT_USE_KDE_FILE_OPERATIONS = true;
+
     // Die Liste mit dem Pipe-Symbol | zusammenfügen
     DEFAULT_SEARCH_FOLDERS = searchPaths.join("|");
 }
@@ -162,6 +169,9 @@ void SettingsManager::saveSettings() {
 
     // mkLauncher specific
     //safeSetValue(s, "mkLauncher/UserFolders", exportSearchFolders(searchFolders));    // searchFolders contains the expanded paths. Since we don't change this value in the gui, no reason to overwrite it in the ini file.
+
+    // mkTransactionHandler specific
+    safeSetValue(s, "mkTransactionHandler/UseKdeFileOperations", useKdeFileOperations);
 
     // Because we used safeSetValue(), the file will only get written if there were changes in values.
 	s.sync();

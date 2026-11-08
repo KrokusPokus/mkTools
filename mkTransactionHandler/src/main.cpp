@@ -11,6 +11,62 @@
 #include <QTranslator>
 #include <QUrl>
 
+#if defined(Q_OS_LINUX)
+#include <KIO/CopyJob>
+#include <KIO/DeleteJob>
+#include <KIO/JobUiDelegateFactory>
+#include <QTimer>
+
+// Überlässt die gesamte Operation KIO (Setting "mkTransactionHandler/UseKdeFileOperations"):
+// Konfliktdialoge, Fehlermeldungen und die Fortschrittsanzeige im Plasma-Benachrichtigungsbereich kommen dann von KDE.
+// Der Job läuft im GUI-Thread, da KIOs Dialoge Widgets sind (KIO-Jobs sind ohnehin asynchron).
+static int runKdeFileOperation(QApplication &app, OperationType opType, const QList<QUrl> &urls, const QString &targetDir) {
+    // Ohne desktopFileName verwirft KUiServerV2JobTracker den Job stillschweigend -> keine Anzeige in Plasma
+    QGuiApplication::setDesktopFileName(QStringLiteral("mkTransactionHandler"));
+
+    const QUrl destUrl = QUrl::fromLocalFile(targetDir);
+    KJob *job = nullptr;
+
+    switch (opType) {
+    case OperationType::Copy:    job = KIO::copy(urls, destUrl); break;
+    case OperationType::Move:    job = KIO::move(urls, destUrl); break;
+    case OperationType::Link:    job = KIO::link(urls, destUrl); break;
+    case OperationType::Recycle: job = KIO::trash(urls); break; // Bestätigung erfolgte bereits in mkFolderWidget
+    case OperationType::Delete:  job = KIO::del(urls); break;   // dto.
+    }
+
+    if (!job) {
+        qDebug() << "[mkTransactionHandler] Error: Unsupported operation type for KIO:" << static_cast<int>(opType);
+        return -4;
+    }
+
+    // Schließen eines Konfliktdialogs darf das Programm nicht beenden, solange der Job noch läuft
+    app.setQuitOnLastWindowClosed(false);
+    job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
+
+    int exitCode = 0;
+    QObject::connect(job, &KJob::result, &app, [&app, &exitCode](KJob *finishedJob) {
+        exitCode = (finishedJob->error() && finishedJob->error() != KJob::KilledJobError) ? 1 : 0;
+
+        // KIO zeigt Fehlermeldungen zeitversetzt (queued) in eigenen Dialogen an.
+        // Erst beenden, wenn kein Fenster mehr sichtbar ist, sonst verschwänden sie ungelesen.
+        auto *waitForDialogs = new QTimer(&app);
+        QObject::connect(waitForDialogs, &QTimer::timeout, &app, [&app, waitForDialogs]() {
+            const QWidgetList widgets = QApplication::topLevelWidgets();
+            for (const QWidget *widget : widgets) {
+                if (widget->isVisible()) return;
+            }
+            waitForDialogs->stop();
+            app.quit();
+        });
+        waitForDialogs->start(200);
+    });
+
+    app.exec();
+    return exitCode;
+}
+#endif
+
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
@@ -99,6 +155,12 @@ int main(int argc, char *argv[]) {
     }
 
     //-----------------------------------------------------------------------------------------
+
+#if defined(Q_OS_LINUX)
+    if (m_settings.useKdeFileOperations) {
+        return runKdeFileOperation(app, opType, urls, targetDir);
+    }
+#endif
 
     MainWindow progressDialog(opType, urls, targetDir);
 
