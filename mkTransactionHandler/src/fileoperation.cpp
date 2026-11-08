@@ -1134,7 +1134,19 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
 #else
         // fdatasync ist unter Linux einen Tick schneller als fsync, da es nur Daten
         // und keine irrelevanten Metadaten/Timestamps pro Chunk synchronisiert!
-        ::fdatasync(dstFile.handle());
+        // Schreibfehler (EIO, ENOSPC, EDQUOT, Stick abgezogen, Netzwerkfehler) melden sich oft
+        // ERST hier -> dann ist die Kopie fehlgeschlagen und die Quelle darf nicht gelöscht werden.
+        int syncResult;
+        do {
+            syncResult = ::fdatasync(dstFile.handle());
+        } while (syncResult == -1 && errno == EINTR);
+
+        // EINVAL/EROFS: Ziel unterstützt keine Synchronisation -> wie bisher ohne Sync weiterkopieren
+        if (syncResult == -1 && errno != EINVAL && errno != EROFS) {
+            qWarning() << "Synchronisationsfehler (fdatasync) bei" << dst << ":" << qt_error_string(errno);
+            success = false;
+            break;
+        }
 #endif
 
         // Erst JETZT ist der Chunk physikalisch geschrieben -> Statistik & UI aktualisieren
@@ -1156,6 +1168,13 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
     // 3. WICHTIG: Erst explizit schließen, damit das OS die Sperre aufhebt!
     srcFile.close();
     dstFile.close();
+
+    // close() kann (v.a. auf NFS/CIFS) noch einen Schreibfehler melden. Nach QFileDevice::close()
+    // ist error() genau dann NoError, wenn Flush und Schließen erfolgreich waren.
+    if (success && dstFile.error() != QFileDevice::NoError) {
+        qWarning() << "Fehler beim Schließen von" << dst << ":" << dstFile.errorString();
+        success = false;
+    }
 
     // 4. MÜLLBESEITIGUNG: Wenn abgebrochen wurde oder ein Fehler auftrat, Fragment löschen
     if (!success || !checkInterruption()) {
