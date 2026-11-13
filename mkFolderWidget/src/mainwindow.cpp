@@ -2617,13 +2617,19 @@ void MainWindow::updateWidgetStyles() {
     m_LineEdit1->setStyleSheet(lineEditStyleDark);
 
     if (targetState == StyleState::Elevated) {
-        m_tableView->setStyleSheet(Styles::tableViewElevated);
-        m_listView->setStyleSheet(Styles::listViewElevated);
-        m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevated);
+        m_tableView->setStyleSheet(Styles::tableViewBase % Styles::headerViewDark % Styles::scrollAreaCornerDark
+                                   % Styles::tableViewColorsElevated % Styles::tableViewHoverElevated % Styles::tableViewSelectionElevated);
+        m_listView->setStyleSheet(Styles::listViewBase % Styles::listViewItemHeight % Styles::scrollAreaCornerDark
+                                  % Styles::listViewColorsElevated % Styles::listViewHoverElevated % Styles::listViewSelectionElevated);
+        m_thumbnailView->setStyleSheet(Styles::listViewBase % Styles::scrollAreaCornerDark
+                                       % Styles::listViewColorsElevated % Styles::listViewHoverElevated % Styles::listViewSelectionElevated);
     } else {
-        m_tableView->setStyleSheet(Styles::tableViewDark);
-        m_listView->setStyleSheet(Styles::listViewDark);
-        m_thumbnailView->setStyleSheet(Styles::thumbnailViewDark);
+        m_tableView->setStyleSheet(Styles::tableViewBase % Styles::headerViewDark % Styles::scrollAreaCornerDark
+                                   % Styles::tableViewColorsDark % Styles::tableViewHoverDark % Styles::tableViewSelectionDark);
+        m_listView->setStyleSheet(Styles::listViewBase % Styles::listViewItemHeight % Styles::scrollAreaCornerDark
+                                  % Styles::listViewColorsDark % Styles::listViewHoverDark % Styles::listViewSelectionDark);
+        m_thumbnailView->setStyleSheet(Styles::listViewBase % Styles::scrollAreaCornerDark
+                                       % Styles::listViewColorsDark % Styles::listViewHoverDark % Styles::listViewSelectionDark);
     }
 
     m_tableView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
@@ -2642,11 +2648,11 @@ void MainWindow::updateWidgetStyles() {
     }
 
     if (targetState == StyleState::Elevated) {
-        m_tableView->setStyleSheet(Styles::tableViewElevatedLinux);
-        m_listView->setStyleSheet(Styles::listViewElevatedLinux);
-        m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevatedLinux);
+        m_tableView->setStyleSheet(Styles::tableViewColorsElevated % Styles::tableViewHoverElevated);
+        m_listView->setStyleSheet(Styles::listViewItemHeight % Styles::listViewColorsElevated);
+        m_thumbnailView->setStyleSheet(Styles::listViewColorsElevated);
     } else {
-        m_listView->setStyleSheet(Styles::listViewLinux);
+        m_listView->setStyleSheet(Styles::listViewItemHeight);
     }
 #endif
 

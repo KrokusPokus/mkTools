@@ -2399,13 +2399,19 @@ void MainWindow::updateWidgetStyles() {
 
 #ifdef Q_OS_WIN
     if (targetState == StyleState::Elevated) {
-        m_tableView->setStyleSheet(Styles::tableViewElevated);
-        m_listView->setStyleSheet(Styles::listViewElevated);
-        m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevated);
+        m_tableView->setStyleSheet(Styles::tableViewBase % Styles::headerViewDark % Styles::scrollAreaCornerDark
+                                   % Styles::tableViewColorsElevated % Styles::tableViewHoverElevated % Styles::tableViewSelectionElevated);
+        m_listView->setStyleSheet(Styles::listViewBase % Styles::listViewItemHeight % Styles::scrollAreaCornerDark
+                                  % Styles::listViewColorsElevated % Styles::listViewHoverElevated % Styles::listViewSelectionElevated);
+        m_thumbnailView->setStyleSheet(Styles::listViewBase % Styles::scrollAreaCornerDark
+                                       % Styles::listViewColorsElevated % Styles::listViewHoverElevated % Styles::listViewSelectionElevated);
     } else {
-        m_tableView->setStyleSheet(Styles::tableViewLight);
-        m_listView->setStyleSheet(Styles::listViewLight);
-        m_thumbnailView->setStyleSheet(Styles::thumbnailViewLight);
+        m_tableView->setStyleSheet(Styles::tableViewBase
+                                   % Styles::tableViewColorsLight % Styles::tableViewHoverLight % Styles::tableViewSelectionLight);
+        m_listView->setStyleSheet(Styles::listViewBase % Styles::listViewItemHeight
+                                  % Styles::listViewColorsLight % Styles::listViewHoverLight % Styles::listViewSelectionLight);
+        m_thumbnailView->setStyleSheet(Styles::listViewBase
+                                       % Styles::listViewColorsLight % Styles::listViewHoverLight % Styles::listViewSelectionLight);
     }
 #elif defined(Q_OS_LINUX)
     if (targetState == StyleState::Dark) {
@@ -2414,41 +2420,41 @@ void MainWindow::updateWidgetStyles() {
             "QHeaderView::section { background-color: palette(window); color: palette(window-text); }"
             );
 
-        m_groupBox2->setStyleSheet(Styles::groupBoxStyleSheetDark);
-        m_groupBox3->setStyleSheet(Styles::groupBoxStyleSheetDark);
-        m_groupBox5->setStyleSheet(Styles::groupBoxStyleSheetDark);
-        //m_groupBox6->setStyleSheet(Styles::groupBoxStyleSheetDark); // Move/Copy
-        m_groupBox7->setStyleSheet(Styles::groupBoxStyleSheetDark);
-        //m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheetDark); // Add date
-        m_groupBox9->setStyleSheet(Styles::groupBoxStyleSheetDark);
-        m_groupBox10->setStyleSheet(Styles::groupBoxStyleSheetDark);
-        m_groupBox11->setStyleSheet(Styles::groupBoxStyleSheetDark);
-        //m_groupBox12->setStyleSheet(Styles::groupBoxStyleSheetDark); // Filters (has no groupbox, only widgets)
-        m_groupBox13->setStyleSheet(Styles::groupBoxStyleSheetDark);
+        m_groupBox2->setStyleSheet(Styles::groupBox);
+        m_groupBox3->setStyleSheet(Styles::groupBox);
+        m_groupBox5->setStyleSheet(Styles::groupBox);
+        //m_groupBox6->setStyleSheet(Styles::groupBox); // Move/Copy
+        m_groupBox7->setStyleSheet(Styles::groupBox);
+        //m_groupBox8->setStyleSheet(Styles::groupBox); // Add date
+        m_groupBox9->setStyleSheet(Styles::groupBox);
+        m_groupBox10->setStyleSheet(Styles::groupBox);
+        m_groupBox11->setStyleSheet(Styles::groupBox);
+        //m_groupBox12->setStyleSheet(Styles::groupBox); // Filters (has no groupbox, only widgets)
+        m_groupBox13->setStyleSheet(Styles::groupBox);
     } else {
         // WICHTIG: Stylesheet leeren, wenn das System auf Light Mode wechselt!
         // Dadurch schaltet Qt wieder auf das helle Breeze-Standarddesign um.
         this->setStyleSheet("");
 
-        m_groupBox2->setStyleSheet(Styles::groupBoxStyleSheet);
-        m_groupBox3->setStyleSheet(Styles::groupBoxStyleSheet);
-        m_groupBox5->setStyleSheet(Styles::groupBoxStyleSheet);
-        //m_groupBox6->setStyleSheet(Styles::groupBoxStyleSheet); // Move/Copy
-        m_groupBox7->setStyleSheet(Styles::groupBoxStyleSheet);
-        //m_groupBox8->setStyleSheet(Styles::groupBoxStyleSheet); // Add date
-        m_groupBox9->setStyleSheet(Styles::groupBoxStyleSheet);
-        m_groupBox10->setStyleSheet(Styles::groupBoxStyleSheet);
-        m_groupBox11->setStyleSheet(Styles::groupBoxStyleSheet);
-        //m_groupBox12->setStyleSheet(Styles::groupBoxStyleSheet); // Filters (has no groupbox, only widgets)
-        m_groupBox13->setStyleSheet(Styles::groupBoxStyleSheet);
+        m_groupBox2->setStyleSheet(Styles::groupBox);
+        m_groupBox3->setStyleSheet(Styles::groupBox);
+        m_groupBox5->setStyleSheet(Styles::groupBox);
+        //m_groupBox6->setStyleSheet(Styles::groupBox); // Move/Copy
+        m_groupBox7->setStyleSheet(Styles::groupBox);
+        //m_groupBox8->setStyleSheet(Styles::groupBox); // Add date
+        m_groupBox9->setStyleSheet(Styles::groupBox);
+        m_groupBox10->setStyleSheet(Styles::groupBox);
+        m_groupBox11->setStyleSheet(Styles::groupBox);
+        //m_groupBox12->setStyleSheet(Styles::groupBox); // Filters (has no groupbox, only widgets)
+        m_groupBox13->setStyleSheet(Styles::groupBox);
     }
 
     if (targetState == StyleState::Elevated) {
-        m_tableView->setStyleSheet(Styles::tableViewElevatedLinux);
-        m_listView->setStyleSheet(Styles::listViewElevatedLinux);
-        m_thumbnailView->setStyleSheet(Styles::thumbnailViewElevatedLinux);
+        m_tableView->setStyleSheet(Styles::tableViewColorsElevated % Styles::tableViewHoverElevated);
+        m_listView->setStyleSheet(Styles::listViewItemHeight % Styles::listViewColorsElevated);
+        m_thumbnailView->setStyleSheet(Styles::listViewColorsElevated);
     } else {
-        m_listView->setStyleSheet(Styles::listViewLinux);
+        m_listView->setStyleSheet(Styles::listViewItemHeight);
     }
 #endif
 }
