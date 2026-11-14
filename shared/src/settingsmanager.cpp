@@ -200,19 +200,21 @@ QSet<QString> SettingsManager::parseExtensions(const QString &input) {
 	return set;
 }
 
-// Shared folder of all mkTools programs: ~/.config/mkTools (created if missing)
-QString SettingsManager::getConfigDir() {
-    const QString toolsDirPath = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)).filePath("mkTools");
-    QDir().mkpath(toolsDirPath);
-    return toolsDirPath;
+// Subfolder of ~/.config (created if missing)
+QString SettingsManager::getConfigDir(const QString &subDir) {
+    const QString dirPath = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)).filePath(subDir);
+    QDir().mkpath(dirPath);
+    return dirPath;
 }
 
+// Shared by all mkTools programs: ~/.config/mkProjects/mkTools.conf
 QString SettingsManager::getSettingsPath() {
-    return QDir(getConfigDir()).filePath("settings.ini");
+    return QDir(getConfigDir("mkProjects")).filePath("mkTools.conf");
 }
 
+// Shared by all mkTools programs: ~/.config/mkTools/history.ini
 QString SettingsManager::getHistoryPath() {
-    return QDir(getConfigDir()).filePath("history.ini");
+    return QDir(getConfigDir("mkTools")).filePath("history.ini");
 }
 
 void SettingsManager::saveHistory() {

@@ -58,7 +58,7 @@ private:
     QStringList importSearchFolders(const QString &input);
     QString exportSearchFolders(const QStringList &folders);
     QString getHistoryPath();
-    QString getConfigDir();
+    QString getConfigDir(const QString &subDir);
 
     // Defaults
     const QString DEFAULT_AUDIO = "aac,flac,m4a,mid,mp3,ogg,wav";
