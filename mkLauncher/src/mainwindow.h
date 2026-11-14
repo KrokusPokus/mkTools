@@ -153,6 +153,8 @@ private:
     QByteArray m_currentClipboardToken;
     QString m_privateTokenName = "application/x-mkfolderwidget-token";
     SettingsManager m_settings;
+    QStringList m_recentOpenList;     // History: last opened files (newest first)
+    QStringList m_recentInputList;    // History: last search terms (newest first)
 
     qint64 m_lastActivationTime = 0;
     bool m_activationClickActive = false;
@@ -167,6 +169,8 @@ private:
     void guiHideConditional();
     void launchAction();
 
+    void loadHistory();
+    void saveHistory();
     void RecentInputList_Add(QString searchTerm);
     void RecentOpenList_Add(const QString &filePath);
     QHBoxLayout *m_topControlsHBoxLayout = nullptr;

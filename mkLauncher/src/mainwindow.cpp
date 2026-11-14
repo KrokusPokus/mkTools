@@ -78,6 +78,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_processIsElevated = Helpers::isCurrentProcessElevated();
 
+    loadHistory();
+
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
     m_centralWidget->setMinimumWidth(745);
@@ -537,7 +539,7 @@ void MainWindow::startSearch() {
         m_selectionModel->clear();
     }
 
-    m_abstractModel->populateModel_mkLauncher(m_settings.searchFolders, InputBox1Text, m_settings.recentOpenList);
+    m_abstractModel->populateModel_mkLauncher(m_settings.searchFolders, InputBox1Text, m_recentOpenList);
 }
 
 void MainWindow::onSearchFinished(uint iItemsFound, uint iNameMatched, uint iContentMatched, bool bSearchInterrupted) {
@@ -1824,15 +1826,39 @@ void MainWindow::launchAction() {
 }
 
 
+// ~/.local/state/mkProjects/mkLauncher_state.conf
+static QString stateFilePath() {
+    const QString stateDir = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericStateLocation)).filePath("mkProjects");
+    QDir().mkpath(stateDir);
+    return QDir(stateDir).filePath("mkLauncher_state.conf");
+}
+
+void MainWindow::loadHistory() {
+    QSettings state(stateFilePath(), QSettings::IniFormat);
+    m_recentInputList = state.value("History/InputList").toStringList();
+    m_recentOpenList  = state.value("History/OpenList").toStringList();
+}
+
+// Writes only if something changed
+void MainWindow::saveHistory() {
+    QSettings state(stateFilePath(), QSettings::IniFormat);
+    if (state.value("History/InputList").toStringList() != m_recentInputList) {
+        state.setValue("History/InputList", m_recentInputList);
+    }
+    if (state.value("History/OpenList").toStringList() != m_recentOpenList) {
+        state.setValue("History/OpenList", m_recentOpenList);
+    }
+}
+
 void MainWindow::RecentOpenList_Add(const QString &filePath) {
     // If already in list, delete and prepend again in next step
-    m_settings.recentOpenList.removeAll(filePath);
+    m_recentOpenList.removeAll(filePath);
 
     // Insert at front (index 0)
-    m_settings.recentOpenList.prepend(filePath);
+    m_recentOpenList.prepend(filePath);
 
-    while (m_settings.recentOpenList.size() > 64) {
-        m_settings.recentOpenList.removeLast();
+    while (m_recentOpenList.size() > 64) {
+        m_recentOpenList.removeLast();
     }
 }
 
@@ -1843,40 +1869,40 @@ void MainWindow::RecentInputList_Add(QString searchTerm) {
     if (searchTerm.trimmed().isEmpty()) return;
 
     // If already in list, delete and prepend again in next step
-    m_settings.recentInputList.removeAll(searchTerm);
+    m_recentInputList.removeAll(searchTerm);
 
     // Insert at front (index 0)
-    m_settings.recentInputList.prepend(searchTerm);
+    m_recentInputList.prepend(searchTerm);
 
-    while (m_settings.recentInputList.size() > 32) {
-        m_settings.recentInputList.removeLast();
+    while (m_recentInputList.size() > 32) {
+        m_recentInputList.removeLast();
     }
 }
 
 QString MainWindow::RecentInputList_GetPrevious(const QString &currentText) {
-    if (m_settings.recentInputList.isEmpty()) {
+    if (m_recentInputList.isEmpty()) {
         return currentText;
     }
 
-    int idx = m_settings.recentInputList.indexOf(currentText);
+    int idx = m_recentInputList.indexOf(currentText);
 
     // Wenn der aktuelle Text nicht in der Liste ist -> das Neueste zurückgeben
     if (idx == -1) {
-        QString sFirst = m_settings.recentInputList.first();
+        QString sFirst = m_recentInputList.first();
         RecentInputList_Add(currentText);
         return sFirst;
     }
 
     // Wenn wir noch nicht am Ende der Liste sind -> das Nächste (ältere) holen
-    if (idx + 1 < m_settings.recentInputList.size()) {
-        return m_settings.recentInputList.at(idx + 1);
+    if (idx + 1 < m_recentInputList.size()) {
+        return m_recentInputList.at(idx + 1);
     }
 
     return currentText; // Wir sind am Ende der Geschichte angekommen
 }
 
 QString MainWindow::RecentInputList_GetNext(const QString &currentText) {
-    int idx = m_settings.recentInputList.indexOf(currentText);
+    int idx = m_recentInputList.indexOf(currentText);
 
     // Wenn wir nicht in der Liste sind oder schon beim neuesten Eintrag (Index 0)
     if (idx <= 0) {
@@ -1884,7 +1910,7 @@ QString MainWindow::RecentInputList_GetNext(const QString &currentText) {
     }
 
     // Einen Schritt nach vorne (Richtung Index 0)
-    return m_settings.recentInputList.at(idx - 1);
+    return m_recentInputList.at(idx - 1);
 }
 
 void MainWindow::guiHideConditional() {
@@ -2451,7 +2477,7 @@ bool MainWindow::nativeEvent(const QByteArray &eventType, void *message, qintptr
 // Protected Overrides
 
 void MainWindow::closeEvent(QCloseEvent *event) {
-    m_settings.saveHistory();
+    saveHistory();
     event->accept();
 }
 

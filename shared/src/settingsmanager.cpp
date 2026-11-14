@@ -52,10 +52,6 @@ void SettingsManager::load() {
     // mkTransactionHandler specific
     useKdeFileOperations = s.value("mkTransactionHandler/UseKdeFileOperations", DEFAULT_USE_KDE_FILE_OPERATIONS).toBool();
 
-    QSettings h(getHistoryPath(), QSettings::IniFormat);
-    recentInputList = h.value("History/InputList").toStringList();
-    recentOpenList = h.value("History/OpenList").toStringList();
-
     saveSettings();
 }
 
@@ -200,28 +196,11 @@ QSet<QString> SettingsManager::parseExtensions(const QString &input) {
 	return set;
 }
 
-// Subfolder of ~/.config (created if missing)
-QString SettingsManager::getConfigDir(const QString &subDir) {
-    const QString dirPath = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)).filePath(subDir);
-    QDir().mkpath(dirPath);
-    return dirPath;
-}
-
 // Shared by all mkTools programs: ~/.config/mkProjects/mkTools.conf
 QString SettingsManager::getSettingsPath() {
-    return QDir(getConfigDir("mkProjects")).filePath("mkTools.conf");
-}
-
-// Shared by all mkTools programs: ~/.config/mkTools/history.ini
-QString SettingsManager::getHistoryPath() {
-    return QDir(getConfigDir("mkTools")).filePath("history.ini");
-}
-
-void SettingsManager::saveHistory() {
-    QSettings h(getHistoryPath(), QSettings::IniFormat);
-    safeSetValue(h, "History/InputList", recentInputList);
-    safeSetValue(h, "History/OpenList", recentOpenList);
-    h.sync();
+    const QString configDir = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)).filePath("mkProjects");
+    QDir().mkpath(configDir);
+    return QDir(configDir).filePath("mkTools.conf");
 }
 
 QStringList SettingsManager::importSearchFolders(const QString &input) {
