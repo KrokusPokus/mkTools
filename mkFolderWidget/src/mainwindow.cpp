@@ -861,6 +861,14 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
             activeView->setCurrentIndex(proxyIndexToFocus);
         }
 
+        // Selection model signals are blocked here, so currentChanged() never reaches the views.
+        // Re-sync the Shift range selection anchors manually (for all views, as they share the selection model).
+        if (proxyIndexToFocus.isValid()) {
+            m_listView->setSelectionAnchor(proxyIndexToFocus);
+            m_thumbnailView->setSelectionAnchor(proxyIndexToFocus);
+            m_tableView->setProperty("selectionAnchor", QVariant::fromValue(QModelIndex(proxyIndexToFocus)));
+        }
+
         // Selektion anwenden
         if (!restoreSelection.isEmpty() && m_selectionModel) {
             m_selectionModel->select(restoreSelection, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);

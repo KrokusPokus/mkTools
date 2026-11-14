@@ -281,7 +281,9 @@ void CustomListView::currentChanged(const QModelIndex &current, const QModelInde
 
     // Wenn die Änderung von außen (programmatisch) kommt,
     // ist weder das Tastatur- noch das Maus-Flag aktiv.
-    if (!m_isKeyboardSelection && !m_isMouseClickSelection) {
+    // Ausnahme: Während der Gummiband-Auswahl setzt QAbstractItemView::mouseMoveEvent() den
+    // currentIndex auf das Item unter der Maus. Das darf den Anker nicht verschieben.
+    if (!m_isKeyboardSelection && !m_isMouseClickSelection && state() != QAbstractItemView::DragSelectingState) {
         // Den Anker sauber auf den neuen aktuellen Index setzen
         m_selectionAnchor = current;
     }

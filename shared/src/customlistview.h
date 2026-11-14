@@ -17,6 +17,12 @@ public:
         m_thumbnailMode = enabled;
     }
 
+    // Must be called whenever the current index is changed while selection model signals are blocked
+    // (e.g. focus restore after a directory reload), since currentChanged() won't fire then.
+    void setSelectionAnchor(const QModelIndex &index) {
+        m_selectionAnchor = index;
+    }
+
 private:
     void updateTargetCache(const QPoint &pos, const QMimeData *mimeData);
     Qt::DropAction resolveDropAction(Qt::KeyboardModifiers mods) const;
@@ -31,7 +37,9 @@ private:
     bool m_isSameDriveCached = false;
 
     // Part of mitigation for Shift+Up/Shift+Down range selection bug. Not needed in tableView
-    QModelIndex m_selectionAnchor;
+    // Persistent, so the anchor follows its item across sorting/filtering and becomes invalid on model reset
+    // (a plain QModelIndex would silently point to whatever item now occupies the old row).
+    QPersistentModelIndex m_selectionAnchor;
     bool m_isMouseClickSelection = false;
     bool m_isKeyboardSelection = false;
 
