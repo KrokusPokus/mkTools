@@ -1,9 +1,7 @@
 #include "settingsmanager.h"
 #include "helpers.h"
 
-#include <QCoreApplication>
 #include <QDir>
-#include <QFile>
 #include <QProcessEnvironment>
 #include <QStandardPaths>
 
@@ -202,30 +200,19 @@ QSet<QString> SettingsManager::parseExtensions(const QString &input) {
 	return set;
 }
 
+// Shared folder of all mkTools programs: ~/.config/mkTools (created if missing)
+QString SettingsManager::getConfigDir() {
+    const QString toolsDirPath = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)).filePath("mkTools");
+    QDir().mkpath(toolsDirPath);
+    return toolsDirPath;
+}
+
 QString SettingsManager::getSettingsPath() {
-    QString iniFilePath = QDir(QCoreApplication::applicationDirPath()).filePath("settings.ini");
-    if (!QFile::exists(iniFilePath)) {
-        QString toolsDirPath = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)).filePath("mkTools");
-        if (!QDir(toolsDirPath).exists()) {
-            QDir().mkpath(toolsDirPath);
-        }
-        QDir toolsDir(toolsDirPath);
-        iniFilePath = toolsDir.filePath("settings.ini");
-    }
-    return iniFilePath;
+    return QDir(getConfigDir()).filePath("settings.ini");
 }
 
 QString SettingsManager::getHistoryPath() {
-    QString iniFilePath = QDir(QCoreApplication::applicationDirPath()).filePath("/history.ini");
-    if (!QFile::exists(iniFilePath)) {
-        QString toolsDirPath = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)).filePath("mkTools");
-        if (!QDir(toolsDirPath).exists()) {
-            QDir().mkpath(toolsDirPath);
-        }
-        QDir toolsDir(toolsDirPath);
-        iniFilePath = toolsDir.filePath("history.ini");
-    }
-    return iniFilePath;
+    return QDir(getConfigDir()).filePath("history.ini");
 }
 
 void SettingsManager::saveHistory() {
