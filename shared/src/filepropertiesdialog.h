@@ -62,7 +62,7 @@ class FilePropertiesDialog : public QDialog {
 
 public:
     explicit FilePropertiesDialog(const QStringList &filePaths, QWidget *parent = nullptr);
-    ~FilePropertiesDialog();
+    ~FilePropertiesDialog() override;
 
 private:
     static void calculateStats(const QStringList &filePaths, AtomicProgressResult &res, const std::atomic<bool> &abortFlag);

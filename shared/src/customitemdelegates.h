@@ -20,7 +20,9 @@ public:
         bool isCut = index.data(CustomTableModel::IsCutRole).toBool();
         bool isHidden = index.data(CustomTableModel::IsHiddenRole).toBool();
 
-        QStyleOptionViewItem opt = option;
+        // Referenz statt Kopie, da opt nicht verändert wird (paint() läuft für jede Zelle).
+        // Für den auskommentierten Block unten wieder eine Kopie verwenden.
+        const QStyleOptionViewItem &opt = option;
 
         /*
         // Eigenen Selektions- und Fokus-Hintergrund zeichnen

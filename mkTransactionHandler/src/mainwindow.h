@@ -24,7 +24,9 @@ class CleanLabel : public QLabel {
 public:
     using QLabel::QLabel;
 
-    void setText(const QString &text) {
+    // Eigener Name statt setText(): QLabel::setText() ist nicht virtuell und würde über
+    // einen QLabel-Zeiger oder eine SLOT()-Verbindung am Neuzeichnen vorbei aufgerufen.
+    void setCleanText(const QString &text) {
         triggerParentUpdate();
 
         QLabel::setText(text);
@@ -33,6 +35,8 @@ public:
     }
 
 private:
+    using QLabel::setText; // versehentliche Aufrufe der Basisversion verhindern
+
     void triggerParentUpdate() {
         if (parentWidget()) {
             parentWidget()->update(geometry().adjusted(-2, 0, 2, 0));
@@ -48,8 +52,9 @@ public:
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     }
 
-    // Wir überschreiben setText, um den originalen, ungekürzten Text im Speicher zu behalten
-    void setText(const QString &text) {
+    // Behält den originalen, ungekürzten Text im Speicher. Eigener Name statt setText():
+    // QLabel::setText() ist nicht virtuell und würde m_fullText sonst umgehen.
+    void setFullText(const QString &text) {
         triggerParentUpdate();
 
         m_fullText = text;
@@ -68,6 +73,8 @@ protected:
     }
 
 private:
+    using QLabel::setText; // versehentliche Aufrufe der Basisversion verhindern
+
     void updateElidedText() {
         QFontMetrics fm = fontMetrics();
         int availableWidth = contentsRect().width();
@@ -97,7 +104,7 @@ class MainWindow : public QMainWindow {
 
 public:
     explicit MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir, QWidget *parent = nullptr);
-    ~MainWindow();
+    ~MainWindow() override;
 
 protected:
     void closeEvent(QCloseEvent *event) override;

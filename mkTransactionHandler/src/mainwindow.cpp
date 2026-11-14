@@ -163,7 +163,7 @@ void MainWindow::setupUi() {
     // Doing it this we so we can setContentsMargins. Otherwise, the text would get cut off a little...
     CleanLabel *nameLabelName = new CleanLabel(this);
     nameLabelName->setContentsMargins(1, 0, 1, 0);
-    nameLabelName->setText(tr("Name:"));
+    nameLabelName->setCleanText(tr("Name:"));
     m_nameLabel = new ElidedLabel(this);
     m_nameLabel->setWordWrap(false);
     m_nameLabel->setContentsMargins(1, 0, 1, 0);
@@ -171,7 +171,7 @@ void MainWindow::setupUi() {
 
     CleanLabel *sourceLabelName = new CleanLabel(this);
     sourceLabelName->setContentsMargins(1, 0, 1, 0);
-    sourceLabelName->setText(tr("Source:"));
+    sourceLabelName->setCleanText(tr("Source:"));
     m_sourceLabel = new ElidedLabel(this);
     m_sourceLabel->setWordWrap(false);
     m_sourceLabel->setContentsMargins(1, 0, 1, 0);
@@ -180,7 +180,7 @@ void MainWindow::setupUi() {
     if (m_operationType != OperationType::Delete && m_operationType != OperationType::Recycle) {
         CleanLabel *targetLabelName = new CleanLabel(this);
         targetLabelName->setContentsMargins(1, 0, 1, 0);
-        targetLabelName->setText(tr("Target:"));
+        targetLabelName->setCleanText(tr("Target:"));
         m_targetLabel = new ElidedLabel(this);
         m_targetLabel->setWordWrap(false);
         m_targetLabel->setContentsMargins(1, 0, 1, 0);
@@ -209,21 +209,21 @@ void MainWindow::setupUi() {
 
     CleanLabel *timeLabelName = new CleanLabel(this);   // Doing it this we so we can setContentsMargins. Otherwise, the text would get cut off a little...
     timeLabelName->setContentsMargins(1, 0, 1, 0);
-    timeLabelName->setText(tr("Time:"));
+    timeLabelName->setCleanText(tr("Time:"));
     m_timeLabel = new CleanLabel(this);
     m_timeLabel->setContentsMargins(1, 0, 1, 0);
     metricsLayout->addRow(timeLabelName, m_timeLabel);
 
     CleanLabel *itemsLeftLabelName = new CleanLabel(this);
     itemsLeftLabelName->setContentsMargins(1, 0, 1, 0);
-    itemsLeftLabelName->setText(tr("Items:"));
+    itemsLeftLabelName->setCleanText(tr("Items:"));
     m_itemsLeftLabel = new CleanLabel(this);
     m_itemsLeftLabel->setContentsMargins(1, 0, 1, 0);
     metricsLayout->addRow(itemsLeftLabelName, m_itemsLeftLabel);
 
     CleanLabel *speedLabelName = new CleanLabel(this);
     speedLabelName->setContentsMargins(1, 0, 1, 0);
-    speedLabelName->setText(tr("Speed:"));
+    speedLabelName->setCleanText(tr("Speed:"));
     m_speedLabel = new CleanLabel(this);
     m_speedLabel->setContentsMargins(1, 0, 1, 0);
     metricsLayout->addRow(speedLabelName, m_speedLabel);
@@ -231,7 +231,7 @@ void MainWindow::setupUi() {
     if (m_operationType != OperationType::Delete && m_operationType != OperationType::Recycle) {
         CleanLabel *modeLabelName = new CleanLabel(this);
         modeLabelName->setContentsMargins(1, 0, 1, 0);
-        modeLabelName->setText(tr("Mode:"));
+        modeLabelName->setCleanText(tr("Mode:"));
         m_driveModeLabel = new CleanLabel(this);
         m_driveModeLabel->setContentsMargins(1, 0, 1, 0);
         metricsLayout->addRow(modeLabelName, m_driveModeLabel);
@@ -283,35 +283,35 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
     // 1. Summary
     switch (m_operationType) {
         case OperationType::Copy:
-            m_headerLabel->setText(tr("Copying %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setCleanText(tr("Copying %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
             break;
 
         case OperationType::Move:
-            m_headerLabel->setText(tr("Moving %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setCleanText(tr("Moving %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
             break;
 
         case OperationType::Link:
-            m_headerLabel->setText(tr("Linking %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setCleanText(tr("Linking %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
             break;
 
         case OperationType::Delete:
-            m_headerLabel->setText(tr("Deleting %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setCleanText(tr("Deleting %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
             break;
 
         case OperationType::Recycle:
-            m_headerLabel->setText(tr("Recycling %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
+            m_headerLabel->setCleanText(tr("Recycling %n file (%1)", nullptr, stats.totalFiles).arg(Helpers::formatAdaptiveSize(stats.totalBytes)));
             break;
 
         default:
-            m_headerLabel->setText("[unknown action]");
+            m_headerLabel->setCleanText("[unknown action]");
             break;
     }
 
     // 2. Pfade setzen
-    m_nameLabel->setText(stats.currentName);
-    m_sourceLabel->setText(stats.currentSourceDir);
+    m_nameLabel->setFullText(stats.currentName);
+    m_sourceLabel->setFullText(stats.currentSourceDir);
     if (m_operationType != OperationType::Delete && m_operationType != OperationType::Recycle) {
-        m_targetLabel->setText(stats.currentTargetDir);
+        m_targetLabel->setFullText(stats.currentTargetDir);
     }
 
     // 3. Remaining Items und Bytes
@@ -319,14 +319,14 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
     int filesLeft = qMax(0, stats.totalFiles - processedFiles);
     qint64 bytesLeft = qMax(0ll, stats.totalBytes - stats.bytesWritten);
 
-    m_itemsLeftLabel->setText(tr("%1 (%2)").arg(m_locale.toString(filesLeft), Helpers::formatAdaptiveSize(bytesLeft)));
+    m_itemsLeftLabel->setCleanText(tr("%1 (%2)").arg(m_locale.toString(filesLeft), Helpers::formatAdaptiveSize(bytesLeft)));
 
     double secondsElapsed = stats.elapsedMs / 1000.0;
 
     if (secondsElapsed > 0.1 && stats.bytesWritten > 0) {
         // Geschwindigkeit in Bytes pro Sekunde
         double bytesPerSecond = stats.bytesWritten / secondsElapsed;
-        m_speedLabel->setText(tr("%1/s").arg(Helpers::formatAdaptiveSize(bytesPerSecond)));
+        m_speedLabel->setCleanText(tr("%1/s").arg(Helpers::formatAdaptiveSize(bytesPerSecond)));
 
         // Geschätzte Restzeit (Time Remaining)
         double secondsLeft = std::min(bytesLeft / bytesPerSecond, 86400.0 * 365);
@@ -337,20 +337,20 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
         int s = int(secondsLeft) % 60;
 
         if (h > 0) {
-            m_timeLabel->setText(tr("%1h %2m %3s").arg(h).arg(m).arg(s));
+            m_timeLabel->setCleanText(tr("%1h %2m %3s").arg(h).arg(m).arg(s));
         } else if (m > 0) {
-            m_timeLabel->setText(tr("%1m %2s").arg(m).arg(s));
+            m_timeLabel->setCleanText(tr("%1m %2s").arg(m).arg(s));
         } else {
-            m_timeLabel->setText(tr("%1s").arg(s));
+            m_timeLabel->setCleanText(tr("%1s").arg(s));
         }
     } else {
-        m_speedLabel->setText(tr("Calculating..."));
-        m_timeLabel->setText(tr("Calculating..."));
+        m_speedLabel->setCleanText(tr("Calculating..."));
+        m_timeLabel->setCleanText(tr("Calculating..."));
     }
 
     // 4. Drive-Mode
     if (m_operationType != OperationType::Delete && m_operationType != OperationType::Recycle) {
-        m_driveModeLabel->setText(stats.isSameDevice ? tr("Same Drive") : tr("Different Drives"));
+        m_driveModeLabel->setCleanText(stats.isSameDevice ? tr("Same Drive") : tr("Different Drives"));
     }
 
     int byteProgressPercent = 0;
@@ -419,7 +419,7 @@ void MainWindow::onConflictDetected(const Conflict &conflict) {
     ConflictDialog dialog(conflict, this);
     dialog.exec();
 
-    ConflictResult res = dialog.result();
+    ConflictResult res = dialog.conflictResult();
 
     if (m_fileOp) {
         m_fileOp->resolveConflict(res.resolution, res.applyToAll);
@@ -438,7 +438,7 @@ void MainWindow::onOperationContinued() {
 void MainWindow::onOperationPaused() {
     if (!isVisible()) show();
 
-    m_headerLabel->setText(tr("Paused"));
+    m_headerLabel->setCleanText(tr("Paused"));
 
     m_pauseButton->setText(tr("Continue"));
     disconnect(m_pauseButton, &QPushButton::clicked, this, nullptr);
@@ -459,7 +459,7 @@ void MainWindow::onOperationFinished(const CopyStats &stats, const QList<FailedI
     if (stats.filesError > 0) {
         if (!isVisible()) show();
 
-        m_headerLabel->setText(tr("Finished with %n error.", nullptr, stats.filesError));
+        m_headerLabel->setCleanText(tr("Finished with %n error.", nullptr, stats.filesError));
 
         m_pauseButton->setText(tr("Retry"));
         disconnect(m_pauseButton, &QPushButton::clicked, this, nullptr);
@@ -517,7 +517,7 @@ void MainWindow::onOperationCanceled(int errorCount, const QList<FailedItem> &fa
     if (errorCount > 0) {
         if (!isVisible()) show();
 
-        m_headerLabel->setText(tr("Canceled. %n error occurred before.", nullptr, errorCount));
+        m_headerLabel->setCleanText(tr("Canceled. %n error occurred before.", nullptr, errorCount));
 
         // Pause-Button deaktivieren/ausblenden, da Abbruch final ist
         m_pauseButton->setEnabled(false);
@@ -589,7 +589,7 @@ void MainWindow::onRetryRequested() {
 }
 
 void MainWindow::onCancelRequested() {
-    m_headerLabel->setText(tr("Cancelling..."));
+    m_headerLabel->setCleanText(tr("Cancelling..."));
     m_cancelButton->setEnabled(false);
 
     if (m_fileOp) {

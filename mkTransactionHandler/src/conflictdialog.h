@@ -81,7 +81,7 @@ class ConflictDialog : public QDialog {
 
 public:
     ConflictDialog(const Conflict &conflict, QWidget *parent = nullptr);
-    ConflictResult result() const { return m_result; }
+    ConflictResult conflictResult() const { return m_result; }
 
 private:
     QString getTypeString(const QFileInfo &fileInfo);
