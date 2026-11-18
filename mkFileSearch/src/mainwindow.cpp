@@ -1016,10 +1016,10 @@ void MainWindow::updateColumns() {
     int nameWidth;
     int pathWidth;
 
-    // Columns are never wider than their content; leftover space stays empty at the right (like Explorer++).
+    // Path is never wider than its content. When everything fits, the leftover space goes to Name.
     if (nameNeed + pathNeed <= available) {
-        nameWidth = nameNeed;
         pathWidth = pathNeed;
+        nameWidth = available - pathWidth;
     } else {
         // Not enough room. Path shrinks first (it elides in the middle) down to its minimum;
         // only then Name is shrunk, down to its own minimum.
