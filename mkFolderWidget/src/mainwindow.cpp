@@ -922,7 +922,8 @@ void MainWindow::updateColumns() {
         m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColType, QHeaderView::ResizeToContents);
         m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColName, QHeaderView::Stretch);
         m_tableView->horizontalHeader()->doItemsLayout();
-        int eColNameWidth = m_tableView->columnWidth(CustomTableModel::eColName);
+        constexpr int kMinNameWidth = 100;   // Stretch may squeeze Name below this in narrow windows
+        int eColNameWidth = qMax(m_tableView->columnWidth(CustomTableModel::eColName), kMinNameWidth);
         m_tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
         m_tableView->setColumnWidth(CustomTableModel::eColName, eColNameWidth);
     } else {
