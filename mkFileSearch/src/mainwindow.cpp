@@ -37,6 +37,7 @@
 #include <QShortcut>
 #include <QSize>
 #include <QStandardPaths>
+#include <QStyleOptionViewItem>
 #include <QStringList>
 #include <QStringView>
 #include <QStyleHints>
@@ -873,6 +874,7 @@ void MainWindow::onSearchFinished(uint iItemsFound, uint iNameMatched, uint iCon
     }
 
     // --- Update columns of tableView ---
+    measureFlexibleColumns();
     if (m_viewStack->currentWidget() == m_tableView) {
         updateColumns();
     }
@@ -913,32 +915,123 @@ void MainWindow::onSearchFinished(uint iItemsFound, uint iNameMatched, uint iCon
     m_timerUpdateIcons->start(20);
 }
 
-void MainWindow::updateColumns() {
-    if (m_bHeaderVisible) {
-        // m_tableView->horizontalHeader()->setVisible(true);
-        
-        m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColSize,    QHeaderView::ResizeToContents);
-        m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColDate,    QHeaderView::ResizeToContents);
-        m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColType,    QHeaderView::ResizeToContents);
-        m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColQuality, QHeaderView::ResizeToContents);
-        m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColCount,   QHeaderView::ResizeToContents);
-        //m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColCRC,   QHeaderView::ResizeToContents);
+// Measures the content width of the two flexible columns (Name, Path) once per search result.
+// Same idea as m_nLabelWidthMax in Explorer++: measure once after loading, reuse on every resize.
+// Lives here (not in the shared CustomTableModel) so mkFolderWidget/mkLauncher/mkBatchRename are unaffected.
+void MainWindow::measureFlexibleColumns() {
+    m_nameColWidthNeeded = 0;
+    m_pathColWidthNeeded = 0;
 
-        m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColName, QHeaderView::Stretch);
-        m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColPath, QHeaderView::Stretch);
-
-        m_tableView->horizontalHeader()->doItemsLayout();
-
-        int eColNameWidth = m_tableView->columnWidth(CustomTableModel::eColName);
-        int eColPathWidth = m_tableView->columnWidth(CustomTableModel::eColPath);
-
-        m_tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
-
-        m_tableView->setColumnWidth(CustomTableModel::eColName, eColNameWidth);
-        m_tableView->setColumnWidth(CustomTableModel::eColPath, eColPathWidth);
-    } else {
-        //m_tableView->horizontalHeader()->setVisible(false);
+    const int rowCount = m_abstractModel->rowCount();
+    if (rowCount == 0) {
+        return;
     }
+
+    // Prefilter by character count (cheap), then measure pixel widths only for the longest candidates.
+    // With a proportional font the longest string is not always the widest, but it is practically always among the top N.
+    constexpr int kCandidates = 64;
+
+    auto widestText = [&](int column) -> int {
+        std::vector<std::pair<qsizetype, int>> lengths;   // (length, row)
+        lengths.reserve(rowCount);
+        for (int row = 0; row < rowCount; ++row) {
+            lengths.emplace_back(m_abstractModel->index(row, column).data(Qt::DisplayRole).toString().size(), row);
+        }
+
+        const auto nth = lengths.begin() + std::min<qsizetype>(kCandidates, static_cast<qsizetype>(lengths.size()));
+        std::partial_sort(lengths.begin(), nth, lengths.end(), [](const auto &a, const auto &b) { return a.first > b.first; });
+
+        const QFontMetrics fm(m_tableView->font());
+        int maxWidth = 0;
+        for (auto it = lengths.begin(); it != nth; ++it) {
+            const QString text = m_abstractModel->index(it->second, column).data(Qt::DisplayRole).toString();
+            maxWidth = std::max(maxWidth, fm.horizontalAdvance(text));
+        }
+        return maxWidth;
+    };
+
+    // Let the style add icon, spacing and margins exactly like QStyledItemDelegate::sizeHint() would.
+    QStyle *style = m_tableView->style();
+    const int iconExtent = style->pixelMetric(QStyle::PM_SmallIconSize, nullptr, m_tableView);
+
+    auto cellWidth = [&](int textWidth, bool hasIcon) -> int {
+        QStyleOptionViewItem opt;
+        opt.initFrom(m_tableView);
+        opt.widget = m_tableView;
+        opt.font = m_tableView->font();
+        opt.fontMetrics = QFontMetrics(opt.font);
+        opt.features = QStyleOptionViewItem::HasDisplay;
+        if (hasIcon) {
+            opt.features |= QStyleOptionViewItem::HasDecoration;
+            opt.decorationSize = m_tableView->iconSize().isValid() ? m_tableView->iconSize() : QSize(iconExtent, iconExtent);
+        }
+        // Ask the style for a one-space cell and subtract the space: what remains is icon + spacing + margins.
+        opt.text = QStringLiteral(" ");
+        const QSize spaceSize = style->sizeFromContents(QStyle::CT_ItemViewItem, &opt, QSize(), m_tableView);
+        const int overhead = spaceSize.width() - opt.fontMetrics.horizontalAdvance(opt.text);
+        return textWidth + overhead + (m_tableView->showGrid() ? 1 : 0);
+    };
+
+    m_nameColWidthNeeded = cellWidth(widestText(CustomTableModel::eColName), true);
+    m_pathColWidthNeeded = cellWidth(widestText(CustomTableModel::eColPath), false) + 8;   // +8: buffer subtracted by TableItemDelegate::paint() before eliding
+}
+
+void MainWindow::updateColumns() {
+    if (!m_bHeaderVisible) {
+        return;
+    }
+
+    QHeaderView *header = m_tableView->horizontalHeader();
+    const int nameCol = CustomTableModel::eColName;
+    const int pathCol = CustomTableModel::eColPath;
+
+    // Fixed columns: exact content width (Qt measures them).
+    for (int col = 0; col < m_abstractModel->columnCount(); ++col) {
+        if (col == nameCol || col == pathCol) {
+            header->setSectionResizeMode(col, QHeaderView::Interactive);
+        } else {
+            header->setSectionResizeMode(col, QHeaderView::ResizeToContents);
+        }
+    }
+    header->doItemsLayout();
+
+    int fixedSum = 0;
+    for (int col = 0; col < m_abstractModel->columnCount(); ++col) {
+        if (col != nameCol && col != pathCol && !header->isSectionHidden(col)) {
+            fixedSum += header->sectionSize(col);
+        }
+    }
+
+    header->setSectionResizeMode(QHeaderView::Interactive);
+
+    // Flexible columns, Explorer++ style: content width, capped to the available space, never below a minimum.
+    // Qt works in logical pixels, so no explicit DPI scaling is needed (unlike the Win32 MulDiv() in Explorer++).
+    constexpr int kMinNameWidth = 150;
+    constexpr int kMinPathWidth = 150;
+
+    const int available = m_tableView->viewport()->width() - fixedSum;
+    int nameNeed = m_nameColWidthNeeded > 0 ? m_nameColWidthNeeded : kMinNameWidth;
+    int pathNeed = m_pathColWidthNeeded > 0 ? m_pathColWidthNeeded : kMinPathWidth;
+
+    int nameWidth;
+    int pathWidth;
+
+    // Columns are never wider than their content; leftover space stays empty at the right (like Explorer++).
+    if (nameNeed + pathNeed <= available) {
+        nameWidth = nameNeed;
+        pathWidth = pathNeed;
+    } else {
+        // Not enough room. Path shrinks first (it elides in the middle) down to its minimum;
+        // only then Name is shrunk, down to its own minimum.
+        // The minimum widths only limit shrinking; they never widen a column beyond its content.
+        const int pathFloor = std::min(pathNeed, kMinPathWidth);
+        const int nameFloor = std::min(nameNeed, kMinNameWidth);
+        nameWidth = std::min(nameNeed, std::max(nameFloor, available - pathFloor));
+        pathWidth = std::min(pathNeed, std::max(pathFloor, available - nameWidth));
+    }
+
+    m_tableView->setColumnWidth(nameCol, nameWidth);
+    m_tableView->setColumnWidth(pathCol, pathWidth);
 }
 
 void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &pos) {
