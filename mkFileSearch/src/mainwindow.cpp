@@ -1806,7 +1806,7 @@ void MainWindow::action_SortDescending() {
 }
 
 void MainWindow::action_EditSettingsFile() {
-    QDesktopServices::openUrl(QUrl::fromLocalFile(m_settings.getSettingsPath()));
+    Helpers::openWithSystemDefault(QUrl::fromLocalFile(m_settings.getSettingsPath()));
 }
 
 void MainWindow::onTimedUpdateIcons() {

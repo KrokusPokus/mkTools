@@ -48,6 +48,7 @@ namespace Helpers {
 
     DesktopEntry getDesktopEntryById(const QString &id);
     DesktopEntry getDesktopEntry(const QFileInfo &fileInfo);
+    bool openWithSystemDefault(const QUrl &url);
     void openFileListWithHandler(const QString &handler, const QStringList &fileList);
     void launchDesktopFile(const DesktopEntry &info, const QStringList &fileList = {});
     QList<QStringList> expandDesktopExec(const DesktopEntry &entry, const QStringList &files);

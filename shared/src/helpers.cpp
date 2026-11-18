@@ -471,6 +471,24 @@ namespace Helpers {
         return DesktopEntry();
     }
 
+    // Opens a file or URL using the system's default application.
+    // We deliberately avoid using QDesktopServices directly: in that case, Qt—even outside of
+    //  a sandbox—uses xdg-desktop-portal, which ignores the user's configured default for local files
+    // (instead presenting a selection dialog, followed by remembering the chosen application).
+    // In contrast, xdg-open queries the desktop environment (e.g., using kde-open on Plasma).
+    // Returns true if the launch process was initiated.
+    // This does not guarantee that xdg-open was actually able to open the file.
+    bool openWithSystemDefault(const QUrl &url) {
+        if (!url.isValid()) return false;
+
+        const QString xdgOpen = QStandardPaths::findExecutable(QStringLiteral("xdg-open"));
+        if (!xdgOpen.isEmpty()) {
+            const QString target = url.isLocalFile() ? url.toLocalFile() : url.toString(QUrl::FullyEncoded);
+            if (QProcess::startDetached(xdgOpen, { target })) return true;
+        }
+        return QDesktopServices::openUrl(url);
+    }
+
     void openFileListWithHandler(const QString &handlerApp, const QStringList &fileList) {
         if (handlerApp.endsWith(".desktop", Qt::CaseInsensitive)) {
             launchDesktopFile(getDesktopEntryById(handlerApp), fileList);
