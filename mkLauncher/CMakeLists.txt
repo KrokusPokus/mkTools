@@ -46,12 +46,3 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin"
 )
-
-if(LINUX)
-    add_custom_command(TARGET mkLauncher POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:mkLauncher>
-        $ENV{HOME}/.local/bin/mkLauncher
-        COMMENT "Copying mkLauncher to ~/.local/bin/"
-    )
-endif()

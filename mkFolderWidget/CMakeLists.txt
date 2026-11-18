@@ -33,6 +33,11 @@ install(TARGETS mkFolderWidget
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # .desktop file: makes it selectable as default file manager; the file name must match the Wayland app_id (= executable name)
+    install(FILES res/mkFolderWidget.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+endif()
+
 #qt_generate_deploy_app_script(
 #    TARGET mkFolderWidget
 #    OUTPUT_SCRIPT deploy_script
@@ -45,12 +50,3 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin"
 )
-
-if(LINUX)
-    add_custom_command(TARGET mkFolderWidget POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:mkFolderWidget>
-        $ENV{HOME}/.local/bin/mkFolderWidget
-        COMMENT "Copying mkFolderWidget to ~/.local/bin/"
-    )
-endif()

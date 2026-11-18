@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/icons">
         <file>app.ico</file>
+        <file>org.kde.dolphin.svg</file>
     </qresource>
 </RCC>

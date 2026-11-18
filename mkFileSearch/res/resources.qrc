@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/icons">
         <file>app.ico</file>
+        <file>kfind.svg</file>
         <file>info.ico</file>
         <file>multi.ico</file>
     </qresource>

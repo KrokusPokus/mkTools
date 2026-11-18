@@ -70,6 +70,13 @@ add_subdirectory(mkFolderWidget)
 add_subdirectory(mkLauncher)
 add_subdirectory(mkTransactionHandler)
 
+# KWin scripts (enable them under System Settings > Window Management > KWin Scripts).
+# The folder name has to match the "Id" in metadata.json.
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    install(DIRECTORY kwin/mkFolderWidgetTiler/ DESTINATION ${CMAKE_INSTALL_DATADIR}/kwin/scripts/mkfolderwidgettiler)
+    install(DIRECTORY kwin/mkNewWindowAutoPos/  DESTINATION ${CMAKE_INSTALL_DATADIR}/kwin/scripts/mknewwindowautopos)
+endif()
+
 # =====================================================================
 # ZENTRALE ÜBERSETZUNG FÜR DAS GESAMTE PROJEKT
 # =====================================================================

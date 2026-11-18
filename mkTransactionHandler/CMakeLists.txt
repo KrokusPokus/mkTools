@@ -34,6 +34,11 @@ install(TARGETS mkTransactionHandler
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # .desktop file: gives the window its identity (icon, progress display); the file name must match the Wayland app_id (= executable name)
+    install(FILES res/mkTransactionHandler.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+endif()
+
 #qt_generate_deploy_app_script(
 #    TARGET mkTransactionHandler
 #    OUTPUT_SCRIPT deploy_script
@@ -46,12 +51,3 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin"
 )
-
-if(LINUX)
-    add_custom_command(TARGET mkTransactionHandler POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:mkTransactionHandler>
-        $ENV{HOME}/.local/bin/mkTransactionHandler
-        COMMENT "Copying mkTransactionHandler to ~/.local/bin/"
-    )
-endif()

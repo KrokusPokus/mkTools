@@ -138,7 +138,12 @@ void MainWindow::setupUi() {
     }
 
     setWindowTitle(windowTitle);
+#ifdef Q_OS_WIN
     setWindowIcon(QIcon(":/icons/app.ico"));
+#else
+    // Icon of the current icon theme, the embedded copy (from dolphin) only if the theme lacks it
+    setWindowIcon(QIcon::fromTheme(QStringLiteral("org.kde.dolphin"), QIcon(QStringLiteral(":/icons/org.kde.dolphin.svg"))));
+#endif
     setMinimumWidth(450);
 
     auto *centralWidget = new QWidget(this);

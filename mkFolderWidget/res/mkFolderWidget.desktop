@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=mkFolderWidget
+GenericName=File Manager
+GenericName[de]=Dateiverwaltung
+Exec=mkFolderWidget %u
+Icon=org.kde.dolphin
+MimeType=inode/directory;
+# Hidden from the start menu, but selectable as default file manager (System Settings > Default Applications)
+NoDisplay=true
+StartupNotify=false
+Terminal=false
+X-KDE-Protocols=file
+Categories=Qt;KDE;System;FileTools;FileManager;

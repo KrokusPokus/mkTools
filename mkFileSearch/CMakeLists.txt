@@ -32,6 +32,11 @@ install(TARGETS mkFileSearch
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    # Start menu entry (icon: kfind from the icon theme); the file name must match the Wayland app_id (= executable name)
+    install(FILES res/mkFileSearch.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+endif()
+
 #qt_generate_deploy_app_script(
 #    TARGET mkFileSearch
 #    OUTPUT_SCRIPT deploy_script
@@ -44,12 +49,3 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin"
     RUNTIME_OUTPUT_DIRECTORY_RELEASE "${CMAKE_BINARY_DIR}/bin"
 )
-
-if(LINUX)
-    add_custom_command(TARGET mkFileSearch POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        $<TARGET_FILE:mkFileSearch>
-        $ENV{HOME}/.local/bin/mkFileSearch
-        COMMENT "Copying mkFileSearch to ~/.local/bin/"
-    )
-endif()

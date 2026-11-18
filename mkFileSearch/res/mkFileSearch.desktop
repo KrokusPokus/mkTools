@@ -1,0 +1,15 @@
+[Desktop Entry]
+Type=Application
+Name=mkFileSearch
+GenericName=File Search
+GenericName[de]=Dateisuche
+Comment=Search for files and folders
+Comment[de]=Dateien und Ordner suchen
+Exec=mkFileSearch %f
+Icon=kfind
+MimeType=inode/directory;
+StartupNotify=false
+Terminal=false
+Categories=Qt;KDE;Utility;
+Keywords=search;find;file;folder;
+Keywords[de]=Suche;suchen;Datei;Ordner;

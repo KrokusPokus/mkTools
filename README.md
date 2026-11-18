@@ -87,7 +87,7 @@ fi
 
 
 
-$HOME/.local/bin/mkFileSearch "$TARGET_PATH" &
+mkFileSearch "$TARGET_PATH" &
 
 exit
 
@@ -95,3 +95,7 @@ fi
 ```
 
 (mkFolderWidget displays its full path in the title bar by default. For other file managers like Dolphin, you might have to enable that option.)
+
+## License
+
+GPL-3.0-only, see [LICENSE](LICENSE).

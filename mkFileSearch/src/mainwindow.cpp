@@ -65,7 +65,12 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     : QMainWindow(parent), m_currentDirectory(targetDirectory)
 {
     setWindowTitle(QDir::toNativeSeparators(m_currentDirectory));
+#ifdef Q_OS_WIN
     setWindowIcon(QIcon(":/icons/app.ico"));
+#else
+    // Icon of the current icon theme, the embedded copy (from breeze-icons) only if the theme lacks it
+    setWindowIcon(QIcon::fromTheme(QStringLiteral("kfind"), QIcon(QStringLiteral(":/icons/kfind.svg"))));
+#endif
     resize(728, 545);
 
     m_processIsElevated = Helpers::isCurrentProcessElevated();
