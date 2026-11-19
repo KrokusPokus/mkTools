@@ -111,6 +111,8 @@ private:
     void scrollToCurrentItem();
     void selectAllItems();
     void setupClipboardForCopyOrCut(const QStringList &cutFilePaths, bool isCut);
+    void scheduleMeasureFlexibleColumns();
+    void measureFlexibleColumns();
     void updateColumns();
     void updateWidgetStyles();
     QPixmap generateThumbnailIcon(const QFileInfo &fileInfo);
@@ -216,6 +218,10 @@ private:
 
     bool m_bShowHiddenFiles = true;
     bool m_bHeaderVisible = true;
+    bool m_measureFlexibleColumnsPending = false;
+    int m_nameColWidthNeeded = 0;      // Cached content width of eColName (incl. icon/padding), set by measureFlexibleColumns()
+    int m_newNameColWidthNeeded = 0;   // Cached content width of eColNewName (incl. padding), set by measureFlexibleColumns()
+    int m_pathColWidthNeeded = 0;      // Cached content width of eColPath (incl. padding), set by measureFlexibleColumns()
     QString m_currentDirectory;
     QElapsedTimer m_BenchmarkTimer;
     QFileIconProvider m_iconProvider;

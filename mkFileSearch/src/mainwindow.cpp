@@ -918,11 +918,12 @@ void MainWindow::onSearchFinished(uint iItemsFound, uint iNameMatched, uint iCon
 // Measures the content width of the two flexible columns (Name, Path) once per search result.
 // Same idea as m_nLabelWidthMax in Explorer++: measure once after loading, reuse on every resize.
 // Lives here (not in the shared CustomTableModel) so mkFolderWidget/mkLauncher/mkBatchRename are unaffected.
+// Measures through the proxy, so rows it filters out (e.g. hidden files) do not widen the columns.
 void MainWindow::measureFlexibleColumns() {
     m_nameColWidthNeeded = 0;
     m_pathColWidthNeeded = 0;
 
-    const int rowCount = m_abstractModel->rowCount();
+    const int rowCount = m_proxyModel->rowCount();
     if (rowCount == 0) {
         return;
     }
@@ -935,7 +936,7 @@ void MainWindow::measureFlexibleColumns() {
         std::vector<std::pair<qsizetype, int>> lengths;   // (length, row)
         lengths.reserve(rowCount);
         for (int row = 0; row < rowCount; ++row) {
-            lengths.emplace_back(m_abstractModel->index(row, column).data(Qt::DisplayRole).toString().size(), row);
+            lengths.emplace_back(m_proxyModel->index(row, column).data(Qt::DisplayRole).toString().size(), row);
         }
 
         const auto nth = lengths.begin() + std::min<qsizetype>(kCandidates, static_cast<qsizetype>(lengths.size()));
@@ -944,7 +945,7 @@ void MainWindow::measureFlexibleColumns() {
         const QFontMetrics fm(m_tableView->font());
         int maxWidth = 0;
         for (auto it = lengths.begin(); it != nth; ++it) {
-            const QString text = m_abstractModel->index(it->second, column).data(Qt::DisplayRole).toString();
+            const QString text = m_proxyModel->index(it->second, column).data(Qt::DisplayRole).toString();
             maxWidth = std::max(maxWidth, fm.horizontalAdvance(text));
         }
         return maxWidth;
