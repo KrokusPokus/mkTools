@@ -3,9 +3,12 @@
 #include "helpers.h"
 
 #include <QAbstractProxyModel>
+#include <QCursor>
 #include <QDrag>
+#include <QGuiApplication>
 #include <QMenu>
 #include <QMimeData>
+#include <QMouseEvent>
 #include <QPainter>
 #include <QTimer>
 
@@ -287,6 +290,100 @@ void CustomListView::currentChanged(const QModelIndex &current, const QModelInde
         // Den Anker sauber auf den neuen aktuellen Index setzen
         m_selectionAnchor = current;
     }
+}
+
+// ---------------------------------------------------------------------------------------------
+// Workaround: Gummiband bleibt unter KDE Plasma Wayland stehen (KWin-Fehler, nicht unserer)
+// ---------------------------------------------------------------------------------------------
+// Ablauf des Fehlers:
+//   1. Ein ANDERES Fenster ist aktiv. Der User drückt die linke Maustaste in der View (auf
+//      leerer Fläche) und zieht ein Gummiband auf. Der Klick aktiviert unser Fenster; mit der
+//      KWin-Standardeinstellung "Activate, pass click and raise on release" wird es aber erst
+//      beim LOSLASSEN nach vorne geholt. War unser Fenster schon aktiv, tritt der Fehler nicht auf.
+//   2. Er zieht mit gedrückter Taste bis über die Titelleiste des eigenen Fensters. Unter
+//      Plasma Wayland ist das eine serverseitige Dekoration, die KWin selbst zeichnet.
+//      Solange die Taste gehalten wird, greift der implizite Pointer-Grab korrekt: Wir
+//      bekommen weiter MouseMove-Events (mit negativen y-Koordinaten).
+//   3. Er lässt die Taste ÜBER DER TITELLEISTE los. Statt eines wl_pointer.button(released)
+//      schickt KWin dem Client nur ein wl_pointer.leave. Qt erhält also nie ein
+//      MouseButtonRelease, sondern nur ein QEvent::Leave, während es die Taste weiter für
+//      gedrückt hält (QGuiApplication::mouseButtons() bleibt Qt::LeftButton).
+//      (Warum, steht unten unter "Ursache in KWin".)
+//   4. Folge: Die View bleibt im Gummiband-Zustand, das Rechteck bleibt sichtbar stehen und
+//      verschwindet erst beim nächsten Klick ins Fenster.
+//   Per Diagnose-Log verifiziert (Qt 6.12.0, KWin 6.8.3). Dolphin zeigt denselben Fehler.
+//   Unter X11 und Windows tritt er nicht auf.
+//
+// Ursache in KWin (im KWin-Quellcode nachvollzogen, Stand KWin 6.8):
+//   a) Linksklick in ein inaktives Fenster löst in KWin standardmäßig den Fenster-Befehl
+//      Options::MouseActivateRaiseOnReleaseAndPassClick aus (Options::defaultCommandWindow1(),
+//      src/options.h). Beim DRÜCKEN ruft Window::performMousePressCommand() nur
+//      workspace()->requestFocus() auf und merkt sich m_delayedRaise = true. Angehoben wird
+//      das Fenster erst beim Loslassen. (Sinn der Einstellung: Man kann aus einem verdeckten
+//      Fenster heraus Drag&Drop starten, ohne dass es dabei nach vorne springt.)
+//   b) Beim Loslassen arbeitet PointerInputRedirection::processButton() (src/pointer_input.cpp)
+//      in dieser Reihenfolge:
+//        1. updateButton()   -> die Taste gilt ab jetzt KWin-intern als losgelassen
+//        2. Filterkette      -> u. a. WindowActionInputFilter, ganz am Ende ForwardInputFilter
+//        3. update()         -> Pointer-Fokus neu berechnen (Ende des impliziten Grabs)
+//      Gedacht ist: Erst wird das Release an den Client geschickt (Schritt 2, ForwardInputFilter
+//      -> SeatInterface::notifyPointerButton()), dann wechselt der Fokus (Schritt 3).
+//   c) In Schritt 2 kommt aber der WindowActionInputFilter (src/input.cpp) VOR dem
+//      ForwardInputFilter dran. Er führt für das Release den verzögerten Befehl aus:
+//      Window::performMouseReleaseCommand() -> performDelayedRaise() -> Workspace::raiseWindow().
+//      Weil unser Fenster vorher nicht ganz oben lag, ändert sich die Stapelreihenfolge. Der
+//      StackingUpdatesBlocker in raiseWindow() sendet beim Verlassen SYNCHRON das Signal
+//      Workspace::stackingOrderChanged, und das ist mit InputDeviceHandler::update() verbunden
+//      (src/input.cpp, InputDeviceHandler::init()).
+//   d) Dieses vorzeitige update() wird nicht mehr blockiert: focusUpdatesBlocked() prüft nur
+//      areButtonsPressed(), und die Taste ist seit Schritt 1 schon als losgelassen markiert.
+//      Also berechnet KWin den Fokus neu. Der Zeiger steht über der Titelleiste, daher setzt
+//      updateDecoration() die Dekoration als Ziel und updateFocus() entzieht unserer
+//      Client-Fläche den Fokus: SeatInterface::notifyPointerLeave() -> wl_pointer.leave an uns.
+//   e) Danach erreicht das Release endlich den ForwardInputFilter. PointerInterface::sendButton()
+//      (src/wayland/pointer.cpp) schickt aber nur an die aktuell fokussierte Fläche, und die gibt
+//      es nicht mehr. Das Release wird ohne jede Meldung verworfen.
+//   Das erklärt alle Beobachtungen:
+//   - War unser Fenster schon aktiv/oben, gibt es kein verzögertes Anheben, also kein
+//     vorzeitiges update() und keinen Fehler.
+//   - Beim Loslassen über unserer eigenen Client-Fläche ergibt die Neuberechnung denselben
+//     Fokus, also kein Leave und keinen Fehler.
+//   - Der Fehler hängt nicht vom Toolkit ab, deshalb hat Dolphin ihn genauso.
+//   Passende Korrektur in KWin wäre: Fokus-Neuberechnungen blockieren, solange ein Release
+//   durch die Filterkette läuft. Das update() am Ende von processButton() holt sie danach in
+//   der richtigen Reihenfolge nach (erst Release an den Client, dann Fokuswechsel).
+//
+// Erkennung: Bei korrekt funktionierendem implizitem Grab kommt während eines gehaltenen
+// Gummibands KEIN Leave beim Viewport an, auch nicht, wenn der Zeiger das Fenster verlässt.
+// Ein Leave mitten in einem aktiven Gummiband-Zug bedeutet daher: Der Release wurde
+// verschluckt.
+//
+// Abhilfe: Wir holen den fehlenden Release selbst nach, indem wir mouseReleaseEvent() mit einem
+// künstlichen Event an der aktuellen Cursorposition aufrufen. Damit läuft der reguläre
+// Aufräum-Code (unser eigener und der von Qt): Gummiband ausblenden, Zustand auf NoState
+// zurücksetzen, Autoscroll stoppen. Die bis dahin aufgezogene Auswahl bleibt erhalten,
+// genau wie bei einem normalen Loslassen.
+// Bewusst auf Wayland beschränkt, damit wir das Verhalten auf anderen Plattformen nicht
+// verändern. Normale Klicks und Datei-Drag&Drop berührt der Workaround nicht.
+//
+// Bekannter Rest: QGuiApplication::mouseButtons() meldet bis zum nächsten echten Klick
+// weiterhin Qt::LeftButton, weil der globale Zustand von Qt nur durch echte Plattform-Events
+// zurückgesetzt wird. Im Code wird mouseButtons() nur in startDrag() auf Qt::RightButton
+// geprüft, daher ist das unkritisch.
+//
+// Kann entfernt werden, sobald KWin das Release beim verzögerten Anheben ("raise on release")
+// korrekt an den Client ausliefert.
+// ---------------------------------------------------------------------------------------------
+bool CustomListView::viewportEvent(QEvent *event) {
+    if (event->type() == QEvent::Leave
+        && QGuiApplication::platformName().startsWith(QLatin1String("wayland"))
+        && state() == QAbstractItemView::DragSelectingState) {   // Qts eigenes Gummiband ist aktiv
+        const QPoint localPos = viewport()->mapFromGlobal(QCursor::pos());
+        QMouseEvent release(QEvent::MouseButtonRelease, QPointF(localPos), QPointF(QCursor::pos()),
+                            Qt::LeftButton, Qt::NoButton, QGuiApplication::keyboardModifiers());
+        mouseReleaseEvent(&release);
+    }
+    return QListView::viewportEvent(event);
 }
 
 bool CustomListView::interceptInvalidFileTarget(QDragMoveEvent *event, bool isEnterEvent) {

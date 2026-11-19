@@ -41,6 +41,7 @@ protected:
 
     void mouseMoveEvent(QMouseEvent *event) override;       // for RubberBand
     void mouseReleaseEvent(QMouseEvent *event) override;    // for RubberBand
+    bool viewportEvent(QEvent *event) override;             // Workaround: verschluckter Release unter Plasma Wayland
 };
 
 #endif // CUSTOMTABLEVIEW_H
