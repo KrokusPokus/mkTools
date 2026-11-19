@@ -245,7 +245,7 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     QLabel *groupBox5_Label3 = new QLabel(tr("From:"));
     m_groupBox5_SpinBox3 = new ZeroOnEmptySpinBox();
     m_groupBox5_SpinBox3->setRange(0, 255);
-    QLabel *groupBox5_Label4 = new QLabel(tr("to:"));
+    QLabel *groupBox5_Label4 = new QLabel(tr("Count:"));
     m_groupBox5_SpinBox4 = new ZeroOnEmptySpinBox();
     m_groupBox5_SpinBox4->setRange(0, 255);
     QGridLayout *groupBox5Layout = new QGridLayout();
@@ -2859,7 +2859,7 @@ void MainWindow::onRenameRulesChanged() {
     rules.rmv.firstN = m_groupBox5_SpinBox1->value();
     rules.rmv.lastN = m_groupBox5_SpinBox2->value();
     rules.rmv.fromN = m_groupBox5_SpinBox3->value();
-    rules.rmv.toN = m_groupBox5_SpinBox4->value();
+    rules.rmv.fromNcount = m_groupBox5_SpinBox4->value();
 
     /*
     // Move/Copy

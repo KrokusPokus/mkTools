@@ -82,7 +82,7 @@ struct RemoveRule {
     int firstN = 0;
     int lastN = 0;
     int fromN = 0;
-    int toN = 0;
+    int fromNcount = 0;
 };
 
 // Move/Copy

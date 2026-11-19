@@ -888,7 +888,7 @@ QString CustomTableModel::applyRemoveRule(const QString &input, const RemoveRule
     // int rule.firstN
     // int rule.lastN
     // int rule.fromN
-    // int rule.toN
+    // int rule.fromNcount
 
     QString workingCopy;
     workingCopy = input;
@@ -900,12 +900,11 @@ QString CustomTableModel::applyRemoveRule(const QString &input, const RemoveRule
             workingCopy.remove(0, count);
         }
 
-        if (rule.fromN > 0 && rule.toN >= rule.fromN) {
+        if (rule.fromNcount > 0) {
             qsizetype startIndex = rule.fromN - 1;
 
             if (startIndex < workingCopy.length()) {
-                qsizetype count = rule.toN - rule.fromN + 1;
-                workingCopy.remove(startIndex, count);
+                workingCopy.remove(startIndex, rule.fromNcount);
             }
         }
 
