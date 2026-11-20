@@ -1,100 +1,158 @@
+# mkTools
 
-mkTools are a collection of GUI apps based on Qt6 that were created out of various frustrations with existing Linux GUI apps. At this point they include a file manager, an anything launcher and a file search tool. They are minimalist and screen space efficient in style and meant to be used with mouse and keyboard. Definitely no touch friendliness here. Think hotkeys, not buttons.
-The apps are multi-platform and tested on Linux with KDE Plasma and Windows 10.
+A collection of Qt6 desktop tools, created out of various frustrations with existing Linux GUI apps:
+a file manager, an anything launcher, a file search, a batch renamer, and two KWin scripts.
 
+The tools are minimalist and screen-space efficient, and meant to be used with mouse and keyboard.
+Definitely no touch friendliness here: think hotkeys, not buttons.
+They are developed on Linux with KDE Plasma and have also been tested on Windows 10.
 
-# mkFolderWidget
+| Tool | Purpose |
+|------|---------|
+| [mkFolderWidget](#mkfolderwidget) | Compact file manager |
+| [mkLauncher](#mklauncher) | Launcher for apps and files |
+| [mkFileSearch](#mkfilesearch) | File search by name and content |
+| [mkBatchRename](#mkbatchrename) | Batch renaming of files |
+| [mkTransactionHandler](#mktransactionhandler) | Copy/move/delete helper for mkFolderWidget |
+| [KWin scripts](#kwin-scripts) | Window tiling and placement (KDE Plasma only) |
 
-![Windows 10](images/screenshot_mkFolderWidget.webp)
+## mkFolderWidget
 
-A minimalist file manager optimized to take up as little space as possible. It can be used with the included KWin script to tile its windows in a narrow column at the right side of the screen.
+![mkFolderWidget on Windows 10](images/screenshot_mkFolderWidget.webp)
 
-
-# mkLauncher
-
-![Windows 10](images/screenshot_mkLauncher.png)
-
-An apps and files launcher that doesn't use an indexing services.
-
-
-# mkFileSearch
-
-![KDE Plasma Breeze Dark](images/screenshot_mkFileSearch.png)
-
-A file search tool that does not use indexing services. It allows for searching by filename and/or content either with normal search terms or RegEx expressions.
-
-Without further arguments given, it opens in the user's $HOME folder.
-The intended workflow for this app is to open it with `mkFileSearch /path/to/search`, either from a file manager that allows for launching external apps this way, or via hotkey.
-
-Here's an sample script to put on a hotkey like Meta+F that takes the path inside the active windows's title bar (if one exists) and launches an mkFileSearch instance in that path:
+A minimalist file manager optimized to take up as little space as possible. Together with the included KWin script
+[mkFolderWidget Tiler](#kwin-scripts), its windows are tiled in a narrow column at the right side of the screen.
 
 ```
-#!/bin/bash
+mkFolderWidget [directory] [-f <file to focus>] [-X <x> -Y <y> -W <width> -H <height>]
+```
 
-if [ "$XDG_SESSION_TYPE" == "wayland" ]; then
+## mkLauncher
+
+![mkLauncher on Windows 10](images/screenshot_mkLauncher.png)
+
+A launcher for apps and files that does not use an indexing service.
+
+## mkFileSearch
+
+![mkFileSearch on KDE Plasma (Breeze Dark)](images/screenshot_mkFileSearch.png)
+
+A file search tool that does not use an indexing service. It searches by file name and/or content, with plain
+search terms or regular expressions.
+
+```
+mkFileSearch [path]
+```
+
+Without an argument it searches the home folder. The intended workflow is to start it with the folder to search,
+either from a file manager that can launch external programs this way, or via a global shortcut.
+
+The following script is an example for a shortcut such as Meta+F. It takes the path from the title bar of the
+active window (if it shows one) and opens mkFileSearch there. mkFolderWidget shows its full path in the title bar by
+default; for other file managers such as Dolphin you may have to enable that option.
+It needs `kdotool` on Wayland or `xdotool` on X11.
+
+<details>
+<summary>mkFileSearch-here.sh</summary>
+
+```bash
+#!/bin/bash
+# Opens mkFileSearch in the folder shown in the title bar of the active window.
+
+if [ "$XDG_SESSION_TYPE" = "wayland" ]; then
     TOOL="kdotool"
-    OPTIONS=""
 else
     TOOL="xdotool"
-    OPTIONS="--onlyvisible"
 fi
 
 WINDOW_ID=$($TOOL getactivewindow)
 FULL_TITLE=$($TOOL getwindowname "$WINDOW_ID")
 
-# Erklärung:
-# ^[^:]+:    -> Matcht vom Anfang (^) alles, was kein Doppelpunkt ist, bis zum ersten Doppelpunkt.
-# (.*)       -> Gruppe 1: Der Pfad (alles bis zum nächsten Teil).
-# \ —\ .*$   -> Der Trenner " — " und der App-Name bis zum Ende ($).
+# "<label>:<path> — <app>"
 regex1="^[^:]+:(.*) — .*$"
-
-# Erklärung:
-# ^(.*)         -> Gruppe 1: Alles vom Anfang bis zum Leerzeichen
-# \ @\          -> Der feste Trenner " @ "
-# (.*)          -> Gruppe 2: Der Pfad
-# \ —\ .*$      -> Der Trenner " — " und der Rest (AppName) bis zum Ende
-#regex="^(.*) @ (.*) — .*$"+
-# "(.*) @" is greedy and reads till the last "@". This version stops at the first:
+# "<file name> @ <path> — <app>"; [^@]* stops at the first "@" (.* would be greedy and read up to the last one)
 regex2="^([^@]*) @ (.*) — .*$"
 
 if [[ "$FULL_TITLE" =~ $regex1 ]]; then
-    # BASH_REMATCH[1] ist der Pfad
     TITLE_PATH="${BASH_REMATCH[1]}"
 elif [[ "$FULL_TITLE" =~ $regex2 ]]; then
-    # BASH_REMATCH[1] ist der Dateiname
-    # BASH_REMATCH[2] ist der Pfad
-    # BASH_REMATCH[3] wäre der AppName (nicht genutzt)
     TITLE_PATH="${BASH_REMATCH[2]}/${BASH_REMATCH[1]}"
 else
-    #if [[ "$variable" == *" — Dolphin" ]]; then
-        # Titel bereinigen
-        # Wir löschen alles ab dem " — Dolphin" Teil (Achtung: langer Gedankenstrich!)
-        # Die Syntax ${VAR%muster} löscht das Muster am Ende des Strings
-        TITLE_PATH="${FULL_TITLE% — Dolphin}"
-    #fi
+    # Dolphin: "<path> — Dolphin" (note the em dash)
+    TITLE_PATH="${FULL_TITLE% — Dolphin}"
 fi
 
-CLEAN_PATH="${TITLE_PATH/#~/$HOME}"
+CLEAN_PATH="${TITLE_PATH/#\~/$HOME}"
 
-
-if [ -d "$CLEAN_PATH" ]; then   # CLEAN_PATH points to folder
+if [ -d "$CLEAN_PATH" ]; then
     TARGET_PATH="$CLEAN_PATH"
-elif [ -f "$CLEAN_PATH" ]; then # CLEAN_PATH points to file
+elif [ -f "$CLEAN_PATH" ]; then
     TARGET_PATH=$(dirname "$CLEAN_PATH")
 else
-    TARGET_PATH=$HOME
+    TARGET_PATH="$HOME"
 fi
-
-
 
 mkFileSearch "$TARGET_PATH" &
-
-exit
-
-fi
 ```
 
-(mkFolderWidget displays its full path in the title bar by default. For other file managers like Dolphin, you might have to enable that option.)
+</details>
+
+## mkBatchRename
+
+Renames many files at once: find and replace (optionally case-sensitive or with regular expressions), remove,
+move or copy parts of the name, add prefix/suffix, folder name or numbering, pad or renumber existing numbers,
+and change case. The rules apply to the name, the extension or both; the file list shows the resulting names before
+anything is renamed.
+
+```
+mkBatchRename [folder]
+```
+![screenshot](images/screenshot_mkBatchRename.webp)
+
+## mkTransactionHandler
+
+A helper without its own launcher entry: mkFolderWidget starts it to copy, move and delete files in a separate
+process, with progress display and conflict dialogs. On Linux it can optionally hand the operations over to KIO,
+so that progress is shown in the Plasma notification area.
+
+## KWin scripts
+
+Two scripts for KDE Plasma 6, enabled under *System Settings → Window Management → KWin Scripts*:
+
+- **mkFolderWidget Tiler** tiles mkFolderWidget windows into a column at the right screen border.
+- **Window placement: Next to active** places new windows right next to the active one, if there is enough space.
+
+They are installed together with the apps. To install only the scripts into your user folder, run
+`./kwin-scripts-install.sh` (remove them again with `./kwin-scripts-remove.sh`).
+
+## Requirements
+
+- Qt ≥ 6.5 (Core, Widgets, Concurrent, DBus, Network, LinguistTools), CMake ≥ 3.19, a C++20 compiler, zlib
+- On Linux additionally KDE Frameworks 6 KIO
+- For the KWin scripts: KDE Plasma 6
+
+On Arch Linux:
+
+```bash
+sudo pacman -S --needed base-devel cmake qt6-base qt6-tools kio zlib
+```
+
+## Building and installing (Linux)
+
+```bash
+git clone https://github.com/KrokusPokus/mkTools.git
+cd mkTools
+cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
+cmake --build build --parallel
+sudo cmake --install build                   # installs system-wide
+sudo xargs rm < build/install_manifest.txt   # uninstalls again
+```
+
+For development, `./build.sh` builds into `build/` without installing, and `./build_lupdate.sh` updates the
+translation sources in `i18n/*.ts`.
+
+> **Note:** release builds use `-march=native`. The binaries are optimized for the CPU they were built on and may
+> not run on older CPUs.
 
 ## License
 
