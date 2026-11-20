@@ -2866,7 +2866,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 
                 return false;
             }
-            else if (mouseEvent->button() == Qt::MiddleButton) {
+            else if (mouseEvent->button() == Qt::BackButton) {
                 if (!m_topControlsContainerWidget->isHidden()) {
                     m_LineEdit1->clear();
                     m_topControlsContainerWidget->hide();
