@@ -4,6 +4,7 @@
 #include <QSet>
 #include <QSettings>
 #include <QString>
+#include <QStringList>
 
 class SettingsManager {
 public:
@@ -13,12 +14,8 @@ public:
     void saveSettings();
     QString getSettingsPath();
 
-	QSet<QString> audioExts;
-	QSet<QString> imageExts;
-    QSet<QString> miscExts;
-	QSet<QString> textExts;
-	QSet<QString> videoExts;
-    QSet<QString> knownExts;
+    QSet<QString> hideExts;           // extensions that are hidden if showFileExtensions is off
+    QSet<QString> contentSearchExts;  // files whose content is searched by mkFileSearch
 
     QString mergeTool;
 	QString fileManager;
@@ -52,11 +49,12 @@ private:
     QString exportSearchFolders(const QStringList &folders);
 
     // Defaults
-    const QString DEFAULT_AUDIO = "aac,flac,m4a,mid,mp3,ogg,wav";
-    const QString DEFAULT_IMAGE = "avif,bmp,gif,heic,heif,jpg,jpeg,jxl,png,qoi,tga,tif,tiff,webp,xcf";
-    const QString DEFAULT_TEXT  = "ahk,ass,au3,bat,c,cfg,conf,cpp,cs,css,cue,cxx,desktop,dic,dsf,dsk,duf,h,hpp,htm,html,inf,ini,ion,js,json,log,lst,lua,md,nfo,py,rc,reg,scp,sfv,sh,slang,slangp,sql,srt,ssa,ts,txt,url,vbs,vcxproj,xhtml,xml,xul,yml";
-    const QString DEFAULT_VIDEO = "3gp,asf,avi,mkv,mov,mp4,mpg,ogm,ts,wm,wmv,webm";
-    const QString DEFAULT_MISC  = "cbz,doc,epub,ods,odt,pdf,ppt,zip";
+    const QString DEFAULT_HIDE_EXTS = "3gp,aac,ahk,asf,ass,au3,avi,avif,bat,bmp,c,cbz,cfg,conf,cpp,cs,css,cue,cxx,desktop,dic,doc,dsf,dsk,duf,epub,flac,gif,h,heic,heif,hpp,htm,html,inf,ini,ion,jpeg,jpg,js,json,jxl,log,lst,lua,m4a,md,mid,mkv,mov,mp3,mp4,mpg,nfo,ods,odt,ogg,ogm,pdf,png,ppt,py,qoi,rc,reg,scp,sfv,sh,slang,slangp,sql,srt,ssa,tga,tif,tiff,ts,txt,url,vbs,vcxproj,wav,webm,webp,wm,wmv,xcf,xhtml,xml,xul,yml,zip";
+    const QString DEFAULT_CONTENT_SEARCH_EXTS = "ahk,ass,au3,bat,c,cfg,conf,cpp,cs,css,cue,cxx,desktop,dic,dsf,dsk,duf,h,hpp,htm,html,inf,ini,ion,js,json,log,lst,lua,md,nfo,py,rc,reg,scp,sfv,sh,slang,slangp,sql,srt,ssa,ts,txt,url,vbs,vcxproj,xhtml,xml,xul,yml";
+
+    // Former per-type extension lists (until 2026-11), only read once to migrate them to HideExts/ContentSearchExts
+    const QStringList LEGACY_EXT_KEYS = { "Extensions/FileExtAudio", "Extensions/FileExtImage", "Extensions/FileExtMisc",
+                                          "Extensions/FileExtText", "Extensions/FileExtVideo" };
 
     QString DEFAULT_MERGE_TOOL;
     QString DEFAULT_FILE_MANAGER;

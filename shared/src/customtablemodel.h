@@ -234,7 +234,7 @@ public:
     void abort();
 
     void populateModel_mkBatchRename(const QString &dirPath, const QStringList &externalPathList);
-    void populateModel_mkFileSearch(const QString &searchDir, const QString &searchStringFilename, const QString &searchStringContent, bool bRegExFilename, bool bRegExContent, bool bFilenameCaseSensitive, bool bContentCaseSensitive, Qt::CheckState cbDirState, const QSet<QString> &FileExtTextSet);
+    void populateModel_mkFileSearch(const QString &searchDir, const QString &searchStringFilename, const QString &searchStringContent, bool bRegExFilename, bool bRegExContent, bool bFilenameCaseSensitive, bool bContentCaseSensitive, Qt::CheckState cbDirState, const QSet<QString> &contentSearchExts);
     void populateModel_mkLauncher(const QStringList &searchFolders, const QString &searchString, QStringList recentOpenList);
     void populateModel_mkFolderWidget(const QString &dirPath);
 

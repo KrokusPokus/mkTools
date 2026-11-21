@@ -5,6 +5,8 @@
 #include <QProcessEnvironment>
 #include <QStandardPaths>
 
+#include <algorithm>
+
 SettingsManager::SettingsManager() {
 	load(); // Loads automatically on creation
 }
@@ -14,14 +16,21 @@ void SettingsManager::load() {
 
     QSettings s(getSettingsPath(), QSettings::IniFormat);
 
-	// Extensions
-	audioExts = parseExtensions(s.value("Extensions/FileExtAudio", DEFAULT_AUDIO).toString());
-	imageExts = parseExtensions(s.value("Extensions/FileExtImage", DEFAULT_IMAGE).toString());
-    miscExts  = parseExtensions(s.value("Extensions/FileExtMisc", DEFAULT_MISC).toString());
-	textExts  = parseExtensions(s.value("Extensions/FileExtText",  DEFAULT_TEXT).toString());
-	videoExts = parseExtensions(s.value("Extensions/FileExtVideo", DEFAULT_VIDEO).toString());
+    // Extensions
+    // Migration: the former per-type lists together were the hidden extensions, the text list was the content search list
+    QString hideExtsDefault = DEFAULT_HIDE_EXTS;
+    if (!s.contains("Extensions/HideExts")
+        && std::any_of(LEGACY_EXT_KEYS.begin(), LEGACY_EXT_KEYS.end(), [&s](const QString &key) { return s.contains(key); })) {
+        QStringList legacyLists;
+        for (const QString &key : LEGACY_EXT_KEYS) {
+            legacyLists << s.value(key).toString();
+        }
+        hideExtsDefault = legacyLists.join(u',');
+    }
+    const QString contentSearchExtsDefault = s.value("Extensions/FileExtText", DEFAULT_CONTENT_SEARCH_EXTS).toString();
 
-    knownExts = audioExts | imageExts | textExts | videoExts | miscExts;
+    hideExts          = parseExtensions(s.value("Extensions/HideExts", hideExtsDefault).toString());
+    contentSearchExts = parseExtensions(s.value("Extensions/ContentSearchExts", contentSearchExtsDefault).toString());
 
     // Handlers
 	mergeTool        = s.value("Handlers/MergeTool", DEFAULT_MERGE_TOOL).toString();
@@ -89,11 +98,11 @@ void SettingsManager::saveSettings() {
     QSettings s(getSettingsPath(), QSettings::IniFormat);
 
     // Extensions
-    safeSetValue(s, "Extensions/FileExtAudio", formatStringSet(audioExts));
-    safeSetValue(s, "Extensions/FileExtImage", formatStringSet(imageExts));
-    safeSetValue(s, "Extensions/FileExtMisc", formatStringSet(miscExts));
-    safeSetValue(s, "Extensions/FileExtText", formatStringSet(textExts));
-    safeSetValue(s, "Extensions/FileExtVideo", formatStringSet(videoExts));
+    for (const QString &legacyKey : LEGACY_EXT_KEYS) {
+        if (s.contains(legacyKey)) s.remove(legacyKey);
+    }
+    safeSetValue(s, "Extensions/HideExts", formatStringSet(hideExts));
+    safeSetValue(s, "Extensions/ContentSearchExts", formatStringSet(contentSearchExts));
 
     // Handlers
     // Obsolete: the edit action now uses the 2nd application of the "Open with" menu

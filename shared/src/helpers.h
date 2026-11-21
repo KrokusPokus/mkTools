@@ -7,7 +7,6 @@
 #include <QPixmap>
 #include <QString>
 
-class SettingsManager;
 
 enum class OperationType { Copy, Move, Link, Delete, Recycle }; // needed for interop with mkTransactionHandler
 enum ViewMode {List = 0, Detail = 1, Thumbnail = 2};
@@ -53,8 +52,8 @@ namespace Helpers {
 
     uint getNameMatchQuality(const QString &itemName, const QString &path, const QString &searchString, const QStringList &searchStringSplit, Qt::CaseSensitivity caseSensitivity);
     uint getRegExNameMatchQuality(const QFileInfo &fileInfo, const QRegularExpression &re);
-    uint getContentMatchCount(const QFileInfo &fileInfo, const QString &searchStringContent, Qt::CaseSensitivity caseSensitivity, const QSet<QString> &m_FileExtTextSet);
-    uint getRegExContentMatchCount(const QFileInfo &fileInfo, const QRegularExpression &re, const QSet<QString> &m_FileExtTextSet);
+    uint getContentMatchCount(const QFileInfo &fileInfo, const QString &searchStringContent, Qt::CaseSensitivity caseSensitivity, const QSet<QString> &contentSearchExts);
+    uint getRegExContentMatchCount(const QFileInfo &fileInfo, const QRegularExpression &re, const QSet<QString> &contentSearchExts);
 
     QString toSentenceCase(const QString &input);
     QString toTitleCase(const QString &input);
@@ -72,11 +71,11 @@ namespace Helpers {
     // How the "Open" action of the apps handles a file
     enum class OpenMethod {
         DesktopEntry,   // .desktop file: the entry is launched
-        Execute,        // executable file (except media files): executed directly
+        Execute,        // file with an executable MIME type (program, script) and the executable bit: executed directly
         PreferredApp    // opened with the preferred application of its MIME type
     };
-    OpenMethod openMethod(const QFileInfo &fileInfo, const SettingsManager &settings);
-    KService::Ptr openActionService(const QStringList &paths, const SettingsManager &settings);
+    OpenMethod openMethod(const QFileInfo &fileInfo);
+    KService::Ptr openActionService(const QStringList &paths);
     bool openFileWithPreferredApp(const QString &path, int rank);
     KService::List commonServicesForPaths(const QStringList &paths, int *mimeTypeCount = nullptr);
 }

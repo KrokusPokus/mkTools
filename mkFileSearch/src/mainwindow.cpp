@@ -791,7 +791,7 @@ void MainWindow::startSearch() {
         m_selectionModel->clear();
     }
 
-    m_abstractModel->populateModel_mkFileSearch(m_currentDirectory, InputBox1Text, InputBox2Text, bRegExFilename, bRegExContent, m_CheckboxNameCaseSense->isChecked(), m_CheckboxContentCaseSense->isChecked(), m_CheckboxDirectories->checkState(), m_settings.textExts);
+    m_abstractModel->populateModel_mkFileSearch(m_currentDirectory, InputBox1Text, InputBox2Text, bRegExFilename, bRegExContent, m_CheckboxNameCaseSense->isChecked(), m_CheckboxContentCaseSense->isChecked(), m_CheckboxDirectories->checkState(), m_settings.contentSearchExts);
 }
 
 void MainWindow::onSearchProgress(uint iItemsFound, uint iNameMatched, uint iContentMatched) {
@@ -1223,7 +1223,7 @@ void MainWindow::onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::Keyb
 // Labels the "Open" action like Dolphin: "Open with <app>" if all selected files are opened with the same application.
 // Returns that application, or nullptr.
 KService::Ptr MainWindow::updateOpenActionText(const QStringList &pathList) {
-    const KService::Ptr service = Helpers::openActionService(pathList, m_settings);
+    const KService::Ptr service = Helpers::openActionService(pathList);
     if (service) {
         m_actionListViewOpenFiles->setText(tr("Open with %1").arg(service->name().replace('&', QLatin1String("&&"))));
         m_actionListViewOpenFiles->setIcon(QIcon::fromTheme(service->icon()));
@@ -1244,7 +1244,7 @@ void MainWindow::action_ListViewOpenFiles() {
         QFileInfo fileInfo(path);
         if (!fileInfo.exists()) continue;
 
-        switch (Helpers::openMethod(fileInfo, m_settings)) {
+        switch (Helpers::openMethod(fileInfo)) {
         case Helpers::OpenMethod::DesktopEntry:
             Helpers::launchDesktopFile(Helpers::getDesktopEntry(fileInfo));
             break;

@@ -358,7 +358,7 @@ void CustomTableModel::applyRenamedFileInfo(int row, const QString &newName, con
         if (lastDot > 0) {
             ext = info.name.sliced(lastDot + 1).toLower(); // in case the type has changed
 
-            if (!m_settings->showFileExtensions && m_settings->knownExts.contains(ext)) {
+            if (!m_settings->showFileExtensions && m_settings->hideExts.contains(ext)) {
                 info.displayName = newName.sliced(0, lastDot);
             }
         }
@@ -1495,7 +1495,7 @@ void CustomTableModel::populateModel_mkBatchRename(const QString &dirPath, const
     endResetModel();
 }
 
-void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, const QString &searchStringFilename, const QString &searchStringContent, bool bRegExFilename, bool bRegExContent, bool bFilenameCaseSensitive, bool bContentCaseSensitive, Qt::CheckState cbDirState, const QSet<QString> &FileExtTextSet) {
+void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, const QString &searchStringFilename, const QString &searchStringContent, bool bRegExFilename, bool bRegExContent, bool bFilenameCaseSensitive, bool bContentCaseSensitive, Qt::CheckState cbDirState, const QSet<QString> &contentSearchExts) {
     m_abortSearch.store(false);
     std::vector<CustomFileInfo> newFiles;
     //m_currentDirectoryPath = searchDir; // commented out, since it would allow dropping on background (after first search)
@@ -1593,9 +1593,9 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
 
         if (!bsearchStringContentEmpty) {
             if (bRegExContent) {
-                contentMatchCount = Helpers::getRegExContentMatchCount(fileInfo, qreContent, FileExtTextSet);
+                contentMatchCount = Helpers::getRegExContentMatchCount(fileInfo, qreContent, contentSearchExts);
             } else {
-                contentMatchCount = Helpers::getContentMatchCount(fileInfo, searchStringContent, caseSensitivityContent, FileExtTextSet);
+                contentMatchCount = Helpers::getContentMatchCount(fileInfo, searchStringContent, caseSensitivityContent, contentSearchExts);
             }
 
             if (contentMatchCount == 0) {
@@ -1873,7 +1873,7 @@ CustomFileInfo CustomTableModel::createCustomFileInfo(const QFileInfo &fileInfo,
         if (lastDot > 0) {
             ext = info.name.sliced(lastDot + 1).toLower();
 
-            if (!m_settings->showFileExtensions && m_settings->knownExts.contains(ext)) {
+            if (!m_settings->showFileExtensions && m_settings->hideExts.contains(ext)) {
                 info.displayName = info.name.sliced(0, lastDot);
             }
         }

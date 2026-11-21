@@ -1,5 +1,4 @@
 #include "helpers.h"
-#include "settingsmanager.h"
 
 #include <QBuffer>
 #include <QClipboard>
@@ -1045,7 +1044,7 @@ namespace Helpers {
         return 0;
     }
 
-    uint getContentMatchCount(const QFileInfo &fileInfo, const QString &searchStringContent, Qt::CaseSensitivity caseSensitivity, const QSet<QString> &FileExtTextSet) {
+    uint getContentMatchCount(const QFileInfo &fileInfo, const QString &searchStringContent, Qt::CaseSensitivity caseSensitivity, const QSet<QString> &contentSearchExts) {
         // Only read regular files: FIFOs, sockets and device files (also listed by QDir::System)
         // would block QFile::open() or read() forever and thereby freeze the whole GUI.
         // isFile() is also true for symlinks to regular files.
@@ -1055,7 +1054,7 @@ namespace Helpers {
         //if (!isTextFile(fileInfo.filePath())) {   // much, MUCH slower...
 
         QString sFileExt = fileInfo.suffix().toLower(); // since contains() is CaseSensitive by default
-        if (!FileExtTextSet.contains(sFileExt)) {
+        if (!contentSearchExts.contains(sFileExt)) {
             return 0;
         }
 
@@ -1088,7 +1087,7 @@ namespace Helpers {
         return iCount;
     }
 
-    uint getRegExContentMatchCount(const QFileInfo &fileInfo, const QRegularExpression &re, const QSet<QString> &FileExtTextSet) {
+    uint getRegExContentMatchCount(const QFileInfo &fileInfo, const QRegularExpression &re, const QSet<QString> &contentSearchExts) {
         // Only read regular files: FIFOs, sockets and device files (also listed by QDir::System)
         // would block QFile::open() or read() forever and thereby freeze the whole GUI.
         // isFile() is also true for symlinks to regular files.
@@ -1098,7 +1097,7 @@ namespace Helpers {
         //if (!isTextFile(fileInfo.filePath())) {   // much, MUCH slower...
 
         QString sFileExt = fileInfo.suffix().toLower(); // since contains() is CaseSensitive by default
-        if (!FileExtTextSet.contains(sFileExt)) {
+        if (!contentSearchExts.contains(sFileExt)) {
             return 0;
         }
 
@@ -1417,19 +1416,20 @@ namespace Helpers {
         }
     }
 
-    OpenMethod openMethod(const QFileInfo &fileInfo, const SettingsManager &settings) {
-        const QString fileExt = fileInfo.suffix().toLower();
-
-        if (fileExt == "desktop") {
+    OpenMethod openMethod(const QFileInfo &fileInfo) {
+        if (fileInfo.suffix().compare(QLatin1String("desktop"), Qt::CaseInsensitive) == 0) {
             return OpenMethod::DesktopEntry;
         }
         // Workaround on linux where executable files are not neccessarily executed when opened via QDesktopServices::openUrl().
-        if (fileInfo.isExecutable()
-            && !fileInfo.isDir()
-            && !settings.audioExts.contains(fileExt)
-            && !settings.imageExts.contains(fileExt)
-            && !settings.videoExts.contains(fileExt)) {
-            return OpenMethod::Execute;
+        // The executable bit alone is not enough: on NTFS/FAT/SMB mounts, often all files have it. So like KIO, only files
+        // whose MIME type is executable are executed (programs, scripts; PIE binaries are detected as x-sharedlib).
+        if (fileInfo.isExecutable() && !fileInfo.isDir()) {
+            static const QMimeDatabase mimeDb;
+            const QMimeType mime = mimeDb.mimeTypeForFile(fileInfo);
+            if (mime.inherits(QStringLiteral("application/x-executable"))
+                || mime.inherits(QStringLiteral("application/x-sharedlib"))) {
+                return OpenMethod::Execute;
+            }
         }
         return OpenMethod::PreferredApp;
     }
@@ -1437,13 +1437,13 @@ namespace Helpers {
     // The application the "Open" action uses for the given files, if it is the same one for all of them (like Dolphin's
     // "Open with <app>"). nullptr for folders, files that are not opened with their preferred application, or if the
     // files need different (or no) applications.
-    KService::Ptr openActionService(const QStringList &paths, const SettingsManager &settings) {
+    KService::Ptr openActionService(const QStringList &paths) {
         QMimeDatabase mimeDb;
         KService::Ptr commonService;
 
         for (const QString &path : paths) {
             const QFileInfo fileInfo(path);
-            if (fileInfo.isDir() || openMethod(fileInfo, settings) != OpenMethod::PreferredApp) {
+            if (fileInfo.isDir() || openMethod(fileInfo) != OpenMethod::PreferredApp) {
                 return {};
             }
 
