@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.19)
 project(mkTransactionHandler LANGUAGES CXX)
 
 qt_add_executable(mkTransactionHandler
-    WIN32 MACOSX_BUNDLE
     src/main.cpp
     src/mainwindow.h src/mainwindow.cpp
     src/fileoperation.h src/fileoperation.cpp
@@ -19,25 +18,19 @@ target_link_libraries(mkTransactionHandler
         Qt6::Core
         Qt6::Widgets
         Qt6::Concurrent
-        $<$<PLATFORM_ID:Windows>:zlibstatic>
-        $<$<PLATFORM_ID:Linux>:ZLIB::ZLIB>
+        ZLIB::ZLIB
 )
 
-# Beschleunigt den Start unter Linux, indem ungenutzte Shared Libraries ignoriert werden
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_options(mkTransactionHandler PRIVATE -Wl,--as-needed)
-endif()
+# Beschleunigt den Start, indem ungenutzte Shared Libraries ignoriert werden
+target_link_options(mkTransactionHandler PRIVATE -Wl,--as-needed)
 
 install(TARGETS mkTransactionHandler
-    BUNDLE  DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    # .desktop file: gives the window its identity (icon, progress display); the file name must match the Wayland app_id (= executable name)
-    install(FILES res/mkTransactionHandler.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
-endif()
+# .desktop file: gives the window its identity (icon, progress display); the file name must match the Wayland app_id (= executable name)
+install(FILES res/mkTransactionHandler.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 
 #qt_generate_deploy_app_script(
 #    TARGET mkTransactionHandler

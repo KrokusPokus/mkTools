@@ -15,10 +15,8 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
-#ifdef Q_OS_LINUX
 #include <QDBusConnection>
 #include <QDBusMessage>
-#endif
 
 MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir, QWidget *parent)
     : QMainWindow(parent)
@@ -28,10 +26,6 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
     , m_workerThread(nullptr)
     , m_fileOp(nullptr)
 {
-#ifdef Q_OS_WIN
-    // COM-Schnittstelle für die Windows-Taskleiste instanziieren
-    CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_taskbarList));
-#endif
     qRegisterMetaType<FailedItem>("FailedItem");
     qRegisterMetaType<QList<FailedItem>>("QList<FailedItem>");
     qRegisterMetaType<CopyStats>("CopyStats");
@@ -53,19 +47,15 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
 
     bool isKioOperation = false;
 
-#if defined(Q_OS_LINUX)
     isKioOperation = std::any_of(m_urls.begin(), m_urls.end(), [](const QUrl &u) {
         return !u.isLocalFile();
     });
-#endif
 
     if (isKioOperation) {
         m_pauseButton->setEnabled(false);
 
-#if defined(Q_OS_LINUX)
         // KIO arbeitet asynchron out-of-process -> Direkt auf dem Main-Thread starten
         m_fileOp->startKioAsync();
-#endif
     } else {
         // Lokale Dateien -> Worker-Thread initialisieren
         m_workerThread = new QThread(this);
@@ -96,12 +86,6 @@ MainWindow::~MainWindow() {
     }
 
     delete m_fileOp;
-
-#ifdef Q_OS_WIN
-    if (m_taskbarList) {
-        m_taskbarList->Release();
-    }
-#endif
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
@@ -138,12 +122,8 @@ void MainWindow::setupUi() {
     }
 
     setWindowTitle(windowTitle);
-#ifdef Q_OS_WIN
-    setWindowIcon(QIcon(":/icons/app.ico"));
-#else
     // Icon of the current icon theme, the embedded copy (from dolphin) only if the theme lacks it
     setWindowIcon(QIcon::fromTheme(QStringLiteral("org.kde.dolphin"), QIcon(QStringLiteral(":/icons/org.kde.dolphin.svg"))));
-#endif
     setMinimumWidth(450);
 
     auto *centralWidget = new QWidget(this);
@@ -603,17 +583,6 @@ void MainWindow::onCancelRequested() {
 }
 
 void MainWindow::setTaskbarProgress(double progressValue, bool visible) {
-#ifdef Q_OS_WIN
-    if (m_taskbarList) {
-        HWND hwnd = reinterpret_cast<HWND>(this->winId());
-        if (visible) {
-            m_taskbarList->SetProgressState(hwnd, TBPF_NORMAL);
-            m_taskbarList->SetProgressValue(hwnd, int(progressValue * 100), 100);
-        } else {
-            m_taskbarList->SetProgressState(hwnd, TBPF_NOPROGRESS);
-        }
-    }
-#elif defined(Q_OS_LINUX)
     QString desktopId = "application://" + QCoreApplication::applicationName() + ".desktop";
 
     QVariantMap properties;
@@ -635,5 +604,4 @@ void MainWindow::setTaskbarProgress(double progressValue, bool visible) {
 
     signal << desktopId << properties;
     QDBusConnection::sessionBus().send(signal);
-#endif
 }

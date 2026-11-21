@@ -31,20 +31,16 @@ target_link_libraries(shared
         Qt6::Core
         Qt6::Widgets
         Qt6::Concurrent
-        $<$<PLATFORM_ID:Linux>:KF6::KIOCore>
-        $<$<PLATFORM_ID:Linux>:KF6::KIOWidgets>
-        $<$<PLATFORM_ID:Linux>:KF6::KIOFileWidgets>
-        $<$<PLATFORM_ID:Windows>:zlibstatic>
-        $<$<PLATFORM_ID:Windows>:shlwapi>
-        $<$<PLATFORM_ID:Linux>:ZLIB::ZLIB>
+        KF6::KIOCore
+        KF6::KIOWidgets
+        KF6::KIOFileWidgets
+        ZLIB::ZLIB
 )
 
 # Das ist der Clou: Jeder, der shared linkt, bekommt automatisch 
 # Zugriff auf den "include"-Ordner, ohne Pfade raten zu müssen!
 target_include_directories(shared PUBLIC src)
 
-# Beschleunigt den Start unter Linux, indem ungenutzte Shared Libraries ignoriert werden
+# Beschleunigt den Start, indem ungenutzte Shared Libraries ignoriert werden
 # INTERFACE sorgt dafür, dass die Apps das Flag beim Linken erben!
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_options(shared INTERFACE -Wl,--as-needed)
-endif()
+target_link_options(shared INTERFACE -Wl,--as-needed)

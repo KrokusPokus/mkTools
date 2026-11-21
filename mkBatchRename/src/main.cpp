@@ -28,11 +28,6 @@ int main(int argc, char *argv[])
     } else if (argc == 2) {
             targetDir = argv[1];
 
-            // Falls der Windows-Parser den Backslash geschluckt und ein " an den String gehängt hat:
-            if (targetDir.endsWith('"')) {
-                targetDir.chop(1);  // Das falsche Anführungszeichen abschneiden
-                targetDir += "/";   // Einen sauberen Ordner-Abschluss hinzufügen
-            }
             targetDir = QDir::cleanPath(targetDir);
 
             if (!QDir(targetDir).exists()) {

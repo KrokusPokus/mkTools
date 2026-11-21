@@ -24,15 +24,8 @@
 
 #include <algorithm>
 
-#ifndef Q_OS_WIN
 #include <sys/stat.h>
-#endif
 
-#ifdef Q_OS_WIN
-#include <QSystemTrayIcon>
-#include <shlwapi.h>
-#include <shellapi.h>   // needed for ShellExecuteEx in startProcessElevatedWin()
-#elif defined(Q_OS_LINUX)
 #include <KApplicationTrader>
 #include <KIO/ApplicationLauncherJob>
 #include <KIO/OpenUrlJob>
@@ -40,7 +33,6 @@
 #include <KService>
 #include <QDBusConnection>
 #include <QDBusMessage>
-#endif
 
 namespace {
 
@@ -112,14 +104,6 @@ namespace {
             line = url.toLocalFile();
         }
 
-#ifdef Q_OS_WIN
-        static const QRegularExpression winEnvRegex(R"(%([A-Za-z0-9_()]+)%)");
-        line = expandVariablesOnce(line, winEnvRegex, [](const QRegularExpressionMatch &m) {
-            const QByteArray name = m.captured(1).toUtf8();
-            if (!qEnvironmentVariableIsSet(name.constData())) return m.captured(0);
-            return qEnvironmentVariable(name.constData());
-        });
-#else
         // Gilt für Linux UND macOS (POSIX-Semantik ist identisch)
         if (line == "~") {
             line = QDir::homePath();
@@ -135,7 +119,6 @@ namespace {
             if (!qEnvironmentVariableIsSet(name.constData())) return m.captured(0);
             return qEnvironmentVariable(name.constData());
         });
-#endif
 
         return QDir::cleanPath(line);
     }
@@ -290,26 +273,13 @@ namespace Helpers {
     QString cleanFileName(const QString &fileName) {
         QString pattern;
 
-#ifdef Q_OS_WIN
-        // Windows verbotene Zeichen: < > : " / \ | ? *
-        // Plus: Steuerzeichen (0-31)
-        pattern = "[<>:\"/\\\\|?*\\x00-\\x1F]";
-#else
         // Linux/Unix verbotene Zeichen: / und der Null-Terminator \0
         pattern = "[/\\x00]";
-#endif
 
         static const QRegularExpression re(pattern);
 
         QString cleanedName = fileName; // local copy
         cleanedName.replace(re, "_");
-
-#ifdef Q_OS_WIN
-        cleanedName = cleanedName.trimmed();
-        while (cleanedName.endsWith('.')) {
-            cleanedName.chop(1);
-        }
-#endif
 
         return cleanedName;
     }
@@ -319,22 +289,9 @@ namespace Helpers {
     QString fileIdentity(const QString &path) {
         if (path.isEmpty()) return QString();
 
-#ifdef Q_OS_WIN
-        HANDLE h = CreateFileW(reinterpret_cast<const wchar_t *>(QDir::toNativeSeparators(path).utf16()),
-                               FILE_READ_ATTRIBUTES,
-                               FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                               nullptr, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, nullptr);
-        if (h == INVALID_HANDLE_VALUE) return QString();
-        BY_HANDLE_FILE_INFORMATION info;
-        const BOOL ok = GetFileInformationByHandle(h, &info);
-        CloseHandle(h);
-        if (!ok) return QString();
-        return QStringLiteral("%1:%2:%3").arg(info.dwVolumeSerialNumber).arg(info.nFileIndexHigh).arg(info.nFileIndexLow);
-#else
         struct stat st;
         if (::stat(QFile::encodeName(path).constData(), &st) != 0) return QString();
         return QStringLiteral("%1:%2").arg(static_cast<quint64>(st.st_dev)).arg(static_cast<quint64>(st.st_ino));
-#endif
     }
 
     // Prüft, ob zwei Pfade auf DASSELBE Dateisystem-Objekt zeigen (folgt Symlinks).
@@ -498,18 +455,18 @@ namespace Helpers {
         if (!handlerApp.contains('/') && !handlerApp.contains('\\')) {
             QString localAppPath = QDir(QCoreApplication::applicationDirPath()).filePath(handlerApp);
             if (QFile::exists(localAppPath)) {
-                QProcess::startDetached(QDir::toNativeSeparators(localAppPath), fileList);
+                QProcess::startDetached(localAppPath, fileList);
                 return;
             }
 
             QString absolutePath = QStandardPaths::findExecutable(handlerApp);
             if (!absolutePath.isEmpty()) {
                 // bool QProcess::startDetached(const QString &program, const QStringList &arguments = {}, const QString &workingDirectory = QString(), qint64 *pid = nullptr)
-                QProcess::startDetached(QDir::toNativeSeparators(absolutePath), fileList);
+                QProcess::startDetached(absolutePath, fileList);
                 return;
             }
         } else if (QFile::exists(handlerApp)) {
-            QProcess::startDetached(QDir::toNativeSeparators(handlerApp), fileList);
+            QProcess::startDetached(handlerApp, fileList);
             return;
         }
     }
@@ -679,13 +636,7 @@ namespace Helpers {
     }
 
     void launchRenameTool(const QString &targetDir, const QStringList &pathList, const QString &renameTool, QObject *parent) {
-        if (targetDir == "drives://") return;
-
-
         QString programName = "mkBatchRename";
-#if defined(Q_OS_WIN)
-        programName += ".exe";
-#endif
         QString appDir = QCoreApplication::applicationDirPath();
         QString programPath = QDir(appDir).filePath(programName);
 
@@ -752,7 +703,7 @@ namespace Helpers {
         if (path.isEmpty()) return;
 
         QFileInfo fileInfo(path);
-        if (!fileInfo.exists() && !(fileInfo.isSymLink() || fileInfo.isShortcut())) return;
+        if (!fileInfo.exists() && !fileInfo.isSymLink()) return;
 
         QString targetPath = path;
         QString targetFile = "";
@@ -762,17 +713,13 @@ namespace Helpers {
         }
 
         QDir appDir(QCoreApplication::applicationDirPath());
-#ifdef Q_OS_WIN
-        QString mkFolderWidgetPath = appDir.filePath("mkFolderWidget.exe");
-#elif defined(Q_OS_LINUX)
         QString mkFolderWidgetPath = appDir.filePath("mkFolderWidget");
-#endif
 
         if (QFile::exists(mkFolderWidgetPath) && (fileManager.isEmpty() || fileManager == "mkFolderWidget")) {
             QStringList args;
-            args << QDir::toNativeSeparators(targetPath);
+            args << targetPath;
             if (!targetFile.isEmpty()) {
-                args << "-f" << QDir::toNativeSeparators(targetFile);
+                args << "-f" << targetFile;
             }
             QProcess::startDetached(mkFolderWidgetPath, args);
             return;
@@ -783,11 +730,6 @@ namespace Helpers {
             return;
         }
 
-#ifdef Q_OS_WIN
-        QStringList args;
-        args << "/select," + QDir::toNativeSeparators(path);
-        QProcess::startDetached("explorer.exe", args);
-#elif defined(Q_OS_LINUX)
         QProcess::startDetached("dbus-send", {
             "--session",
             "--print-reply",
@@ -797,9 +739,6 @@ namespace Helpers {
             "array:string:" + QUrl::fromLocalFile(path).toString(),
                                 "string:\"\""
         });
-#else
-        QDesktopServices::openUrl(QUrl::fromLocalFile(targetPath));
-#endif
     }
 
     /*
@@ -922,9 +861,7 @@ namespace Helpers {
 
         // --- NEU: Plattformabhängige Dateiendung festlegen ---
         QString extension = ".url";
-#if defined(Q_OS_LINUX)
         extension = ".desktop";
-#endif
 
         if (!fileName.endsWith(extension, Qt::CaseInsensitive)) {
             fileName += extension;
@@ -959,18 +896,12 @@ namespace Helpers {
         if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
             QTextStream out(&file);
 
-#ifdef Q_OS_WIN
-            // Windows .url Format
-            out << "[InternetShortcut]\n";
-            out << "URL=" << urlStr << "\n";
-#elif defined(Q_OS_LINUX)
             // Linux .desktop Format für Web-Links
             out << "[Desktop Entry]\n";
             out << "Icon=text-html\n";                  // Standard-Icon für HTML/Web-Links
             out << "Name=" << finalAnzeigename << "\n"; // Das ist der Text, den Linux anzeigt
             out << "Type=Link\n";
             out << "URL=" << urlStr << "\n";
-#endif
 
             file.close();
         } else {
@@ -979,109 +910,8 @@ namespace Helpers {
     }
 
     bool isCurrentProcessElevated() {
-#ifdef Q_OS_WIN
-        HANDLE hProcess = GetCurrentProcess();
-        HANDLE hToken = NULL;
-        bool elevated = false;
-
-        // 1. Zugriff auf das Sicherheits-Token des Prozesses anfordern
-        if (OpenProcessToken(hProcess, TOKEN_QUERY, &hToken)) {
-            TOKEN_ELEVATION elevation;
-            DWORD dwSize = sizeof(elevation);
-
-            // 2. Abfragen, ob das Token angehoben (elevated) ist
-            if (GetTokenInformation(hToken, TokenElevation, &elevation, sizeof(elevation), &dwSize)) {
-                elevated = elevation.TokenIsElevated;
-            }
-            CloseHandle(hToken);
-        }
-        return elevated;
-#elif defined(Q_OS_LINUX)
         return (geteuid() == 0);
-#else
-        return false;
-#endif
     }
-
-#ifdef Q_OS_WIN
-    bool startProcessElevatedWin(const QString &programPath, const QString &arguments) {
-        SHELLEXECUTEINFO shExecInfo = { 0 };
-        shExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-        shExecInfo.fMask = SEE_MASK_NOCLOSEPROCESS; // Erlaubt es uns, das Prozess-Handle zu tracken
-        shExecInfo.hwnd = NULL;
-
-        // "runas" ist der magische Schlüssel, der den UAC-Admin-Dialog erzwingt!
-        shExecInfo.lpVerb = L"runas";
-
-        // Qt-Strings in Windows-kompatible WCHAR-Arrays umwandeln (.utf16())
-        shExecInfo.lpFile = reinterpret_cast<LPCWSTR>(programPath.utf16());
-        shExecInfo.lpParameters = reinterpret_cast<LPCWSTR>(arguments.utf16());
-        shExecInfo.lpDirectory = NULL;
-        shExecInfo.nShow = SW_SHOWNORMAL;
-
-        // Ausführen
-        if (ShellExecuteEx(&shExecInfo)) {
-            // Der Prozess wurde erfolgreich gestartet!
-            // Da wir SEE_MASK_NOCLOSEPROCESS gesetzt haben, MÜSSEN wir das Handle schließen,
-            // um Speicherlecks zu verhindern.
-            if (shExecInfo.hProcess) {
-                CloseHandle(shExecInfo.hProcess);
-            }
-            return true;
-        }
-
-        // Wenn wir hier landen, hat der Nutzer im UAC-Dialog auf "Nein" geklickt
-        // oder die Datei wurde nicht gefunden (GetLastError() gibt Aufschluss).
-        return false;
-    }
-
-
-    // Baut aus einer Argumentliste eine Windows-Kommandozeile, die CommandLineToArgvW bzw. die C-Laufzeit
-    // des gestarteten Programms wieder exakt in dieselbe Liste zerlegt. Microsoft-Regeln:
-    //  - n Backslashes direkt vor einem "  -> 2n+1 Backslashes + \"
-    //  - n Backslashes am Argumentende     -> 2n Backslashes (sonst würde das schließende " maskiert)
-    //  - Backslashes an anderer Stelle bleiben unverändert (C:\Pfad\Datei braucht keine Verdopplung)
-    // Ein Argument wird nur in Anführungszeichen gesetzt, wenn es leer ist oder Leerraum bzw. " enthält.
-    QString argumentsToWinString(const QStringList &args) {
-        QStringList escapedArgs;
-
-        for (const QString &arg : args) {
-            const bool needsQuotes = arg.isEmpty()
-                || std::any_of(arg.cbegin(), arg.cend(), [](QChar c) {
-                       return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '"';
-                   });
-
-            if (!needsQuotes) {
-                escapedArgs << arg;
-                continue;
-            }
-
-            QString quoted = QStringLiteral("\"");
-            qsizetype backslashes = 0;
-
-            for (const QChar c : arg) {
-                if (c == '\\') {
-                    ++backslashes;
-                    continue;
-                }
-                if (c == '"') {
-                    quoted += QString(backslashes * 2 + 1, '\\');
-                    quoted += '"';
-                } else {
-                    quoted += QString(backslashes, '\\');
-                    quoted += c;
-                }
-                backslashes = 0;
-            }
-
-            quoted += QString(backslashes * 2, '\\'); // Backslashes vor dem schließenden "
-            quoted += '"';
-            escapedArgs << quoted;
-        }
-
-        return escapedArgs.join(' ');
-    }
-#endif
 
     uint getNameMatchQuality(const QString &itemName, const QString &path, const QString &searchString, const QStringList &searchStringSplit, Qt::CaseSensitivity caseSensitivity) {
         if (QString::compare(itemName , searchString, caseSensitivity) == 0) {
@@ -1099,7 +929,7 @@ namespace Helpers {
         QString pathMatchingString;
         if (searchString.contains(QDir::separator())) {
             QString itemPath = path.endsWith('/') ? (path + itemName) : (path + '/' + itemName);
-            pathMatchingString = QDir::toNativeSeparators(itemPath);
+            pathMatchingString = itemPath;
             if (pathMatchingString.contains(searchString, caseSensitivity)) {
                 return 4;
             }
@@ -1240,62 +1070,6 @@ namespace Helpers {
 
         return iCount;
     }
-
-#ifdef Q_OS_WIN
-    LnkInfo getLnkInfo(const QString &filePath) {
-        LnkInfo info;
-        WIN32_FILE_ATTRIBUTE_DATA fileData;
-
-        if (GetFileAttributesExW(reinterpret_cast<LPCWSTR>(filePath.utf16()),
-            GetFileExInfoStandard,
-            &fileData))
-        {
-            ULARGE_INTEGER size;
-            size.LowPart = fileData.nFileSizeLow;
-            size.HighPart = fileData.nFileSizeHigh;
-            info.size = static_cast<qint64>(size.QuadPart);
-
-            info.birthTime      = fileTimeToQDateTime(fileData.ftCreationTime);
-            info.lastAccessTime = fileTimeToQDateTime(fileData.ftLastAccessTime);
-            info.lastWriteTime  = fileTimeToQDateTime(fileData.ftLastWriteTime);
-
-            info.isReadOnly = (fileData.dwFileAttributes & FILE_ATTRIBUTE_READONLY) != 0;
-            info.isHidden   = (fileData.dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
-            info.isSystem   = (fileData.dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0;
-
-            info.exists = true;
-        }
-
-        return info;
-    }
-    qint64 getLnkSize(const QString &filePath) {
-        WIN32_FILE_ATTRIBUTE_DATA fileData;
-        if (GetFileAttributesExW(reinterpret_cast<LPCWSTR>(filePath.utf16()), GetFileExInfoStandard, &fileData)) {
-            ULARGE_INTEGER size;
-            size.LowPart = fileData.nFileSizeLow;
-            size.HighPart = fileData.nFileSizeHigh;
-            return static_cast<qint64>(size.QuadPart);
-        }
-
-        return 0;
-    }
-    QDateTime fileTimeToQDateTime(const FILETIME &ft) {
-        ULARGE_INTEGER uli;
-        uli.LowPart = ft.dwLowDateTime;
-        uli.HighPart = ft.dwHighDateTime;
-
-        const ULONGLONG epochOffset = 116444736000000000ULL;
-
-        // Underflow verhindern! (Falls Zeitstempel 0 oder vor 1.1.1970 ist)
-        if (uli.QuadPart < epochOffset) {
-            return QDateTime();
-        }
-
-        qint64 msecs = static_cast<qint64>((uli.QuadPart - epochOffset) / 10000ULL);
-
-        return QDateTime::fromMSecsSinceEpoch(msecs, QTimeZone::UTC).toLocalTime();
-    }
-#endif
 
 /*
     QString readLnkTargetOnLinux(const QString &lnkFilePath) {
@@ -1441,22 +1215,6 @@ namespace Helpers {
 
 
     void showPopup(const QString &appName, const QString &title, const QString &body) {
-#ifdef Q_OS_WIN
-        static QSystemTrayIcon *trayIcon = nullptr;
-        if (!trayIcon) {
-            trayIcon = new QSystemTrayIcon();
-            // WICHTIG: Windows benötigt zwingend ein Icon, sonst wird kein Toast angezeigt
-            trayIcon->setIcon(QIcon(":/icons/app.ico"));
-            trayIcon->show();
-        }
-
-        QString usedTitle = title;
-        if (usedTitle.isEmpty()) {
-            usedTitle = appName;
-        }
-
-        trayIcon->showMessage(usedTitle, body, QSystemTrayIcon::Information, 5000);
-#else
         QDBusMessage msg = QDBusMessage::createMethodCall(
             "org.freedesktop.Notifications",
             "/org/freedesktop/Notifications",
@@ -1476,122 +1234,8 @@ namespace Helpers {
 
         msg.setArguments(args);
         QDBusConnection::sessionBus().send(msg);
-#endif
     }
 
-#ifdef Q_OS_WIN
-    QString getAssociatedExecutableWin32(const QString &extensionOrScheme) {
-        if (extensionOrScheme.isEmpty()) return QString();
-
-        QString key = extensionOrScheme;
-        if (!key.contains('/') && !key.startsWith('.')) {
-            key.prepend('.');
-        }
-
-        std::wstring wKey = key.toStdWString();
-        DWORD bufferSize = 0;
-
-        // 1. Aufruf mit ASSOCSTR_COMMAND
-        HRESULT hr = AssocQueryStringW(
-            ASSOCF_NOTRUNCATE | ASSOCF_INIT_IGNOREUNKNOWN,
-            ASSOCSTR_COMMAND, // <--- Geändert von ASSOCSTR_EXECUTABLE
-            wKey.c_str(),
-            L"open",
-            nullptr,
-            &bufferSize
-            );
-
-        if (FAILED(hr) || bufferSize == 0) return QString();
-
-        std::wstring buffer(bufferSize, L'\0');
-        hr = AssocQueryStringW(
-            ASSOCF_NOTRUNCATE | ASSOCF_INIT_IGNOREUNKNOWN,
-            ASSOCSTR_COMMAND, // <--- Geändert von ASSOCSTR_EXECUTABLE
-            wKey.c_str(),
-            L"open",
-            &buffer[0],
-            &bufferSize
-            );
-
-        if (SUCCEEDED(hr)) {
-            QString fullCommand = QString::fromWCharArray(buffer.c_str());
-
-            // Entfernt Platzhalter wie "%1", %1, "%L", %L, "%*" etc. inklusive umgebender Anführungszeichen
-            static const QRegularExpression placeholderRegex(R"("\s*%[1Ll\*]\s*"|%[1Ll\*])");
-            fullCommand.remove(placeholderRegex);
-
-            return fullCommand.trimmed();
-        }
-
-        return QString();
-    }
-
-    void openUrlsWithWin32(const QList<QUrl> &urls) {
-        if (urls.isEmpty()) return;
-
-        struct AppGroup {
-            QString exePath;
-            QStringList filePaths;
-            QList<QUrl> remoteUrls;
-        };
-
-        // Schlüssel ist der Kleingeschriebene Executable-Pfad (Windows ist Case-Insensitive)
-        QHash<QString, AppGroup> appGroups;
-        QList<QUrl> unmappedUrls;
-
-        for (const QUrl &url : urls) {
-            QString keyLookup;
-            if (url.isLocalFile()) {
-                keyLookup = QFileInfo(url.toLocalFile()).suffix();
-            } else {
-                keyLookup = url.scheme();
-            }
-
-            QString exePath = QDir::toNativeSeparators(Helpers::getAssociatedExecutableWin32(keyLookup));
-
-            if (!exePath.isEmpty() && (exePath != "%1")) {
-                QString groupKey = exePath.toLower();
-                if (!appGroups.contains(groupKey)) {
-                    appGroups[groupKey] = { exePath, {}, {} };
-                }
-
-                if (url.isLocalFile()) {
-                    appGroups[groupKey].filePaths.append(QDir::toNativeSeparators(url.toLocalFile()));
-                } else {
-                    appGroups[groupKey].remoteUrls.append(url);
-                }
-            } else {
-                unmappedUrls.append(url);
-            }
-        }
-
-        // 1. Gebündelte Starts pro Anwendung durchführen
-        for (auto it = appGroups.constBegin(); it != appGroups.constEnd(); ++it) {
-            const AppGroup &group = it.value();
-
-            qDebug() << "openUrlsWithWin32():";
-            qDebug() << "  App Executable:" << group.exePath;
-            qDebug() << "  Files gebündelt:" << group.filePaths;
-
-            // QProcess::startDetached kümmert sich automatisch um das korrekte Escaping von Leerzeichen
-            if (!group.filePaths.isEmpty()) {
-                QProcess::startDetached(group.exePath, group.filePaths);
-            }
-
-            // Falls es sich um Remote-URLs (z.B. http://) handelt, einzeln aufrufen
-            for (const QUrl &remoteUrl : group.remoteUrls) {
-                QDesktopServices::openUrl(remoteUrl);
-            }
-        }
-
-        // 2. Fallback für Dateien/Schemas ohne zugewiesene Executable
-        for (const QUrl &url : unmappedUrls) {
-            QDesktopServices::openUrl(url);
-        }
-    }
-#endif
-
-#ifdef Q_OS_LINUX
     void showKdePropertiesDialog(const QStringList &filePaths, QWidget *parent = nullptr) {
         if (filePaths.isEmpty()) {
             return;
@@ -1671,6 +1315,5 @@ namespace Helpers {
         job->start();
         return true;
     }
-#endif
 
 } // namespace Helpers

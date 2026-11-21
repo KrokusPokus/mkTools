@@ -15,10 +15,6 @@
 #include <QThread>
 #include <QUrl>
 
-#ifdef Q_OS_WIN
-#include <shobjidl.h> // Enthält ITaskbarList3
-#endif
-
 class CleanLabel : public QLabel {
     Q_OBJECT
 public:
@@ -154,10 +150,6 @@ private:
     QPushButton *m_cancelButton = nullptr;
     QWidget *m_errorContainer = nullptr;
     QPlainTextEdit *m_errorTextEdit = nullptr;
-
-#ifdef Q_OS_WIN
-    ITaskbarList3* m_taskbarList = nullptr;
-#endif
 };
 
 #endif // MAINWINDOW_H

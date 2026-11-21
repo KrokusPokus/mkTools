@@ -191,17 +191,10 @@ private:
 
     StyleState m_currentStyleState{StyleState::Uninitialized};
 
-#ifdef Q_OS_WIN
-    QString getSendToPath();
-#endif
-
 protected:
     void closeEvent(QCloseEvent *event) override;
     void showEvent(QShowEvent *event) override;
     void changeEvent(QEvent *event) override;
     bool eventFilter(QObject *watched, QEvent *event) override;
-#ifdef Q_OS_WIN
-    bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
-#endif
 };
 #endif // MAINWINDOW_H

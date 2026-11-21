@@ -9,7 +9,6 @@
 #include <QPainter>
 #include <QRegularExpression>
 #include <QStandardPaths>
-#include <QStorageInfo>
 #include <QStyle>
 
 #include <algorithm>        // needed for std::reverse();
@@ -50,16 +49,16 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
             case eColPath: {
                     if (file.anchorPathLength > 0) {
                         if (file.anchorPathLength <= file.path.length()) {
-                            return QDir::toNativeSeparators(file.path.sliced(file.anchorPathLength));
+                            return file.path.sliced(file.anchorPathLength);
                         }
                         else {
                             return QVariant();
                         }
 			        }
-            		return QDir::toNativeSeparators(file.path);
+            		return file.path;
             	}
             case eColSize: {
-                    if (file.isDir && m_currentDirectoryPath != "drives://") {
+                    if (file.isDir) {
                         return QVariant();
                     }
                     return Helpers::formatAdaptiveSize(file.size);
@@ -105,11 +104,6 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
         if (col != eColName) return QVariant(); // Icons nur in der Namensspalte anzeigen
 
         QString absolutePath = file.filePath;
-#ifdef Q_OS_WIN
-        if (!file.drivePath.isEmpty()) {
-            absolutePath = file.drivePath;
-        }
-#endif
         if (m_viewMode == ViewMode::Thumbnail) {
             auto itThumb = m_individualThumbnailCache.find(absolutePath);
             if (itThumb != m_individualThumbnailCache.end()) {
@@ -287,7 +281,7 @@ QVariant CustomTableModel::headerData(int section, Qt::Orientation orientation, 
 
 Qt::ItemFlags CustomTableModel::flags(const QModelIndex &index) const {
     if (!index.isValid()) {                             // No index -> no item -> background!
-        if (!m_currentDirectoryPath.isEmpty() && m_currentDirectoryPath != "drives://") {
+        if (!m_currentDirectoryPath.isEmpty()) {
         	return Qt::NoItemFlags | Qt::ItemIsDropEnabled;  // Background needs to have Qt::ItemIsDropEnabled to become a valid drop target.
     	}
         return Qt::NoItemFlags;
@@ -302,9 +296,6 @@ Qt::ItemFlags CustomTableModel::flags(const QModelIndex &index) const {
         // Nur Ordner dürfen als Drop-Ziel dienen
         int row = index.row();
         if (row >= 0 && row < static_cast<int>(m_files.size())) {
-            if (m_files[row].isDrive) {
-                cellFlags &= ~Qt::ItemIsEditable;
-            }
             if (m_files[row].isDir) {
                 cellFlags |= Qt::ItemIsDropEnabled;
             }
@@ -374,10 +365,6 @@ void CustomTableModel::applyRenamedFileInfo(int row, const QString &newName, con
     }
 
     info.type = ext;
-
-#ifdef Q_OS_WIN
-    info.isExecutable = (ext == "exe" || ext == "scr");
-#endif
 }
 
 void CustomTableModel::sort(int column, Qt::SortOrder order) {
@@ -414,22 +401,13 @@ QString CustomTableModel::filePath(const QModelIndex &index) const {
         return QString();
     }
 
-    const CustomFileInfo &file = m_files[row];
-
-#ifdef Q_OS_WIN
-    if (m_currentDirectoryPath == "drives://") {
-        return file.drivePath;
-    } else
-#endif
-    {
-        return file.filePath;
-    }
+    return m_files[row].filePath;
 }
 
 // Festes Icon für SymLinks (Dateien und Ordner gleichermaßen).
 // Einzige Stelle, an der die Icon-Quelle festgelegt wird.
 QIcon CustomTableModel::symlinkIcon() {
-    // PROVISORISCH: Theme-Emblem (Linux), Fallback auf das Qt-Style-Icon (u.a. Windows).
+    // PROVISORISCH: Theme-Emblem (Linux), Fallback auf das Qt-Style-Icon.
     QIcon icon = QIcon::fromTheme("emblem-symbolic-link");
     if (icon.isNull()) {
         icon = QApplication::style()->standardIcon(QStyle::SP_FileLinkIcon);
@@ -566,11 +544,7 @@ void CustomTableModel::setRenameRows(const QSet<int> &rowSet, const QList<int> &
 namespace {
 // Vergleichsschlüssel für Pfade: unter Windows ist das Dateisystem case-insensitiv
 QString renameKey(const QString &path) {
-#ifdef Q_OS_WIN
-    return QDir::cleanPath(path).toLower();
-#else
     return QDir::cleanPath(path);
-#endif
 }
 
 // Noch nicht existierender temporärer Name neben 'path' (zum Auflösen von Umbenennungs-Zyklen)
@@ -823,14 +797,14 @@ bool CustomTableModel::applyBatchRename(QString *errorMessage) {
         QStringList notReverted;
         for (int k = static_cast<int>(journal.size()) - 1; k >= 0; --k) {
             if (!QFile::rename(journal[k].second, journal[k].first)) {
-                notReverted << QDir::toNativeSeparators(journal[k].second);
+                notReverted << journal[k].second;
             }
         }
 
         if (errorMessage) {
             QString msg;
             if (!failedFrom.isEmpty()) {
-                msg = tr("Renaming \"%1\" to \"%2\" failed: %3").arg(QDir::toNativeSeparators(failedFrom), QFileInfo(failedTo).fileName(), failedReason);
+                msg = tr("Renaming \"%1\" to \"%2\" failed: %3").arg(failedFrom, QFileInfo(failedTo).fileName(), failedReason);
             } else {
                 msg = failedReason;
             }
@@ -1086,7 +1060,7 @@ QString CustomTableModel::applyAddFolderNameRule(const QString &input, const Add
     // int rule.levels
 
     // Pfad-Separatoren vereinheitlichen und säubern
-    QString cleanPath = QDir::cleanPath(QDir::fromNativeSeparators(path));
+    QString cleanPath = QDir::cleanPath(path);
     QStringList parts = cleanPath.split('/', Qt::SkipEmptyParts);
 
     if (parts.isEmpty()) {
@@ -1370,7 +1344,7 @@ bool CustomTableModel::dropMimeData(const QMimeData *data, Qt::DropAction action
 
     // Standardziel: Das aktuell geöffnete Verzeichnis
     QString targetDir;
-	if (!m_currentDirectoryPath.isEmpty() && m_currentDirectoryPath != "drives://") {
+	if (!m_currentDirectoryPath.isEmpty()) {
 		targetDir = m_currentDirectoryPath;
 	}
 	
@@ -1483,7 +1457,7 @@ void CustomTableModel::populateModel_mkBatchRename(const QString &dirPath, const
 
     if (!dirPath.isEmpty()) {
         int iAnchorPathLength = dirPath.length();
-        if (!QDir::toNativeSeparators(dirPath).endsWith(QDir::separator())) {
+        if (!dirPath.endsWith(QDir::separator())) {
             iAnchorPathLength++;
         }
 
@@ -1580,11 +1554,11 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
     bool bsearchStringContentEmpty = searchStringContent.trimmed().isEmpty();
 
     int iAnchorPathLength = searchDir.length();
-    if (!QDir::toNativeSeparators(searchDir).endsWith(QDir::separator())) {
+    if (!searchDir.endsWith(QDir::separator())) {
         iAnchorPathLength++;
     }
 
-    QDir::Filters searchFlags = QDir::Hidden | QDir::NoDotAndDotDot | QDir::System; // QDir::System needed for *.lnk files on Windows
+    QDir::Filters searchFlags = QDir::Hidden | QDir::NoDotAndDotDot | QDir::System;
 
     if (cbDirState == Qt::Unchecked) {
         searchFlags = searchFlags | QDir::Files;
@@ -1718,7 +1692,6 @@ void CustomTableModel::populateModel_mkLauncher(const QStringList &searchFolders
 
     int nameMatchQuality = -1;
 
-#if defined(Q_OS_LINUX)
     static const QString currentDesktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP").toUpper();
     static const QStringList appDirs = QStandardPaths::standardLocations(QStandardPaths::ApplicationsLocation);
     // Note to self: appDirs contains the path in the order from user specific to system defaults
@@ -1840,7 +1813,6 @@ void CustomTableModel::populateModel_mkLauncher(const QStringList &searchFolders
             break;
         }
     }
-#endif
 
     if (bSearchInterrupted == false) {
         // Search through list of user-defined folders
@@ -1892,58 +1864,13 @@ void CustomTableModel::populateModel_mkFolderWidget(const QString &dirPath) {
     std::vector<CustomFileInfo> newFiles;
     m_currentDirectoryPath = dirPath;
 
-#ifdef Q_OS_WIN
-    if (m_currentDirectoryPath == "drives://") {
-        QFileInfoList drives = QDir::drives();
-        for (const QFileInfo &driveInfo : std::as_const(drives)) {
-            CustomFileInfo info;
-            info.drivePath = driveInfo.absoluteFilePath();
+    QDir::Filters filters = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
+    QDirIterator it(dirPath, filters, QDirIterator::NoIteratorFlags);
+    while (it.hasNext()) {
+        it.next();
+        CustomFileInfo info = createCustomFileInfo(it.fileInfo());
 
-            QStorageInfo storage(driveInfo.absoluteFilePath());
-            QString volumeName = storage.name();
-
-            // Fallback: Falls das Laufwerk keinen Namen hat (oder z.B. ein leeres CD-Laufwerk ist)
-            if (volumeName.isEmpty()) {
-                if (storage.fileSystemType() == "CDFS" || storage.fileSystemType() == "UDF") {
-                    volumeName = tr("Optical Drive");
-                } else {
-                    volumeName = tr("Local Drive");
-                }
-            }
-
-            QString driveLetter = driveInfo.absoluteFilePath().left(2);
-
-            info.name = QString("(%1) %2").arg(driveLetter, volumeName);
-
-            info.isDir = true;
-            info.isDrive = true;
-            info.isHidden = false;
-            info.size = storage.bytesTotal();
-            info.date = QDateTime();
-            info.iconIndex = 0;
-            info.displayName = info.name;
-            info.type = storage.fileSystemType();
-            info.isExecutable = false;
-            info.path = driveInfo.absoluteFilePath();
-            info.anchorPathLength = 0;
-
-            m_individualIconCache.insert(info.drivePath, {m_iconProvider.icon(driveInfo), QDateTime()});
-
-
-            newFiles.push_back(info);
-        }
-    }
-    else
-#endif
-        {
-        QDir::Filters filters = QDir::Files | QDir::Dirs | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot;
-        QDirIterator it(dirPath, filters, QDirIterator::NoIteratorFlags);
-        while (it.hasNext()) {
-            it.next();
-            CustomFileInfo info = createCustomFileInfo(it.fileInfo());
-
-            newFiles.push_back(info);
-        }
+        newFiles.push_back(info);
     }
 
     beginResetModel();
@@ -1979,22 +1906,9 @@ CustomFileInfo CustomTableModel::createCustomFileInfo(const QFileInfo &fileInfo,
     info.isDir = fileInfo.isDir();
     info.isSymbolicLink = fileInfo.isSymbolicLink();
 
-#ifdef Q_OS_WIN
-    if (fileInfo.isShortcut()) {
-        LnkInfo lnkinfo = Helpers::getLnkInfo(fileInfo.filePath());
-        if (lnkinfo.exists) {
-            info.isHidden = lnkinfo.isHidden;
-            info.size = lnkinfo.size;
-            info.date = lnkinfo.lastWriteTime;
-        }
-    }
-    else
-#endif
-    {
-        info.isHidden = fileInfo.isHidden();
-        info.size = info.isDir ? 0 : fileInfo.size();
-        info.date = fileInfo.lastModified();
-    }
+    info.isHidden = fileInfo.isHidden();
+    info.size = info.isDir ? 0 : fileInfo.size();
+    info.date = fileInfo.lastModified();
 
     info.iconIndex = 0;
     info.displayName = info.name;
@@ -2013,11 +1927,7 @@ CustomFileInfo CustomTableModel::createCustomFileInfo(const QFileInfo &fileInfo,
 
     info.type = ext;
 
-#ifdef Q_OS_WIN
-    info.isExecutable = (ext == "exe" || ext == "scr" || ext == "msi" || ext == "com" || ext == "bat");
-#else
     info.isExecutable = fileInfo.isExecutable();
-#endif
     info.path = fileInfo.absolutePath();
     info.filePath = fileInfo.absoluteFilePath();
     info.anchorPathLength = anchorPathLength;

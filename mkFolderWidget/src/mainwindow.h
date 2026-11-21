@@ -189,29 +189,10 @@ private:
 
     StyleState m_currentStyleState{StyleState::Uninitialized};
 
-#ifdef Q_OS_WIN
-    QAction *m_actionWinRarOpen = nullptr;
-    QAction *m_actionCompressCBZ = nullptr;
-    QAction *m_actionCompressZIP = nullptr;
-    QAction *m_actionExtractHere = nullptr;
-    QAction *m_actionExtractToSubfolder = nullptr;
-
-    void action_WinRarOpen();
-    void action_WinRarCompress(const QString &archiveExt);
-    void action_WinRarExtract(bool toSubFolder);
-    QString getSendToPath();
-
-    QString m_winrarPath = "D:/A/1/WinRAR/WinRAR.exe";
-    QIcon m_winrarIcon;
-#endif
-
 protected:
     void closeEvent(QCloseEvent *event) override;
     void changeEvent(QEvent *event) override;
     bool eventFilter(QObject *watched, QEvent *event) override;
-#ifdef Q_OS_WIN
-    bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
-#endif
 };
 #endif // MAINWINDOW_H
 

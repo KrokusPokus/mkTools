@@ -48,14 +48,6 @@
 #include <algorithm> // Für std::reverse
 #include <utility> // Für std::as_const
 
-#ifdef Q_OS_WIN
-#include <qt_windows.h>
-#include <shellapi.h>
-#include <shlobj.h>
-#define WM_MY_LAUNCHER_FOCUS_EDITBOX (WM_APP + 0x7B)
-#define WM_MY_LAUNCHER_HIDE (WM_APP + 0x7C)
-#define WM_MY_LAUNCHER_UNHIDE (WM_APP + 0x7D)
-#elif defined(Q_OS_LINUX)
 #include <KFileItem>
 #include <KFileItemListProperties>
 #include <KFileItemActions>
@@ -63,7 +55,6 @@
 #include <KService>
 #include <KIO/ApplicationLauncherJob>
 #include <KOpenWithDialog>
-#endif
 
 
 MainWindow::MainWindow(QWidget *parent)
@@ -411,13 +402,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     // --------------------------------------------------------------------
 
-#ifdef Q_OS_LINUX
     loadMimeCache();
 
     if (QDBusConnection::sessionBus().registerService("org.mkLauncher")) {
         QDBusConnection::sessionBus().registerObject("/Main", this, QDBusConnection::ExportScriptableSlots | QDBusConnection::ExportScriptableSignals | QDBusConnection::ExportScriptableProperties);
     }
-#endif
 
     // --------------------------------------------------------------------
 
@@ -731,11 +720,6 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         mainMenu.addSeparator(); //-----------------------------------------
         mainMenu.addAction(m_actionListViewFileProperties);
         */
-    } else if (m_currentDirectory == "drives://") {
-        mainMenu.addAction(m_actionListViewOpenFiles);
-        mainMenu.setDefaultAction(m_actionListViewOpenFiles);
-        mainMenu.addSeparator(); //-----------------------------------------
-        mainMenu.addAction(m_actionListViewFileProperties);
     } else {
         QStringList selectedPaths = getActiveViewPathList(); // Used by KDE SERVICE-ACTIONS
 
@@ -748,41 +732,6 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
             mainMenu.addAction(m_actionListViewEditFiles);
         }
 
-#ifdef Q_OS_WIN
-        mainMenu.addSeparator(); //-----------------------------------------
-        QDir sendToDir(getSendToPath());
-        if (sendToDir.exists()) {
-            QMenu *sendToMenu = mainMenu.addMenu(tr("Send to"));
-            QFileInfoList shortcuts = sendToDir.entryInfoList({"*.lnk"}, QDir::Files);
-
-            for (const QFileInfo &shortcutInfo : std::as_const(shortcuts)) {
-                QString displayName = shortcutInfo.completeBaseName();
-
-                QIcon cleanIcon = m_iconProvider.icon(shortcutInfo);
-
-                QPixmap pix = cleanIcon.pixmap(16, 16);
-
-                QAction *sendAction = sendToMenu->addAction(QIcon(pix), displayName);
-                sendAction->setData(shortcutInfo.absoluteFilePath());	// store lnk path inside sendAction object
-
-                connect(sendAction, &QAction::triggered, this, [this, shortcutInfo]() {
-                    QStringList pathList = getActiveViewPathList();
-                    if (pathList.isEmpty()) return;
-
-                    QString allParams;
-                    for (const QString &p : std::as_const(pathList)) {
-                        if (!allParams.isEmpty()) allParams += " ";
-                        allParams += "\"" + QDir::toNativeSeparators(p) + "\"";
-                    }
-
-                    ShellExecuteW(nullptr, L"open",
-                                  reinterpret_cast<const wchar_t*>(shortcutInfo.absoluteFilePath().utf16()),
-                                  reinterpret_cast<const wchar_t*>(allParams.utf16()),
-                                  nullptr, SW_SHOWNORMAL);
-                });
-            }
-        }
-#else
         /*
         QMimeDatabase db;
         QMimeType mime = db.mimeTypeForFile(filePath);
@@ -902,7 +851,6 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
                 });
             }
         }
-#endif
         mainMenu.addSeparator(); //-----------------------------------------
         mainMenu.addAction(m_actionListViewBrowseToFile);
         mainMenu.addAction(m_actionListViewCopyPaths);
@@ -911,7 +859,6 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         mainMenu.addAction(m_actionListViewRenameFiles);
         mainMenu.addSeparator(); //-----------------------------------------
         mainMenu.addAction(m_actionListViewDeleteFiles);
-#ifdef Q_OS_LINUX
         // KDE SERVICE-ACTIONS
         if (!selectedPaths.isEmpty()) {
             KFileItemList fileItemList;
@@ -930,7 +877,6 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
             mainMenu.addSeparator(); //-----------------------------------------
             serviceActions->addActionsTo(&mainMenu);
         }
-#endif
         mainMenu.addSeparator(); //-----------------------------------------
         mainMenu.addAction(m_actionListViewFileProperties);
     }
@@ -1007,14 +953,10 @@ void MainWindow::onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::Keyb
     }
     if (!fileInfo.exists()) return;
 
-#ifdef Q_OS_LINUX
     if (Helpers::openFileWithPreferredApp(fileInfo.absoluteFilePath(), (modifiers & Qt::ShiftModifier) ? 2 : 1)) {
         RecentOpenList_Add(fileInfo.absoluteFilePath());
         guiHideConditional();
     }
-#else
-    Q_UNUSED(modifiers)
-#endif
 }
 
 void MainWindow::action_ListViewOpenFiles() {
@@ -1036,7 +978,6 @@ void MainWindow::action_ListViewOpenFiles() {
         if (fileExt == "desktop") {
             Helpers::launchDesktopFile(Helpers::getDesktopEntry(fileInfo));
         }
-#ifdef Q_OS_LINUX
         else if (fileInfo.isExecutable()
                  && !fileInfo.isDir()
                  && !m_settings.audioExts.contains(fileExt)
@@ -1045,26 +986,19 @@ void MainWindow::action_ListViewOpenFiles() {
             // Workaround on linux where executable files are not neccessarily executed when opened via QDesktopServices::openUrl().
             QProcess::startDetached(path, QStringList(), fileInfo.absolutePath());
         }
-#endif
         else {
             urlsToOpen.append(QUrl::fromLocalFile(fileInfo.absoluteFilePath()));
         }
     }
 
     if (!urlsToOpen.isEmpty()) {
-#ifdef Q_OS_LINUX
         Helpers::openUrlsWithKIO(urlsToOpen);
-#else
-        Helpers::openUrlsWithWin32(urlsToOpen);
-#endif
     }
 
     guiHideConditional();
 }
 
 void MainWindow::action_ListViewEditFiles() {
-    if (m_currentDirectory == "drives://") return;
-
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) return;
 
@@ -1072,21 +1006,17 @@ void MainWindow::action_ListViewEditFiles() {
     QStringList pathListImage;
     QStringList pathListText;
     QStringList pathListVideo;
-#ifdef Q_OS_LINUX
     QMimeDatabase db;
-#endif
 
     for (const QString &fullPath : std::as_const(pathList)) {
         QFileInfo fileInfo(fullPath);
         QString fileExt = fileInfo.suffix().toLower();
 
         if (fileExt.isEmpty()) {
-#ifdef Q_OS_LINUX
             QMimeType mime = db.mimeTypeForFile(fullPath);
             if (mime.inherits("text/plain")) {
                 pathListText << fullPath;
             }
-#endif
             continue;
         }
         if (m_settings.audioExts.contains(fileExt)) {
@@ -1120,28 +1050,20 @@ void MainWindow::action_ListViewEditFiles() {
 }
 
 void MainWindow::action_ListViewCopyPaths() {
-    if (m_currentDirectory == "drives://") return;
-
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) return;
 
     QStringList pathListNative;
     for (const QString &path : std::as_const(pathList)) {
-        pathListNative << QDir::toNativeSeparators(path);
+        pathListNative << path;
     }
 
-#ifdef Q_OS_WIN
-    QString sClipboardList = pathListNative.join("\r\n");
-#else
     QString sClipboardList = pathListNative.join("\n");
-#endif
 
     QGuiApplication::clipboard()->setText(sClipboardList);
 }
 
 void MainWindow::action_ListViewDeleteFiles(bool bRecycleOnly) {
-    if (m_currentDirectory == "drives://") return;
-
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) {
         return;
@@ -1195,8 +1117,6 @@ void MainWindow::action_ListViewDeleteFiles(bool bRecycleOnly) {
 }
 
 void MainWindow::action_ListViewCutFiles() {
-    if (m_currentDirectory == "drives://") return;
-
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) return;
 
@@ -1205,8 +1125,6 @@ void MainWindow::action_ListViewCutFiles() {
 }
 
 void MainWindow::action_ListViewCopyFiles() {
-    if (m_currentDirectory == "drives://") return;
-
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) return;
 
@@ -1225,17 +1143,6 @@ void MainWindow::setupClipboardForCopyOrCut(const QStringList &cutFilePaths, boo
     auto *mimeData = new QMimeData();
     mimeData->setUrls(urls);
 
-#ifdef Q_OS_WIN
-    // For MS Windows: set "Preferred DropEffect" (Copy oder Move)
-    QByteArray buffer;
-    if (isCut) {
-        buffer.append(static_cast<char>(Qt::MoveAction));
-    } else {
-        buffer.append(static_cast<char>(Qt::CopyAction));
-    }
-    buffer.append('\0'); buffer.append('\0'); buffer.append('\0');
-    mimeData->setData("Preferred DropEffect", buffer);
-#elif defined(Q_OS_LINUX)
     // For Linux on GNOME-based Desktops (Nautilus, PCManFM, etc.)
     // Format: "cut" oder "copy", dann Zeilenumbruch, dann alle URLs (ebenfalls per \n getrennt)
     QByteArray gnomeData;
@@ -1254,7 +1161,6 @@ void MainWindow::setupClipboardForCopyOrCut(const QStringList &cutFilePaths, boo
     if (isCut) {
         mimeData->setData("application/x-kde-cutselection", QByteArray("1"));
     }
-#endif
 
     m_currentClipboardToken = QByteArray::number(QDateTime::currentMSecsSinceEpoch());
     mimeData->setData(m_privateTokenName, m_currentClipboardToken);
@@ -1311,18 +1217,16 @@ void MainWindow::action_ListViewRenameFiles() {
 void MainWindow::action_ListViewFileProperties() {
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) {
-        if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") {
+        if (m_currentDirectory.isEmpty()) {
             return;
         }
         pathList = { m_currentDirectory };
     }
 
-#ifdef Q_OS_LINUX
     if (pathList.size() > 1) {
         Helpers::showKdePropertiesDialog(pathList, this);
         return;
     }
-#endif
 
     auto *dialog = new FilePropertiesDialog(pathList);
     dialog->setAttribute(Qt::WA_DeleteOnClose);
@@ -1332,8 +1236,6 @@ void MainWindow::action_ListViewFileProperties() {
 }
 
 void MainWindow::action_ListViewPasteFiles() {
-    if (m_currentDirectory == "drives://") return;
-
     const QMimeData *mimeData = QApplication::clipboard()->mimeData();
     if (!mimeData || !mimeData->hasUrls()) return;
 
@@ -1341,22 +1243,6 @@ void MainWindow::action_ListViewPasteFiles() {
 
     OperationType operationType = OperationType::Copy;
 
-#ifdef Q_OS_WIN
-    // Prüfen Windows Cut-Flag
-    if (mimeData->hasFormat("Preferred DropEffect")) {
-        QByteArray dropEffect = mimeData->data("Preferred DropEffect");
-        if (dropEffect.size() >= static_cast<int>(sizeof(DWORD))) {
-            // Die ersten 4 Bytes als DWORD interpretieren
-            DWORD effect = 0;
-            memcpy(&effect, dropEffect.constData(), sizeof(DWORD));
-
-            // Wenn das MOVE-Bit gesetzt ist, ändern wir die Operation auf Verschieben
-            if (effect & DROPEFFECT_MOVE) {
-                operationType = OperationType::Move;
-            }
-        }
-    }
-#elif defined(Q_OS_LINUX)
     // Prüfen auf KDE-Cut-Flag
     if (mimeData->hasFormat("application/x-kde-cutselection")) {
         if (mimeData->data("application/x-kde-cutselection") == "1") {
@@ -1370,7 +1256,6 @@ void MainWindow::action_ListViewPasteFiles() {
             operationType = OperationType::Move;
         }
     }
-#endif
 
     fileOperation(operationType, urlFileList, m_currentDirectory, true);
 }
@@ -1413,25 +1298,14 @@ void MainWindow::fileOperation(OperationType operationType, const QList<QUrl> &u
 
             QString linkFileName = targetInfo.fileName();
 
-#if defined(Q_OS_WIN)
-            // Windows-Spezifisch: Eine Shell-Verknüpfung MUSS zwingend auf .lnk enden
-            if (!linkFileName.endsWith(".lnk", Qt::CaseInsensitive)) {
-                linkFileName += ".lnk";
-            }
-#endif
             QDir dir(targetDir);
             QString fullLinkPath = dir.filePath(linkFileName);
 
             if (QFile::exists(fullLinkPath)) {
                 int counter = 1;
                 while (QFile::exists(fullLinkPath)) {
-#if defined(Q_OS_WIN)
-                    // Erzeugt z.B. "datei (1).txt.lnk" oder "ordner (1).lnk"
-                    QString numberedName = QString("%1 (%2)%3.lnk").arg(baseName).arg(counter).arg(dotExt);
-#else
                     // Erzeugt z.B. "datei (1).txt" oder "ordner (1)" (Symlink unter Linux)
                     QString numberedName = QString("%1 (%2)%3").arg(baseName).arg(counter).arg(dotExt);
-#endif
                     fullLinkPath = dir.filePath(numberedName);
                     counter++;
                 }
@@ -1450,9 +1324,6 @@ void MainWindow::fileOperation(OperationType operationType, const QList<QUrl> &u
 
     // Pfad zum separaten Tool im selben Ordner ermitteln
     QString programName = "mkTransactionHandler";
-#if defined(Q_OS_WIN)
-    programName += ".exe";
-#endif
     QString appDir = QCoreApplication::applicationDirPath();
     QString programPath = QDir(appDir).filePath(programName);
 
@@ -1725,19 +1596,9 @@ void MainWindow::onTimedUpdateIcons() {
             // 5. Feststellen, ob ein individuelles Icon benötigt wird
 
             bool needsTrueIcon = false;
-#ifdef Q_OS_WIN
-            needsTrueIcon = (fileInfo.isDir() && (GetFileAttributesW(reinterpret_cast<const WCHAR*>(fullPath.utf16())) & FILE_ATTRIBUTE_READONLY)) ||
-                            fullPath.endsWith(".exe", Qt::CaseInsensitive) ||
-                            fullPath.endsWith(".ico", Qt::CaseInsensitive) ||
-                            fullPath.endsWith(".lnk", Qt::CaseInsensitive) ||
-                            fullPath.endsWith(".msi", Qt::CaseInsensitive) ||
-                            fullPath.endsWith(".cur", Qt::CaseInsensitive) ||
-                            fullPath.endsWith(".ani", Qt::CaseInsensitive);
-#else
             needsTrueIcon = fileInfo.isDir() ||
                             fileInfo.isExecutable() ||
                             fullPath.endsWith(".desktop", Qt::CaseInsensitive);
-#endif
 
             if (needsTrueIcon) {
                 QIcon trueIcon = m_iconProvider.icon(fileInfo);
@@ -1945,20 +1806,6 @@ void MainWindow::guiHideConditional() {
     this->hide();
     });
 }
-
-#ifdef Q_OS_WIN
-QString MainWindow::getSendToPath() {
-    PWSTR path = nullptr;
-    // FOLDERID_SendTo ist die offizielle GUID für diesen Ordner
-    HRESULT hr = SHGetKnownFolderPath(FOLDERID_SendTo, 0, nullptr, &path);
-    if (SUCCEEDED(hr)) {
-        QString result = QString::fromWCharArray(path);
-        CoTaskMemFree(path); // Wichtig: Speicher freigeben
-        return result;
-    }
-    return QString();
-}
-#endif
 
 void MainWindow::loadMimeCache() {
     m_mimeCache.clear();
@@ -2379,11 +2226,7 @@ void MainWindow::updateWidgetStyles() {
         "}"
         );
 
-#ifdef Q_OS_WIN
-    bool isDark = true;
-#elif defined(Q_OS_LINUX)
     bool isDark = (QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark);
-#endif
 
     StyleState targetState;
     if (m_processIsElevated) {
@@ -2401,40 +2244,6 @@ void MainWindow::updateWidgetStyles() {
     m_currentStyleState = targetState;
     m_StyleLastPalette = currentPalette;
 
-#ifdef Q_OS_WIN
-    this->setStyleSheet(
-        "QMainWindow { background-color: #222222; }"
-        "QHeaderView::section { background-color: #222222; color: #ffffff; }"
-        );
-
-    m_LineEdit1->setStyleSheet(lineEdit1StyleDark);
-    m_LineEdit2->setStyleSheet(lineEdit2StyleDark);
-
-    if (targetState == StyleState::Elevated) {
-        m_tableView->setStyleSheet(Styles::tableViewBase % Styles::headerViewDark % Styles::scrollAreaCornerDark
-                                   % Styles::tableViewColorsElevated % Styles::tableViewHoverElevated % Styles::tableViewSelectionElevated);
-        m_listView->setStyleSheet(Styles::listViewBase % Styles::listViewItemHeight % Styles::scrollAreaCornerDark
-                                  % Styles::listViewColorsElevated % Styles::listViewHoverElevated % Styles::listViewSelectionElevated);
-        m_thumbnailView->setStyleSheet(Styles::listViewBase % Styles::scrollAreaCornerDark
-                                       % Styles::listViewColorsElevated % Styles::listViewHoverElevated % Styles::listViewSelectionElevated);
-    } else {
-        m_tableView->setStyleSheet(Styles::tableViewBase % Styles::headerViewDark % Styles::scrollAreaCornerDark
-                                   % Styles::tableViewColorsDark % Styles::tableViewHoverDark % Styles::tableViewSelectionDark);
-        m_listView->setStyleSheet(Styles::listViewBase % Styles::listViewItemHeight % Styles::scrollAreaCornerDark
-                                  % Styles::listViewColorsDark % Styles::listViewHoverDark % Styles::listViewSelectionDark);
-        m_thumbnailView->setStyleSheet(Styles::listViewBase % Styles::scrollAreaCornerDark
-                                       % Styles::listViewColorsDark % Styles::listViewHoverDark % Styles::listViewSelectionDark);
-    }
-
-    m_tableView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
-    m_tableView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
-
-    m_listView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
-    m_listView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
-
-    m_thumbnailView->verticalScrollBar()->setStyleSheet(Styles::verticalScrollBarDark);
-    m_thumbnailView->horizontalScrollBar()->setStyleSheet(Styles::horizontalScrollBarDark);
-#elif defined(Q_OS_LINUX)
     if (targetState == StyleState::Dark) {
         this->setStyleSheet(
             "QMainWindow { background-color: palette(window); }"
@@ -2459,7 +2268,6 @@ void MainWindow::updateWidgetStyles() {
     } else {
         m_listView->setStyleSheet(Styles::listViewItemHeight);
     }
-#endif
 }
 
 //######################################################################################
@@ -2479,25 +2287,6 @@ void MainWindow::winUnhide() {
     focusEditBox();
     this->show();
 }
-
-#ifdef Q_OS_WIN
-// Note: To use this, you can do something akin to "PostMessage(hWnd, 0x807B, 0, 0)" with the hWnd of the window with the name "mkLauncher" and class "Qt6111QWindowIcon"
-bool MainWindow::nativeEvent(const QByteArray &eventType, void *message, qintptr *result) {
-    MSG *msg = static_cast<MSG *>(message);
-    if (msg->message == WM_MY_LAUNCHER_FOCUS_EDITBOX) {
-        this->focusEditBox();
-        return true;
-    } else if (msg->message == WM_MY_LAUNCHER_HIDE) {
-        this->winHide();
-        return true;
-    } else if (msg->message == WM_MY_LAUNCHER_UNHIDE) {
-        this->winUnhide();
-        return true;
-    }
-
-    return QMainWindow::nativeEvent(eventType, message, result);
-}
-#endif
 
 //######################################################################################
 // Protected Overrides
@@ -2997,7 +2786,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 
 /*
 void MainWindow::action_ListViewNewFolder() {
-    if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") return;
+    if (m_currentDirectory.isEmpty()) return;
 
     // 1. Create unique dummy name
     QDir dir(m_currentDirectory);
@@ -3051,7 +2840,7 @@ void MainWindow::action_ListViewNewFolder() {
 }
 
 void MainWindow::action_ListViewNewTextFile() {
-    if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") return;
+    if (m_currentDirectory.isEmpty()) return;
 
     QString baseName = tr("New Text Document");
     QString extension = ".txt";
@@ -3071,9 +2860,6 @@ void MainWindow::action_ListViewNewTextFile() {
 
     QFile file(fullPath);
     if (file.open(QIODevice::WriteOnly)) {
-#ifdef Q_OS_WIN
-        file.write("\xEF\xBB\xBF", 3);  // UTF-8 BOM only on Windows
-#endif
         file.close();
     } else {
         qWarning() << "Konnte Textdatei nicht erstellen:" << file.errorString();
@@ -3167,9 +2953,6 @@ void MainWindow::elevateInstance() {
     }
 
     bool bSuccess = false;
-#ifdef Q_OS_WIN
-    bSuccess = Helpers::startProcessElevatedWin(appPath, Helpers::argumentsToWinString(arguments));
-#elif defined(Q_OS_LINUX)
     QStringList pkexecArgs;
     pkexecArgs << "env"
                // Wir holen die Display-Infos des aktuellen Nutzers und übergeben sie an Root
@@ -3182,21 +2965,16 @@ void MainWindow::elevateInstance() {
                << arguments;
     qint64 pid;
     bSuccess = QProcess::startDetached("pkexec", pkexecArgs, QString(), &pid);
-#endif
     if (bSuccess) {
         QMetaObject::invokeMethod(qApp, "closeAllWindows", Qt::QueuedConnection);
     }
 }
 
 void MainWindow::navigateUp() {
-    if (m_currentDirectory.isEmpty() || m_currentDirectory == "drives://") return;
+    if (m_currentDirectory.isEmpty()) return;
 
     QDir currentDir(m_currentDirectory);
     if (currentDir.isRoot()) {
-#ifdef Q_OS_WIN
-        QString focusPath = currentDir.absolutePath();
-        browseFolder("drives://", focusPath);
-#endif
     } else {
         QString focusPath = currentDir.absolutePath();
         currentDir.cdUp();

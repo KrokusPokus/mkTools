@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.19)
 project(mkBatchRename LANGUAGES CXX)
 
 qt_add_executable(mkBatchRename
-    WIN32 MACOSX_BUNDLE
     src/main.cpp
     src/mainwindow.h src/mainwindow.cpp
 
@@ -18,17 +17,13 @@ target_link_libraries(mkBatchRename
         Qt6::Core
         Qt6::Widgets
         Qt6::Concurrent
-        $<$<PLATFORM_ID:Windows>:zlibstatic>
-        $<$<PLATFORM_ID:Linux>:ZLIB::ZLIB>
+        ZLIB::ZLIB
 )
 
-# Beschleunigt den Start unter Linux, indem ungenutzte Shared Libraries ignoriert werden
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_options(mkBatchRename PRIVATE -Wl,--as-needed)
-endif()
+# Beschleunigt den Start, indem ungenutzte Shared Libraries ignoriert werden
+target_link_options(mkBatchRename PRIVATE -Wl,--as-needed)
 
 install(TARGETS mkBatchRename
-    BUNDLE  DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )

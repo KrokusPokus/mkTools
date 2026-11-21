@@ -40,11 +40,6 @@ int main(int argc, char *argv[])
     QString pathToScan;
     if (!parser.positionalArguments().isEmpty()) {
         pathToScan = parser.positionalArguments().at(0);
-        // Falls der Windows-Parser den Backslash geschluckt und ein " an den String gehängt hat:
-        if (pathToScan.endsWith('"')) {
-            pathToScan.chop(1);  // Das falsche Anführungszeichen abschneiden
-            pathToScan += "/";   // Einen sauberen Ordner-Abschluss hinzufügen
-        }
         pathToScan = QDir::cleanPath(pathToScan);
     } else {
         pathToScan = QDir::homePath();

@@ -10,15 +10,10 @@
 
 #include <zlib.h>
 
-#ifndef Q_OS_WIN
 #include <cerrno>
 #include <sys/stat.h> // stat(), mkfifo(), S_ISFIFO ...
 #include <cstdio>     // ::rename()
-#endif
 
-#ifdef Q_OS_WIN
-#include <qt_windows.h>
-#elif defined(Q_OS_LINUX)
 #include <sys/resource.h> // Für getpriority/setpriority (CPU)
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -37,8 +32,6 @@
 #define IOPRIO_PRIO_VALUE(class, data) (((class) << 13) | (data))
 #endif
 
-#endif
-
 namespace {
 
 // Sonderdateien (nur Unix): FIFO, Socket, Zeichen- oder Blockgerät. Sie melden alle die Größe 0 und dürfen
@@ -47,17 +40,11 @@ namespace {
 enum class SpecialFileKind { None, Fifo, Other };
 
 SpecialFileKind specialFileKind(const QString &path, unsigned int *permissions = nullptr) {
-#ifdef Q_OS_WIN
-    Q_UNUSED(path);
-    Q_UNUSED(permissions);
-    return SpecialFileKind::None;
-#else
     struct stat st;
     if (::stat(QFile::encodeName(path).constData(), &st) != 0) return SpecialFileKind::None;
     if (S_ISREG(st.st_mode) || S_ISDIR(st.st_mode)) return SpecialFileKind::None;
     if (permissions) *permissions = st.st_mode & 07777;
     return S_ISFIFO(st.st_mode) ? SpecialFileKind::Fifo : SpecialFileKind::Other;
-#endif
 }
 
 // Liefert true, wenn 'path' (muss nicht existieren) gleich 'dir' ist oder irgendwo darunter liegt.
@@ -78,24 +65,6 @@ bool isSameOrInsideDir(const QString &dir, const QString &path) {
 
 } // namespace
 
-#ifdef Q_OS_WIN
-// RAII-Klasse: Aktiviert den Hintergrundmodus beim Erstellen
-// und deaktiviert ihn automatisch beim Verlassen des Scopes (auch bei Fehlern/Abbrüchen).
-struct WindowsBackgroundPriorityGuard {
-    WindowsBackgroundPriorityGuard() {
-        // Schaltet den aktuellen Thread in den Hintergrundmodus (CPU & I/O)
-        m_activated = SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_BEGIN);
-    }
-
-    ~WindowsBackgroundPriorityGuard() {
-        if (m_activated) {
-            SetThreadPriority(GetCurrentThread(), THREAD_MODE_BACKGROUND_END);
-        }
-    }
-private:
-    BOOL m_activated = FALSE;
-};
-#elif defined(Q_OS_LINUX)
 struct LinuxBackgroundPriorityGuard {
     LinuxBackgroundPriorityGuard() {
         m_oldIoPrio = syscall(SYS_ioprio_get, IOPRIO_WHO_PROCESS, 0);
@@ -113,7 +82,6 @@ struct LinuxBackgroundPriorityGuard {
 private:
     int m_oldIoPrio = -1;
 };
-#endif
 
 FileOperation::FileOperation(OperationType opType, QList<QUrl> urls, QString targetDir, QObject *parent)
     : QObject(parent)
@@ -124,12 +92,7 @@ FileOperation::FileOperation(OperationType opType, QList<QUrl> urls, QString tar
 {}
 
 void FileOperation::run() {
-#ifdef Q_OS_WIN
-    // Ab hier läuft der gesamte Kopiervorgang im Windows-Hintergrundmodus
-    WindowsBackgroundPriorityGuard priorityGuard;
-#elif defined(Q_OS_LINUX)
     LinuxBackgroundPriorityGuard priorityGuard;
-#endif
 
     m_isCancelled.store(false);
 
@@ -148,8 +111,8 @@ void FileOperation::run() {
     m_stats = CopyStats();
     m_stats.currentName = tr("Scanning files...");
 
-    m_stats.currentSourceDir = QDir::toNativeSeparators(m_sourceDir);
-    m_stats.currentTargetDir = QDir::toNativeSeparators(m_targetDir);
+    m_stats.currentSourceDir = m_sourceDir;
+    m_stats.currentTargetDir = m_targetDir;
     m_timer.start();
     updateProgress();
 
@@ -280,22 +243,11 @@ void FileOperation::run() {
         }
         else if (m_operationType == OperationType::Link) {
             QString baseName = srcInfo.fileName();
-
-#ifdef Q_OS_WIN
-            // Unter Windows MÜSSEN Shortcuts zwingend die Dateiendung .lnk haben,
-            // damit QFile::link() eine korrekte Shell-Verknüpfung via COM-API erstellt.
-            if (!baseName.endsWith(".lnk", Qt::CaseInsensitive)) {
-                baseName += ".lnk";
-            }
-#endif
-
             QString dstPath = QDir(m_targetDir).filePath(baseName);
             QFileInfo linkDstInfo(dstPath);
 
-            // Konfliktprüfung mit dem neuen Namen (inkl. evtl. .lnk Endung)
+            // Konfliktprüfung mit dem neuen Namen
             if (linkDstInfo.exists() || linkDstInfo.isSymbolicLink()) {
-                // Wir erzeugen eine temporäre QFileInfo für generateUniqueCopyName,
-                // damit die "(Copy)"-Endung korrekt VOR dem ".lnk" eingefügt wird.
                 dstPath = generateUniqueCopyName(QFileInfo(dstPath), m_targetDir);
             }
 
@@ -331,7 +283,6 @@ void FileOperation::run() {
 void FileOperation::doCancel() {
     m_isCancelled.store(true);
 
-#if defined(Q_OS_LINUX)
     KJob* jobToKill = nullptr;
     {
         // Mutex NUR für das Auslesen des Zeigers sperren
@@ -344,7 +295,6 @@ void FileOperation::doCancel() {
         // welches im Lambda m_mutex wieder ohne Deadlock sperren kann.
         jobToKill->kill(KJob::EmitResult);
     }
-#endif
 
     // Falls der Thread in der Pause-Bedingung schläft -> Aufwecken!
     {
@@ -532,7 +482,6 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
     QString failReason;
 
     if (isSpecialSource) {
-#ifndef Q_OS_WIN
         // Sonderdatei: niemals über QFile::rename (fällt bei EXDEV still auf Kopieren = Lesen zurück)
         // und niemals über copyFileInChunks.
         if (canMoveSpecialByRename && !replaceExisting) {
@@ -553,7 +502,6 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
         } else if (!ok) {
             failReason = tr("Special file (device or socket) cannot be copied, skipped");
         }
-#endif
     } else if (isMove && !isCrossDevice) {
         // Verschieben auf demselben Laufwerk durch einfaches Umbenennen
         // (bei Überschreiben: altes Ziel wird erst nach erfolgreichem Umbenennen entfernt)
@@ -839,7 +787,7 @@ FileOpResult FileOperation::deleteDirRecursively(const QString &dirPath) {
         const bool isSymLink = entry.isSymbolicLink() || entry.isJunction();
 
         // Rekursion NUR wenn es ein echtes Verzeichnis ist, KEIN Symlink!
-        if (entry.isDir() && !isSymLink && !entry.isShortcut()) {
+        if (entry.isDir() && !isSymLink) {
             FileOpResult r = deleteDirRecursively(entry.filePath());
             if (r == FileOpResult::Cancelled) return FileOpResult::Cancelled;
             if (r == FileOpResult::Error)     anyErrors = true;
@@ -997,14 +945,6 @@ std::pair<qint64, int> FileOperation::calculateStats(const QStringList &filePath
 
     // Hilfs-Lambda zur einheitlichen Bewertung jedes FileInfo-Objekts
     auto processInfo = [&](const QFileInfo &info) {
-#ifdef Q_OS_WIN
-        // --- WINDOWS .LNK SHORTCUTS ---
-        if (info.isShortcut()) {
-            totalBytes += Helpers::getLnkSize(info.filePath());
-            totalFiles++;
-            return;
-        }
-#endif
         // --- SYMLINKS & JUNCTIONS ---
         if (info.isSymbolicLink() || info.isJunction()) {
             // Case 1: Löschen, Papierkorb oder Link erstellen -> Immer nur das Link-Objekt selbst zählen
@@ -1129,9 +1069,6 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
         dstFile.flush();
 
         // Kernel zwingen, den Chunk SOFORT physisch auf das Medium zu schreiben
-#if defined(Q_OS_WIN)
-        FlushFileBuffers(reinterpret_cast<HANDLE>(dstFile.handle()));
-#else
         // fdatasync ist unter Linux einen Tick schneller als fsync, da es nur Daten
         // und keine irrelevanten Metadaten/Timestamps pro Chunk synchronisiert!
         // Schreibfehler (EIO, ENOSPC, EDQUOT, Stick abgezogen, Netzwerkfehler) melden sich oft
@@ -1147,7 +1084,6 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
             success = false;
             break;
         }
-#endif
 
         // Erst JETZT ist der Chunk physikalisch geschrieben -> Statistik & UI aktualisieren
         m_stats.bytesWritten += bytesWritten;
@@ -1206,7 +1142,7 @@ QString FileOperation::calculateRelativeDisplayPath(const QFileInfo &info) {
         }
 
         if (fullPath.startsWith(cleanSource, Qt::CaseInsensitive)) {
-            return QDir::toNativeSeparators(fullPath.sliced(cleanSource.length()));
+            return fullPath.sliced(cleanSource.length());
         }
     }
 
@@ -1305,19 +1241,8 @@ ConflictResolution FileOperation::askUserForResolution(const Conflict &conflict)
 }
 
 bool FileOperation::removeReadOnlyAttribute(const QString &path) {
-    // QFile::exists prüft die Datei selbst (auch kaputte .lnk-Dateien),
-    // während QFileInfo::exists() dem Ziel der Verknüpfung folgen würde!
     if (!QFile::exists(path)) return true;
 
-#ifdef Q_OS_WIN
-    const wchar_t *wPath = reinterpret_cast<const wchar_t *>(path.utf16());
-    DWORD dwAttrs = GetFileAttributesW(wPath);
-
-    if (dwAttrs != INVALID_FILE_ATTRIBUTES && (dwAttrs & FILE_ATTRIBUTE_READONLY)) {
-        return SetFileAttributesW(wPath, dwAttrs & ~FILE_ATTRIBUTE_READONLY) != 0;
-    }
-    return true;
-#else
     QFileInfo info(path);
     if (!info.exists()) return true;
 
@@ -1328,13 +1253,11 @@ bool FileOperation::removeReadOnlyAttribute(const QString &path) {
         return QFile::setPermissions(path, permissions);
     }
     return true;
-#endif
 }
 
 void FileOperation::doPause() {
     m_isPaused.store(true);
 
-#if defined(Q_OS_LINUX)
     if (m_currentKioJob) {
         // Pausiert den asynchronen KIO-Job direkt
         if (m_currentKioJob->doSuspend()) {
@@ -1342,7 +1265,6 @@ void FileOperation::doPause() {
         }
         return;
     }
-#endif
 
     // Bei non-KIO (Worker-Thread) sendet checkInterruption()
     // das wasPaused()-Signal, sobald der Thread schlafen geht.
@@ -1351,7 +1273,6 @@ void FileOperation::doPause() {
 void FileOperation::doContinue() {
     m_isPaused.store(false);
 
-#if defined(Q_OS_LINUX)
     if (m_currentKioJob) {
         // Setzt den KIO-Job fort
         if (m_currentKioJob->doResume()) {
@@ -1359,7 +1280,6 @@ void FileOperation::doContinue() {
         }
         return;
     }
-#endif
 
     // Bei non-KIO: Worker-Thread aus dem m_pauseCond.wait() aufwecken
     m_pauseCond.wakeAll();
@@ -1379,7 +1299,6 @@ void FileOperation::doRetry() {
     m_isPaused.store(false);
     m_applyToAll = false;
 
-#if defined(Q_OS_LINUX)
     // KIO-Operationen (nicht-lokale URLs) NICHT über den lokalen Retry-Code wiederholen: Dort würden
     // URL-Strings wie lokale Pfade behandelt. Stattdessen den KIO-Job mit der ursprünglichen Liste neu starten;
     // bereits übertragene Dateien behandelt KIO selbst über seinen Konfliktdialog (z.B. "Alle überspringen").
@@ -1389,7 +1308,6 @@ void FileOperation::doRetry() {
         }, Qt::QueuedConnection);
         return;
     }
-#endif
 
     // 3. Einen gezielten Retry-Durchlauf anfordern
     // FALSCH: run(); -> Würde den GUI-Thread blockieren
@@ -1401,11 +1319,7 @@ void FileOperation::doRetry() {
 }
 
 void FileOperation::runRetryList(const QList<FailedItem> &itemsToRetry) {
-#ifdef Q_OS_WIN
-    WindowsBackgroundPriorityGuard priorityGuard;
-#elif defined(Q_OS_LINUX)
     LinuxBackgroundPriorityGuard priorityGuard;
-#endif
 
     // 1. STATISTIKEN ZURÜCKSETZEN & NEU BERECHNEN
     m_stats = CopyStats();
@@ -1568,11 +1482,6 @@ bool FileOperation::checkInterruption() {
 }
 
 bool FileOperation::checkTargetSymlinkSupport(const QString &targetDir) const {
-#ifdef Q_OS_WIN
-    // Unter Windows erzwingen wir immer eine "Deep Copy" (Inhalte auflösen/kopieren),
-    // da Symlinks Rechte (Admin/Developer Mode) erfordern und Explorer-Standard sind.
-    return false;
-#else
     QDir target(targetDir);
     if (!target.exists()) {
         if (!target.mkpath(".")) {
@@ -1605,7 +1514,6 @@ bool FileOperation::checkTargetSymlinkSupport(const QString &targetDir) const {
     QDir().rmdir(testTargetAbs); // Löscht den Test-Ordner
 
     return supportsSymlinks;
-#endif
 }
 
 // Lazy Evaluator!
@@ -1616,7 +1524,6 @@ bool FileOperation::targetSupportsSymlinks() {
     return m_targetSupportsSymlinks.value();
 }
 
-#if defined(Q_OS_LINUX)
 void FileOperation::startKioAsync() {
     if (m_isCancelled.load()) {
         emit wasCanceled(0, m_failedItems);
@@ -1663,7 +1570,7 @@ void FileOperation::startKioAsync() {
     job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
 
     m_stats = CopyStats();
-    m_stats.currentTargetDir = QDir::toNativeSeparators(m_targetDir);
+    m_stats.currentTargetDir = m_targetDir;
     m_stats.totalFiles = m_urls.size();
     m_timer.start();
 
@@ -1730,8 +1637,8 @@ void FileOperation::startKioAsync() {
                 failedSource = failedTarget; // Fehler beim Anlegen eines Zielordners: den Ordner selbst nennen
             } else if (failedSource.isEmpty()) {
                 failedSource = (m_urls.size() == 1) ? m_urls.first().toDisplayString(QUrl::PreferLocalFile)
-                                                    : QDir::toNativeSeparators(m_targetDir);
-                failedTarget = QDir::toNativeSeparators(m_targetDir);
+                                                    : m_targetDir;
+                failedTarget = m_targetDir;
             }
             m_failedItems.append({failedSource, failedTarget, m_operationType, kjob->errorString()});
         }
@@ -1745,5 +1652,3 @@ void FileOperation::startKioAsync() {
         }
     });
 }
-
-#endif

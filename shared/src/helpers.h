@@ -5,10 +5,6 @@
 #include <QPixmap>
 #include <QString>
 
-#ifdef Q_OS_WIN
-#include <qt_windows.h>
-#endif
-
 enum class OperationType { Copy, Move, Link, Delete, Recycle }; // needed for interop with mkTransactionHandler
 enum ViewMode {List = 0, Detail = 1, Thumbnail = 2};
 
@@ -23,19 +19,6 @@ struct DesktopEntry {
     QString url;  // Für Type=Link
     bool isValid = false;
     bool useTerminal = false;
-};
-
-struct LnkInfo {
-    qint64 size = 0;
-    QDateTime birthTime;
-    QDateTime lastAccessTime;
-    QDateTime lastWriteTime;
-
-    bool isReadOnly = false;
-    bool isHidden   = false;
-    bool isSystem   = false;
-
-    bool exists     = false;
 };
 
 namespace Helpers {
@@ -80,19 +63,9 @@ namespace Helpers {
     //QString getDisplayName(const QString &filePath, bool isDir, bool showFileExtensions);
     //QString readLnkTargetOnLinux(const QString &filePath);
 
-#ifdef Q_OS_WIN
-    bool startProcessElevatedWin(const QString &programPath, const QString &arguments);
-    QString argumentsToWinString(const QStringList &args);
-    LnkInfo getLnkInfo(const QString &filePath);
-    qint64 getLnkSize(const QString &filePath);
-    QDateTime fileTimeToQDateTime(const FILETIME &ft);
-    QString getAssociatedExecutableWin32(const QString &extensionOrScheme);
-    void openUrlsWithWin32(const QList<QUrl> &urls);
-#elif defined(Q_OS_LINUX)
     void showKdePropertiesDialog(const QStringList &filePaths, QWidget *parent);
     void openUrlsWithKIO(const QList<QUrl> &urls);
     bool openFileWithPreferredApp(const QString &path, int rank);
-#endif
 }
 
 #endif // HELPERS_H

@@ -41,7 +41,7 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     lblSrcIcon->setAlignment(Qt::AlignCenter);
     lblSrcIcon->setContentsMargins(8, 8, 8, 8);
 
-    QLabel *pathSrcLabel = new QLabel(QDir::toNativeSeparators(conflict.sourcePath), this);
+    QLabel *pathSrcLabel = new QLabel(conflict.sourcePath, this);
     pathSrcLabel->setWordWrap(true);
 
     // Line 2: Source Data
@@ -80,7 +80,7 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     lblDstIcon->setAlignment(Qt::AlignCenter);
     lblDstIcon->setContentsMargins(8, 8, 8, 8);
 
-    QLabel *pathDstLabel = new QLabel(QDir::toNativeSeparators(conflict.targetPath), this);
+    QLabel *pathDstLabel = new QLabel(conflict.targetPath, this);
     pathDstLabel->setWordWrap(true);
 
     // Grid befüllen

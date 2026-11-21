@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.19)
 project(mkFolderWidget LANGUAGES CXX)
 
 qt_add_executable(mkFolderWidget
-    WIN32 MACOSX_BUNDLE
     src/main.cpp
     src/mainwindow.h src/mainwindow.cpp
 	
@@ -18,25 +17,19 @@ target_link_libraries(mkFolderWidget
         Qt6::Widgets
         Qt6::Concurrent
         Qt6::DBus
-        $<$<PLATFORM_ID:Windows>:zlibstatic>
-        $<$<PLATFORM_ID:Linux>:ZLIB::ZLIB>
+        ZLIB::ZLIB
 )
 
-# Beschleunigt den Start unter Linux, indem ungenutzte Shared Libraries ignoriert werden
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_options(mkFolderWidget PRIVATE -Wl,--as-needed)
-endif()
+# Beschleunigt den Start, indem ungenutzte Shared Libraries ignoriert werden
+target_link_options(mkFolderWidget PRIVATE -Wl,--as-needed)
 
 install(TARGETS mkFolderWidget
-    BUNDLE  DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    # .desktop file: makes it selectable as default file manager; the file name must match the Wayland app_id (= executable name)
-    install(FILES res/mkFolderWidget.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
-endif()
+# .desktop file: makes it selectable as default file manager; the file name must match the Wayland app_id (= executable name)
+install(FILES res/mkFolderWidget.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 
 #qt_generate_deploy_app_script(
 #    TARGET mkFolderWidget

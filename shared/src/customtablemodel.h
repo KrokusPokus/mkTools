@@ -18,7 +18,6 @@ struct CustomFileInfo {
     QString name;
     QString displayName;
     QString newName;
-    QString drivePath;
     QString path;
     QString filePath;
     qint64 size;
@@ -33,7 +32,6 @@ struct CustomFileInfo {
     bool isCut = false;
     bool isDir;
     bool isSymbolicLink;
-    bool isDrive = false;
     bool isExecutable;
     bool isHidden;
     bool isNameCollision = false;

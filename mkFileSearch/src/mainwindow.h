@@ -186,10 +186,6 @@ private:
 
     StyleState m_currentStyleState{StyleState::Uninitialized};
 
-#ifdef Q_OS_WIN
-    QString getSendToPath();
-#endif
-
 protected:
     void changeEvent(QEvent *event) override;
     void closeEvent(QCloseEvent *event) override;

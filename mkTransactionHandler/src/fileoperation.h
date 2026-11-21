@@ -19,11 +19,9 @@
 #include <optional>
 
 // KDE KIO Framework (Linux-spezifisch)
-#if defined(Q_OS_LINUX)
 #include <KIO/CopyJob>
 #include <KIO/JobUiDelegate>
 #include <KJob>
-#endif
 
 struct CopyStats {
     qint64 totalBytes = 0;
@@ -66,9 +64,7 @@ public:
                            QList<QUrl> urls,
                            QString targetDir = QString(),
                            QObject *parent = nullptr);
-#if defined(Q_OS_LINUX)
     void startKioAsync();
-#endif
 
 signals:
     void progress(const CopyStats &stats);
@@ -105,13 +101,11 @@ private:
     bool checkTargetSymlinkSupport(const QString &targetDir) const;
     bool targetSupportsSymlinks(); // Lazy Evaluator
 
-#if defined(Q_OS_LINUX)
     KIO::CopyJob *m_currentKioJob = nullptr;
     QStringList m_kioCreatedTargets; // Vom KIO-Job nachweislich neu angelegte Ziel-Dateien/Links (für Cleanup bei Abbruch)
     bool m_isKioMode = false;        // Operation läuft über KIO (GUI-Thread) statt über den lokalen Worker-Thread
     QString m_kioCurrentSource;      // Element, das KIO gerade überträgt (für eine korrekte Fehlerzuordnung)
     QString m_kioCurrentTarget;
-#endif
 
     CopyStats m_stats;
     QElapsedTimer m_timer;

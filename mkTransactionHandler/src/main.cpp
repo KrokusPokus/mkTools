@@ -11,7 +11,6 @@
 #include <QTranslator>
 #include <QUrl>
 
-#if defined(Q_OS_LINUX)
 #include <KIO/CopyJob>
 #include <KIO/DeleteJob>
 #include <KIO/JobUiDelegateFactory>
@@ -65,7 +64,6 @@ static int runKdeFileOperation(QApplication &app, OperationType opType, const QL
     app.exec();
     return exitCode;
 }
-#endif
 
 int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
@@ -156,11 +154,9 @@ int main(int argc, char *argv[]) {
 
     //-----------------------------------------------------------------------------------------
 
-#if defined(Q_OS_LINUX)
     if (m_settings.useKdeFileOperations) {
         return runKdeFileOperation(app, opType, urls, targetDir);
     }
-#endif
 
     MainWindow progressDialog(opType, urls, targetDir);
 

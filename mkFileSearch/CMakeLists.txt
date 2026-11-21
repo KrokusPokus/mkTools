@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.19)
 project(mkFileSearch LANGUAGES CXX)
 
 qt_add_executable(mkFileSearch
-    WIN32 MACOSX_BUNDLE
     src/main.cpp
     src/mainwindow.h src/mainwindow.cpp
 
@@ -17,25 +16,19 @@ target_link_libraries(mkFileSearch
         Qt6::Core
         Qt6::Widgets
         Qt6::Concurrent
-        $<$<PLATFORM_ID:Windows>:zlibstatic>
-        $<$<PLATFORM_ID:Linux>:ZLIB::ZLIB>
+        ZLIB::ZLIB
 )
 
-# Beschleunigt den Start unter Linux, indem ungenutzte Shared Libraries ignoriert werden
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    target_link_options(mkFileSearch PRIVATE -Wl,--as-needed)
-endif()
+# Beschleunigt den Start, indem ungenutzte Shared Libraries ignoriert werden
+target_link_options(mkFileSearch PRIVATE -Wl,--as-needed)
 
 install(TARGETS mkFileSearch
-    BUNDLE  DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
 )
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    # Start menu entry (icon: kfind from the icon theme); the file name must match the Wayland app_id (= executable name)
-    install(FILES res/mkFileSearch.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
-endif()
+# Start menu entry (icon: kfind from the icon theme); the file name must match the Wayland app_id (= executable name)
+install(FILES res/mkFileSearch.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 
 #qt_generate_deploy_app_script(
 #    TARGET mkFileSearch

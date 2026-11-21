@@ -14,10 +14,6 @@
 
 #include <iostream>
 
-#ifdef Q_OS_WIN
-#include <qt_windows.h>
-#endif
-
 bool delegateNonLocalToDolphin(const QString &inputArg) {
     if (inputArg.isEmpty()) return false;
 
@@ -120,16 +116,9 @@ int main(int argc, char *argv[])
         return 0; // Sofort beenden, Dolphin übernimmt
     }
 
-    // Falls der Windows-Parser den Backslash geschluckt und ein " an den String gehängt hat:
-    if (targetDir.endsWith('"')) {
-        targetDir.chop(1);  // Das falsche Anführungszeichen abschneiden
-        targetDir += "/";   // Einen sauberen Ordner-Abschluss hinzufügen
-    }
     targetDir = QDir::cleanPath(targetDir);
 
-    if (targetDir == "::{20d04fe0-3aea-1069-a2d8-08002b30309d}") {
-        targetDir = "drives://";
-    } else if (targetDir.isEmpty() || !QDir(targetDir).exists()) {
+    if (targetDir.isEmpty() || !QDir(targetDir).exists()) {
         targetDir = QDir::homePath();
     }
 
@@ -160,25 +149,6 @@ int main(int argc, char *argv[])
             int right = margins.right();
             int bottom = margins.bottom();
             int top = margins.top();
-
-#ifdef Q_OS_WIN
-            if (left == 0 && right == 0 && bottom == 0) {
-                HWND hwnd = (HWND)w.winId();
-                LONG style = GetWindowLongPtr(hwnd, GWL_STYLE);
-                LONG exStyle = GetWindowLongPtr(hwnd, GWL_EXSTYLE);
-
-                // Wir simulieren eine hypothetische Client-Area von 100x100 Pixeln
-                RECT rect = {0, 0, 100, 100};
-
-                // AdjustWindowRectEx rechnet die Ränder basierend auf dem Stil oben drauf
-                if (AdjustWindowRectEx(&rect, style, FALSE, exStyle)) {
-                    left = abs(rect.left);
-                    right = rect.right - 100;
-                    bottom = rect.bottom - 100;
-                    top = abs(rect.top); // Überschreibt die 27px mit dem exakten OS-Wert
-                }
-            }
-#endif
 
             if (parser.isSet(wOpt) && parser.isSet(hOpt)) {
                 int clientWidth = parser.value(wOpt).toInt() - left - right;

@@ -24,14 +24,14 @@ void SettingsManager::load() {
     knownExts = audioExts | imageExts | textExts | videoExts | miscExts;
 
     // Handlers
-    audioEditor      = QDir::toNativeSeparators(s.value("Handlers/EditorAudio", DEFAULT_AUDIO_EDITOR).toString());
-    imageEditor      = QDir::toNativeSeparators(s.value("Handlers/EditorImage", DEFAULT_IMAGE_EDITOR).toString());
-    textEditor       = QDir::toNativeSeparators(s.value("Handlers/EditorText", DEFAULT_TEXT_EDITOR).toString());
-    videoEditor      = QDir::toNativeSeparators(s.value("Handlers/EditorVideo", DEFAULT_VIDEO_EDITOR).toString());
-	mergeTool        = QDir::toNativeSeparators(s.value("Handlers/MergeTool", DEFAULT_MERGE_TOOL).toString());
-    fileManager      = QDir::toNativeSeparators(s.value("Handlers/FileManager", DEFAULT_FILE_MANAGER).toString());
-    renameTool       = QDir::toNativeSeparators(s.value("Handlers/RenameTool", DEFAULT_RENAME_TOOL).toString());
-    searchTool       = QDir::toNativeSeparators(s.value("Handlers/SearchTool", DEFAULT_SEARCH_TOOL).toString());
+    audioEditor      = s.value("Handlers/EditorAudio", DEFAULT_AUDIO_EDITOR).toString();
+    imageEditor      = s.value("Handlers/EditorImage", DEFAULT_IMAGE_EDITOR).toString();
+    textEditor       = s.value("Handlers/EditorText", DEFAULT_TEXT_EDITOR).toString();
+    videoEditor      = s.value("Handlers/EditorVideo", DEFAULT_VIDEO_EDITOR).toString();
+	mergeTool        = s.value("Handlers/MergeTool", DEFAULT_MERGE_TOOL).toString();
+    fileManager      = s.value("Handlers/FileManager", DEFAULT_FILE_MANAGER).toString();
+    renameTool       = s.value("Handlers/RenameTool", DEFAULT_RENAME_TOOL).toString();
+    searchTool       = s.value("Handlers/SearchTool", DEFAULT_SEARCH_TOOL).toString();
 
     // Interface
     alternatingRowColors = s.value("Interface/AlternatingRowColors", DEFAULT_ALTERNATING_ROW_COLORS).toBool();
@@ -58,7 +58,6 @@ void SettingsManager::load() {
 void SettingsManager::getDefaults() {
     QStringList searchPaths;
 
-#ifdef Q_OS_LINUX
     DEFAULT_AUDIO_EDITOR = "org.kde.kwave.desktop";
     DEFAULT_IMAGE_EDITOR = "gimp.desktop";
     DEFAULT_TEXT_EDITOR = "org.kde.kate.desktop";
@@ -87,41 +86,8 @@ void SettingsManager::getDefaults() {
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-#elif defined(Q_OS_WIN)
-    DEFAULT_AUDIO_EDITOR = "";
-    DEFAULT_IMAGE_EDITOR = "";
-    DEFAULT_TEXT_EDITOR = "";
-    DEFAULT_VIDEO_EDITOR = "";
-    DEFAULT_MERGE_TOOL = "";
-    DEFAULT_FILE_MANAGER = "mkFolderWidget.exe";
-    DEFAULT_RENAME_TOOL = "mkBatchRename.exe";
-    DEFAULT_SEARCH_TOOL = "mkFileSearch.exe";
 
-    DEFAULT_ALTERNATING_ROW_COLORS = false;
-    DEFAULT_EXECUTABLE_FILES_RED = true;
-    DEFAULT_FONT_NAME_OVERRIDE = "Tahoma";
-    DEFAULT_FONT_SIZE_OVERRIDE = 8;
-    DEFAULT_MENU_ON_MOUSE_UP = true;
-    DEFAULT_SHOW_FILE_EXTENSIONS = false;
-    DEFAULT_SHOW_GRID = false;
-    DEFAULT_SHOW_ICONS_IN_MENU = false;
-    DEFAULT_SHOW_PLACEHOLDER_TEXT = true;
-    DEFAULT_SHOW_SHORTCUTS_IN_MENU = false;
-    DEFAULT_ALLOW_LAUNCHER_SHRINK = true;
-
-    searchPaths << QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
-    searchPaths << QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-    searchPaths << QStandardPaths::writableLocation(QStandardPaths::MusicLocation);
-    searchPaths << QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
-    searchPaths << QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
-    searchPaths << QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
-    searchPaths << "%APPDATA%/Microsoft/Windows/Start Menu";
-    searchPaths << "%ALLUSERSPROFILE%/Microsoft/Windows/Start Menu";
-    searchPaths << "%PUBLIC%/Desktop";    // "C:/Users/Public/Desktop"
-#endif
-
-    // Linux: Kopieren/Verschieben/Löschen komplett an KIO abgeben (KDE-Dialoge und Plasma-Fortschrittsanzeige)
-    // Windows: wird ignoriert
+    // Kopieren/Verschieben/Löschen komplett an KIO abgeben (KDE-Dialoge und Plasma-Fortschrittsanzeige)
     DEFAULT_USE_KDE_FILE_OPERATIONS = true;
 
     // Die Liste mit dem Pipe-Symbol | zusammenfügen
@@ -224,7 +190,6 @@ QString SettingsManager::exportSearchFolders(const QStringList &folders) {
 
     workingCopy.removeDuplicates();
 
-#ifdef Q_OS_LINUX
     QString homePath = QDir::homePath();
 
     for (QString &path : workingCopy) {
@@ -232,7 +197,6 @@ QString SettingsManager::exportSearchFolders(const QStringList &folders) {
             path.replace(0, homePath.length(), "$HOME");
         }
     }
-#endif
 
     return workingCopy.join(u'|');
 }

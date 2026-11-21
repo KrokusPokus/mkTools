@@ -5,7 +5,7 @@ a file manager, an anything launcher, a file search, a batch renamer, and two KW
 
 The tools are minimalist and screen-space efficient, and meant to be used with mouse and keyboard.
 Definitely no touch friendliness here: think hotkeys, not buttons.
-They are developed on Linux with KDE Plasma and have also been tested on Windows 10.
+They are Linux apps, developed on KDE Plasma.
 
 | Tool | Purpose |
 |------|---------|
@@ -137,7 +137,7 @@ On Arch Linux:
 sudo pacman -S --needed base-devel cmake qt6-base qt6-tools kio zlib
 ```
 
-## Building and installing (Linux)
+## Building and installing
 
 ```bash
 git clone https://github.com/KrokusPokus/mkTools.git

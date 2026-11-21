@@ -71,11 +71,6 @@ int main(int argc, char *argv[])
     MainWindow w;
 
     w.adjustSize();
-#ifdef Q_OS_WIN
-    QScreen *screen = QGuiApplication::primaryScreen();
-    int x = (screen->availableGeometry().width() - w.width()) / 2;
-    w.move(x, screen->availableGeometry().top());
-#endif
     w.resize(w.width(), w.layout()->minimumSize().height());
 
     w.show();

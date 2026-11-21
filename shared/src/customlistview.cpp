@@ -12,11 +12,6 @@
 #include <QPainter>
 #include <QTimer>
 
-#ifdef Q_OS_WIN
-#include <qt_windows.h>
-#include <shellapi.h>   // needed for ExtractIconW() and DestroyIcon()
-#endif
-
 CustomListView::CustomListView(QWidget *parent)
     : QListView(parent)
 {
@@ -49,16 +44,7 @@ void CustomListView::startDrag(Qt::DropActions supportedActions) {
     QPixmap pm;
 
     if (indexes.count() > 1) {
-#if defined(Q_OS_WIN)
-        HICON hIcon = ExtractIconW(GetModuleHandle(nullptr), L"shell32.dll", -133);
-        if (hIcon) {
-            QImage img = QImage::fromHICON(hIcon);
-            dragIcon = QIcon(QPixmap::fromImage(img));
-            DestroyIcon(hIcon);
-        }
-#else
         dragIcon = QIcon::fromTheme("document-multiple");
-#endif
     } else {
         if (m_thumbnailMode) {
             pm = model()->data(indexes.first(), Qt::DecorationRole).value<QPixmap>();
@@ -312,7 +298,7 @@ void CustomListView::currentChanged(const QModelIndex &current, const QModelInde
 //   4. Folge: Die View bleibt im Gummiband-Zustand, das Rechteck bleibt sichtbar stehen und
 //      verschwindet erst beim nächsten Klick ins Fenster.
 //   Per Diagnose-Log verifiziert (Qt 6.12.0, KWin 6.8.3). Dolphin zeigt denselben Fehler.
-//   Unter X11 und Windows tritt er nicht auf.
+//   Unter X11 tritt er nicht auf.
 //
 // Ursache in KWin (im KWin-Quellcode nachvollzogen, Stand KWin 6.8):
 //   a) Linksklick in ein inaktives Fenster löst in KWin standardmäßig den Fenster-Befehl
