@@ -20,10 +20,6 @@ public:
 	QSet<QString> videoExts;
     QSet<QString> knownExts;
 
-	QString audioEditor;
-	QString imageEditor;
-	QString textEditor;
-	QString videoEditor;
     QString mergeTool;
 	QString fileManager;
     QString renameTool;
@@ -62,10 +58,6 @@ private:
     const QString DEFAULT_VIDEO = "3gp,asf,avi,mkv,mov,mp4,mpg,ogm,ts,wm,wmv,webm";
     const QString DEFAULT_MISC  = "cbz,doc,epub,ods,odt,pdf,ppt,zip";
 
-    QString DEFAULT_AUDIO_EDITOR;
-    QString DEFAULT_IMAGE_EDITOR;
-    QString DEFAULT_TEXT_EDITOR;
-    QString DEFAULT_VIDEO_EDITOR;
     QString DEFAULT_MERGE_TOOL;
     QString DEFAULT_FILE_MANAGER;
     QString DEFAULT_SEARCH_TOOL;

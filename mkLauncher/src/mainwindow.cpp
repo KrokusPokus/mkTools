@@ -685,47 +685,12 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         mainMenu.addSeparator(); //-----------------------------------------
 
         if (!selectedPaths.isEmpty()) {
-            // 1. Determine all distinct MIME types of the selected files
-            QMimeDatabase db;
-            QSet<QString> uniqueMimeTypes;
-            for (const QString &path : std::as_const(selectedPaths)) {
-                uniqueMimeTypes.insert(db.mimeTypeForFile(path).name());
-            }
-
-            // 2. Compute the intersection of the available KServices
-            KService::List commonServices;
-            bool isFirstMime = true;
-
-            for (const QString &mimeName : std::as_const(uniqueMimeTypes)) {
-                KService::List servicesForMime = KApplicationTrader::queryByMimeType(mimeName);
-
-                if (isFirstMime) {
-                    commonServices = servicesForMime;
-                    isFirstMime = false;
-                } else {
-                    // Only keep services that also support the current MIME type
-                    KService::List intersected;
-                    for (const KService::Ptr &service : std::as_const(commonServices)) {
-                        bool supportsMime = std::any_of(servicesForMime.begin(), servicesForMime.end(),
-                                                        [&service](const KService::Ptr &s) {
-                                                            return s->storageId() == service->storageId();
-                                                        });
-
-                        if (supportsMime) {
-                            intersected.append(service);
-                        }
-                    }
-                    commonServices = intersected;
-                }
-
-                // Stop when the intersection becomes empty
-                if (commonServices.isEmpty()) {
-                    break;
-                }
-            }
+            // 1.+2. Applications that can open all selected files (intersection over their MIME types)
+            int mimeTypeCount = 0;
+            KService::List commonServices = Helpers::commonServicesForPaths(selectedPaths, &mimeTypeCount);
 
             // 3. The application of the "Open" action is not repeated in the submenu (like in Dolphin)
-            const bool showOtherApp = (uniqueMimeTypes.size() == 1) || !commonServices.isEmpty();
+            const bool showOtherApp = (mimeTypeCount == 1) || !commonServices.isEmpty();
             if (openService) {
                 commonServices.removeIf([&openService](const KService::Ptr &service) {
                     return service->storageId() == openService->storageId();
@@ -937,50 +902,14 @@ void MainWindow::action_ListViewEditFiles() {
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) return;
 
-    QStringList pathListAudio;
-    QStringList pathListImage;
-    QStringList pathListText;
-    QStringList pathListVideo;
-    QMimeDatabase db;
+    // Same applications as in the "Open with" submenu of the context menu: use the 2nd one (the 1st is the default
+    // application used by "Open"), or the 1st one if there is no 2nd.
+    const KService::List services = Helpers::commonServicesForPaths(pathList);
+    if (services.isEmpty()) return;
 
-    for (const QString &fullPath : std::as_const(pathList)) {
-        QFileInfo fileInfo(fullPath);
-        QString fileExt = fileInfo.suffix().toLower();
-
-        if (fileExt.isEmpty()) {
-            QMimeType mime = db.mimeTypeForFile(fullPath);
-            if (mime.inherits("text/plain")) {
-                pathListText << fullPath;
-            }
-            continue;
-        }
-
-        if (m_settings.audioExts.contains(fileExt)) {
-            pathListAudio << fullPath;
-        } else if (m_settings.imageExts.contains(fileExt)) {
-            pathListImage << fullPath;
-        } else if (m_settings.textExts.contains(fileExt)) {
-            pathListText << fullPath;
-        } else if (m_settings.videoExts.contains(fileExt)) {
-            pathListVideo << fullPath;
-        }
-    }
-
-    if (!pathListAudio.isEmpty()) {
-        Helpers::openFileListWithHandler(m_settings.audioEditor, pathListAudio);
-    }
-
-    if (!pathListImage.isEmpty()) {
-        Helpers::openFileListWithHandler(m_settings.imageEditor, pathListImage);
-    }
-
-    if (!pathListText.isEmpty()) {
-        Helpers::openFileListWithHandler(m_settings.textEditor, pathListText);
-    }
-
-    if (!pathListVideo.isEmpty()) {
-        Helpers::openFileListWithHandler(m_settings.videoEditor, pathListVideo);
-    }
+    const KService::Ptr service = (services.size() >= 2) ? services.at(1) : services.first();
+    // entryPath() is the absolute path of the .desktop file, which openFileListWithHandler() accepts directly
+    Helpers::openFileListWithHandler(service->entryPath(), pathList);
 
     guiHideConditional();
 }

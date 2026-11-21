@@ -24,10 +24,6 @@ void SettingsManager::load() {
     knownExts = audioExts | imageExts | textExts | videoExts | miscExts;
 
     // Handlers
-    audioEditor      = s.value("Handlers/EditorAudio", DEFAULT_AUDIO_EDITOR).toString();
-    imageEditor      = s.value("Handlers/EditorImage", DEFAULT_IMAGE_EDITOR).toString();
-    textEditor       = s.value("Handlers/EditorText", DEFAULT_TEXT_EDITOR).toString();
-    videoEditor      = s.value("Handlers/EditorVideo", DEFAULT_VIDEO_EDITOR).toString();
 	mergeTool        = s.value("Handlers/MergeTool", DEFAULT_MERGE_TOOL).toString();
     fileManager      = s.value("Handlers/FileManager", DEFAULT_FILE_MANAGER).toString();
     renameTool       = s.value("Handlers/RenameTool", DEFAULT_RENAME_TOOL).toString();
@@ -58,15 +54,10 @@ void SettingsManager::load() {
 void SettingsManager::getDefaults() {
     QStringList searchPaths;
 
-    DEFAULT_AUDIO_EDITOR = "org.kde.kwave.desktop";
-    DEFAULT_IMAGE_EDITOR = "gimp.desktop";
-    DEFAULT_TEXT_EDITOR = "org.kde.kate.desktop";
-    DEFAULT_VIDEO_EDITOR = "org.kde.kdenlive.desktop";
-    DEFAULT_MERGE_TOOL = "";
+    DEFAULT_MERGE_TOOL = "libremerge";
     DEFAULT_FILE_MANAGER = "mkFolderWidget";
     DEFAULT_RENAME_TOOL = "mkBatchRename";
     DEFAULT_SEARCH_TOOL = "mkFileSearch";
-
 
     DEFAULT_ALTERNATING_ROW_COLORS = true;
     DEFAULT_EXECUTABLE_FILES_RED = false;
@@ -105,10 +96,10 @@ void SettingsManager::saveSettings() {
     safeSetValue(s, "Extensions/FileExtVideo", formatStringSet(videoExts));
 
     // Handlers
-    safeSetValue(s, "Handlers/EditorAudio", audioEditor);
-    safeSetValue(s, "Handlers/EditorImage", imageEditor);
-    safeSetValue(s, "Handlers/EditorText", textEditor);
-    safeSetValue(s, "Handlers/EditorVideo", videoEditor);
+    // Obsolete: the edit action now uses the 2nd application of the "Open with" menu
+    for (const char *obsoleteKey : {"Handlers/EditorAudio", "Handlers/EditorImage", "Handlers/EditorText", "Handlers/EditorVideo"}) {
+        if (s.contains(obsoleteKey)) s.remove(obsoleteKey);
+    }
 	safeSetValue(s, "Handlers/MergeTool", mergeTool);
     safeSetValue(s, "Handlers/FileManager", fileManager);
     safeSetValue(s, "Handlers/RenameTool", renameTool);

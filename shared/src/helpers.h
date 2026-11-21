@@ -78,6 +78,7 @@ namespace Helpers {
     OpenMethod openMethod(const QFileInfo &fileInfo, const SettingsManager &settings);
     KService::Ptr openActionService(const QStringList &paths, const SettingsManager &settings);
     bool openFileWithPreferredApp(const QString &path, int rank);
+    KService::List commonServicesForPaths(const QStringList &paths, int *mimeTypeCount = nullptr);
 }
 
 #endif // HELPERS_H

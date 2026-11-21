@@ -21,6 +21,7 @@
 #include <QProcess>
 #include <QPushButton>
 #include <QRegularExpression>
+#include <QSet>
 #include <QSharedMemory>
 #include <QStandardPaths>
 #include <QStorageInfo>
@@ -1469,6 +1470,46 @@ namespace Helpers {
         job->setUrls({QUrl::fromLocalFile(QFileInfo(path).absoluteFilePath())});
         job->start();
         return true;
+    }
+
+    // The applications that can open all of the given files (intersection of the applications associated with their
+    // MIME types), sorted by user preference of the first MIME type. Optionally returns the number of distinct MIME types.
+    KService::List commonServicesForPaths(const QStringList &paths, int *mimeTypeCount) {
+        // 1. Determine all distinct MIME types of the files
+        QMimeDatabase db;
+        QSet<QString> uniqueMimeTypes;
+        for (const QString &path : paths) {
+            uniqueMimeTypes.insert(db.mimeTypeForFile(path).name());
+        }
+        if (mimeTypeCount) *mimeTypeCount = int(uniqueMimeTypes.size());
+
+        // 2. Compute the intersection of the available KServices
+        KService::List commonServices;
+        bool isFirstMime = true;
+
+        for (const QString &mimeName : std::as_const(uniqueMimeTypes)) {
+            const KService::List servicesForMime = KApplicationTrader::queryByMimeType(mimeName);
+
+            if (isFirstMime) {
+                commonServices = servicesForMime;
+                isFirstMime = false;
+            } else {
+                // Only keep services that also support the current MIME type
+                commonServices.removeIf([&servicesForMime](const KService::Ptr &service) {
+                    return std::none_of(servicesForMime.begin(), servicesForMime.end(),
+                                        [&service](const KService::Ptr &s) {
+                                            return s->storageId() == service->storageId();
+                                        });
+                });
+            }
+
+            // Stop when the intersection becomes empty
+            if (commonServices.isEmpty()) {
+                break;
+            }
+        }
+
+        return commonServices;
     }
 
 } // namespace Helpers
