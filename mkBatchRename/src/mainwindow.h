@@ -180,7 +180,6 @@ private:
     QCheckBox *m_groupBox12_CheckBox4 = nullptr;
 
     QAction *m_actionListViewOpenFiles = nullptr;
-    QAction *m_actionListViewEditFiles = nullptr;
     QAction *m_actionListViewBrowseToFile = nullptr;
     QAction *m_actionListViewCopyPaths = nullptr;
     QAction *m_actionListViewCutFiles = nullptr;

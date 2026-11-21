@@ -276,10 +276,6 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     m_actionListViewOpenFiles = new QAction(tr("Open"), this);
     connect(m_actionListViewOpenFiles, &QAction::triggered, this, &MainWindow::action_ListViewOpenFiles);
 
-    m_actionListViewEditFiles = new QAction(tr("Edit"), this);
-    m_actionListViewEditFiles->setShortcut(QKeySequence("Ctrl+E"));
-    connect(m_actionListViewEditFiles, &QAction::triggered, this, &MainWindow::action_ListViewEditFiles);
-
     m_actionListViewBrowseToFile = new QAction(tr("Show in folder"),this);
     m_actionListViewBrowseToFile->setIcon(QIcon::fromTheme("folder-open"));
     m_actionListViewBrowseToFile->setShortcut(QKeySequence("Ctrl+L"));
@@ -377,7 +373,6 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
 
     if (m_settings.showIconsInMenu == false) {
         m_actionListViewOpenFiles->setIconVisibleInMenu(false);
-        m_actionListViewEditFiles->setIconVisibleInMenu(false);
         m_actionListViewBrowseToFile->setIconVisibleInMenu(false);
         m_actionListViewCopyPaths->setIconVisibleInMenu(false);
         m_actionListViewCutFiles->setIconVisibleInMenu(false);
@@ -392,7 +387,6 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
 
     if (m_settings.showShortcutsInMenu == false) {
         m_actionListViewOpenFiles->setShortcutVisibleInContextMenu(false);
-        m_actionListViewEditFiles->setShortcutVisibleInContextMenu(false);
         m_actionListViewBrowseToFile->setShortcutVisibleInContextMenu(false);
         m_actionListViewCopyPaths->setShortcutVisibleInContextMenu(false);
         m_actionListViewCutFiles->setShortcutVisibleInContextMenu(false);
@@ -1061,12 +1055,6 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         const KService::Ptr openService = updateOpenActionText(selectedPaths);
         mainMenu.addAction(m_actionListViewOpenFiles);
         mainMenu.setDefaultAction(m_actionListViewOpenFiles);
-
-        QFileInfo fileInfo(filePath);
-        QString fileExt = fileInfo.suffix().toLower();
-        if (m_settings.audioExts.contains(fileExt) || m_settings.imageExts.contains(fileExt) || m_settings.textExts.contains(fileExt) || m_settings.videoExts.contains(fileExt)) {
-            mainMenu.addAction(m_actionListViewEditFiles);
-        }
 
         // Native KDE Open with menu
         mainMenu.addSeparator(); //-----------------------------------------

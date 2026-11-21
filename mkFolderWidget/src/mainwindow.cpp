@@ -221,10 +221,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     m_actionListViewOpenFiles = new QAction(tr("Open"), this);
     connect(m_actionListViewOpenFiles, &QAction::triggered, this, &MainWindow::action_ListViewOpenFiles);
 
-    m_actionListViewEditFiles = new QAction(tr("Edit"), this);
-    m_actionListViewEditFiles->setShortcut(QKeySequence("Ctrl+E"));
-    connect(m_actionListViewEditFiles, &QAction::triggered, this, &MainWindow::action_ListViewEditFiles);
-
     m_actionListViewCopyPaths = new QAction(tr("Copy Path"), this);
     m_actionListViewCopyPaths->setShortcut(QKeySequence("Ctrl+Shift+C"));
     m_actionListViewCopyPaths->setIcon(QIcon::fromTheme("edit-copy-path"));
@@ -380,7 +376,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
 
     if (m_settings.showIconsInMenu == false) {
         m_actionListViewOpenFiles->setIconVisibleInMenu(false);
-        m_actionListViewEditFiles->setIconVisibleInMenu(false);
         m_actionListViewCopyPaths->setIconVisibleInMenu(false);
         m_actionListViewCutFiles->setIconVisibleInMenu(false);
         m_actionListViewCopyFiles->setIconVisibleInMenu(false);
@@ -397,7 +392,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
 
     if (m_settings.showShortcutsInMenu == false) {
         m_actionListViewOpenFiles->setShortcutVisibleInContextMenu(false);
-        m_actionListViewEditFiles->setShortcutVisibleInContextMenu(false);
         m_actionListViewCopyPaths->setShortcutVisibleInContextMenu(false);
         m_actionListViewCutFiles->setShortcutVisibleInContextMenu(false);
         m_actionListViewCopyFiles->setShortcutVisibleInContextMenu(false);
@@ -934,12 +928,6 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         mainMenu.addAction(m_actionListViewOpenFiles);
         mainMenu.setDefaultAction(m_actionListViewOpenFiles);
 
-        QFileInfo fileInfo(filePath);
-        QString fileExt = fileInfo.suffix().toLower();
-        if (m_settings.audioExts.contains(fileExt) || m_settings.imageExts.contains(fileExt) || m_settings.textExts.contains(fileExt) || m_settings.videoExts.contains(fileExt)) {
-            mainMenu.addAction(m_actionListViewEditFiles);
-        }
-
         // Native KDE Open with menu
         mainMenu.addSeparator(); //-----------------------------------------
 
@@ -1214,6 +1202,7 @@ void MainWindow::action_ListViewEditFiles() {
             }
             continue;
         }
+
         if (m_settings.audioExts.contains(fileExt)) {
             pathListAudio << fullPath;
         } else if (m_settings.imageExts.contains(fileExt)) {
