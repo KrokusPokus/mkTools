@@ -155,7 +155,7 @@ private:
 
     QFileSystemWatcher* m_fileSystemWatcher = nullptr;
     QTimer *m_watcherDebounceTimer = nullptr;
-    bool m_ignoreNextWatcherSignal = false; // Flag für eigene Datei-Aktionen
+    bool m_ignoreNextWatcherSignal = false; // Flag for our own file actions
 
     bool m_bShowHiddenFiles = false;
     bool m_bHeaderVisible = true;

@@ -32,7 +32,7 @@ struct AtomicProgressResult {
     std::atomic<quint64> followedFolders{0};
     std::atomic<quint64> followedSize{0};
 
-    // Hilfsmethode, um ein konsistentes, nicht-atomares Foto für das UI zu machen
+    // Helper method to take a consistent, non-atomic snapshot for the UI
     void snapshot(ProgressResult &out) const {
         out.directFiles = directFiles.load(std::memory_order_relaxed);
         out.directFolders = directFolders.load(std::memory_order_relaxed);

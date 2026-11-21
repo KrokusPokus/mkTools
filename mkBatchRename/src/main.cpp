@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
         QSharedMemory sharedMemory(memoryKey);
         if (sharedMemory.attach(QSharedMemory::ReadOnly)) {
-            // Niemals über das Segment hinaus lesen: Die Größe aus argv ist nicht vertrauenswürdig
+            // Never read beyond the segment: the size from argv is not trustworthy
             if (expectedSize > sharedMemory.size()) {
                 qDebug() << "[mkBatchRename] Error: Data size" << expectedSize << "exceeds shared memory size" << sharedMemory.size();
                 sharedMemory.detach();

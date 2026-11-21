@@ -45,8 +45,8 @@
 #include <QUrl>
 #include <QUuid>
 
-#include <algorithm> // Für std::reverse
-#include <utility> // Für std::as_const
+#include <algorithm> // For std::reverse
+#include <utility> // For std::as_const
 
 #include <KFileItem>
 #include <KFileItemListProperties>
@@ -106,7 +106,7 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
 
     m_tableView = new CustomTableView(this);
     m_tableView->setModel(m_proxyModel);
-    m_tableView->setSortingEnabled(true);   // Unlike with TableWidget, this doesn't need turning on und off for speed optimization.
+    m_tableView->setSortingEnabled(true);   // Unlike with TableWidget, this doesn't need turning on and off for speed optimization.
     m_proxyModel->sort(CustomTableModel::eColName, Qt::AscendingOrder);
 
     TableItemDelegate *tableItemDelegate = new TableItemDelegate(m_tableView);
@@ -170,7 +170,7 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     m_listView->setDragDropMode(QAbstractItemView::DragDrop);
     m_listView->setDefaultDropAction(Qt::MoveAction);
 
-    // Wir nehmen das Selektionsmodell der Tabelle und zwingen die Liste, dasselbe zu nutzen!
+    // We take the selection model of the table and force the list to use the same one!
     m_selectionModel = m_tableView->selectionModel();
     m_listView->setSelectionModel(m_selectionModel);
 
@@ -491,7 +491,7 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     // part of mitigation for Shift+Pos1 / Shift+End not working in tableView
     connect(m_tableView->selectionModel(), &QItemSelectionModel::currentChanged, this, &MainWindow::onTableCurrentChanged);
 
-    // Signale zur Deaktivierung des Watchers während Rename EditBox aktiv ist
+    // Signals to disable the watcher while the rename edit box is active
     connect(listItemDelegate, &ListItemDelegate::editingStarted, this, [this]() {
         m_isEditingFile = true;
         m_refreshPendingWhileEditing = false;
@@ -537,8 +537,8 @@ MainWindow::~MainWindow() = default;
 void MainWindow::onTableCurrentChanged(const QModelIndex &current, const QModelIndex &previous) {
     Q_UNUSED(previous);
 
-    // Nur wenn SHIFT gerade NICHT gedrückt ist, wandert der Anker mit dem Fokus mit.
-    // Das fängt Mausklicks, Pfeiltasten etc. perfekt und ohne Timer ab!
+    // The anchor follows the focus only while SHIFT is NOT pressed.
+    // This catches mouse clicks, arrow keys etc. perfectly and without a timer!
     if (!(QApplication::keyboardModifiers() & Qt::ShiftModifier) && current.isValid()) {
         m_tableView->setProperty("selectionAnchor", current);
     }
@@ -620,7 +620,7 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
         directoryPath = dir.absolutePath();
     }
 
-    // Rechteprüfung (Leserechte vorhanden?)
+    // Permission check (read permission available?)
     QFileInfo dirInfo(directoryPath);
     if (!dirInfo.isReadable()) {
         QMessageBox::warning(
@@ -639,9 +639,9 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
 
     // Save history
     if (!isHistoryNavigation && !m_currentDirectory.isEmpty() && m_currentDirectory != directoryPath) {
-        m_backHistory.append(m_currentDirectory);   // Den alten Ordner auf den Back-Stack legen
+        m_backHistory.append(m_currentDirectory);   // Push the old folder onto the back stack
 
-        m_forwardHistory.clear();                   // Sobald der User manuell wohin klickt, wird die Vorwärts-Historie gelöscht
+        m_forwardHistory.clear();                   // As soon as the user navigates somewhere manually, the forward history is cleared
     }
 
     bool isSameDirectory = (directoryPath == m_currentDirectory);
@@ -655,7 +655,7 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
     int lastSelectedProxyRow = -1;
 
     if (isSameDirectory && m_selectionModel) {
-        // A) Selektierte Zeilen merken & höchste Zeilennummer ermitteln
+        // A) Remember selected rows & determine the highest row number
         QModelIndexList selectedProxyIndexes = m_selectionModel->selectedIndexes();
         for (const QModelIndex &proxyIdx : std::as_const(selectedProxyIndexes)) {
             if (proxyIdx.column() != 0) {
@@ -673,7 +673,7 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
             }
         }
 
-        // B) Fokussiertes (Current) Element merken (falls keines via focusPath erzwungen wurde)
+        // B) Remember the focused (current) item (unless one was forced via focusPath)
         if (focusedPathToRestore.isEmpty() && activeView) {
             QModelIndex currentProxyIdx = activeView->currentIndex();
             if (currentProxyIdx.isValid()) {
@@ -685,7 +685,7 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
             }
         }
 
-        // C) Pfad des Elements DIREKT UNTER DEM LETZTEN selektierten/fokussierten Element merken
+        // C) Remember the path of the item DIRECTLY BELOW THE LAST selected/focused item
         if (lastSelectedProxyRow != -1) {
             int rowBelow = lastSelectedProxyRow + 1;
             if (rowBelow < m_proxyModel->rowCount()) {
@@ -741,24 +741,24 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
             QModelIndex sourceIndex = m_proxyModel->mapToSource(proxyIdx);
             QString currentPath = m_abstractModel->filePath(sourceIndex);
 
-            // Prüfen, ob diese Zeile selektiert war
+            // Check whether this row was selected
             if (selectedSet.contains(currentPath)) {
                 QModelIndex topLeft = proxyIdx;
                 QModelIndex bottomRight = m_proxyModel->index(i, colCount - 1);
                 restoreSelection.select(topLeft, bottomRight);
 
-                // Merken für Prio 2 (Falls Original-Fokus weg ist, aber Markierung existiert)
+                // Remember for prio 2 (in case the original focus is gone but a selection exists)
                 if (!firstStillExistingSelectedProxyIndex.isValid()) {
                     firstStillExistingSelectedProxyIndex = proxyIdx;
                 }
             }
 
-            // Prio 1:  Prüfen, ob diese Zeile den Fokus hatte (oder haben soll)
+            // Prio 1:  Check whether this row had (or should have) the focus
             if (!focusedPathToRestore.isEmpty() && currentPath == focusedPathToRestore) {
                 proxyIndexToFocus = proxyIdx;
             }
 
-            // Prio 3: Prüfen, ob dies das Element unterhalb der ehemaligen Selektion ist
+            // Prio 3: Check whether this is the item below the former selection
             if (!pathBelowLastSelectedToRestore.isEmpty() && currentPath == pathBelowLastSelectedToRestore) {
                 indexBelowLastSelectedProxy = proxyIdx;
             }
@@ -766,27 +766,27 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
 
         // --- DOLPHIN FOCUS EVALUATION ---
         if (!proxyIndexToFocus.isValid()) {
-            // Prio 2: Focus auf ein verbliebenes, markiertes Item setzen
+            // Prio 2: Set focus on a remaining selected item
             if (firstStillExistingSelectedProxyIndex.isValid()) {
                 proxyIndexToFocus = firstStillExistingSelectedProxyIndex;
             }
-            // Prio 3: Focus auf das Item setzen, das vorher UNTER dem letzten markierten lag
+            // Prio 3: Set focus on the item that used to be BELOW the last selected one
             else if (indexBelowLastSelectedProxy.isValid()) {
                 proxyIndexToFocus = indexBelowLastSelectedProxy;
             }
-            // Prio 4: Fallback auf die relative Position (Zeilenindex) vor dem Reload
+            // Prio 4: Fall back to the relative position (row index) before the reload
             else if (lastSelectedProxyRow >= 0) {
                 int targetRow = std::min(lastSelectedProxyRow, rowCount - 1);
                 targetRow = std::max(0, targetRow);
                 proxyIndexToFocus = m_proxyModel->index(targetRow, 0);
             }
-            // Prio 5: Erstes Element im Ordner
+            // Prio 5: First item in the folder
             else {
                 proxyIndexToFocus = m_proxyModel->index(0, 0);
             }
         }
 
-        // Fokus anwenden
+        // Apply the focus
         if (proxyIndexToFocus.isValid() && activeView) {
             activeView->setCurrentIndex(proxyIndexToFocus);
         }
@@ -799,7 +799,7 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
             m_tableView->setProperty("selectionAnchor", QVariant::fromValue(QModelIndex(proxyIndexToFocus)));
         }
 
-        // Selektion anwenden
+        // Apply the selection
         if (!restoreSelection.isEmpty() && m_selectionModel) {
             m_selectionModel->select(restoreSelection, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Rows);
         }
@@ -953,14 +953,14 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         mainMenu.addSeparator(); //-----------------------------------------
 
         if (!selectedPaths.isEmpty()) {
-            // 1. Alle eindeutigen MIME-Typen aus den markierten Dateien ermitteln
+            // 1. Determine all distinct MIME types of the selected files
             QMimeDatabase db;
             QSet<QString> uniqueMimeTypes;
             for (const QString &path : std::as_const(selectedPaths)) {
                 uniqueMimeTypes.insert(db.mimeTypeForFile(path).name());
             }
 
-            // 2. Schnittmenge der verfügbaren KServices berechnen
+            // 2. Compute the intersection of the available KServices
             KService::List commonServices;
             bool isFirstMime = true;
 
@@ -971,7 +971,7 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
                     commonServices = servicesForMime;
                     isFirstMime = false;
                 } else {
-                    // Nur Services behalten, die auch den aktuellen MIME-Typ unterstützen
+                    // Only keep services that also support the current MIME type
                     KService::List intersected;
                     for (const KService::Ptr &service : std::as_const(commonServices)) {
                         bool supportsMime = std::any_of(servicesForMime.begin(), servicesForMime.end(),
@@ -986,19 +986,19 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
                     commonServices = intersected;
                 }
 
-                // Abbrechen, wenn die Schnittmenge leer wird
+                // Stop when the intersection becomes empty
                 if (commonServices.isEmpty()) {
                     break;
                 }
             }
 
-            // 3. Untermenü "Öffnen mit" im Hauptmenü anlegen
+            // 3. Create the "Open with" submenu in the main menu
             QMenu *openWithMenu = mainMenu.addMenu(tr("Open with"));
             if (m_settings.showIconsInMenu) {
                 openWithMenu->setIcon(QIcon::fromTheme("system-run"));
             }
 
-            // 4. Gefundene Anwendungen (Schnittmenge) zum Menü hinzufügen
+            // 4. Add the found applications (intersection) to the menu
             for (const KService::Ptr &service : std::as_const(commonServices)) {
                 QAction *action = openWithMenu->addAction(QIcon::fromTheme(service->icon()), service->name());
 
@@ -1015,7 +1015,7 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
                 });
             }
 
-            // 5. "Other Application..." hinzufügen, wenn alle Items den gleichen MimeType haben ODER commonServices nicht leer ist
+            // 5. Add "Other Application..." if all items have the same MIME type OR commonServices is not empty
             bool showOtherApp = (uniqueMimeTypes.size() == 1) || !commonServices.isEmpty();
 
             if (showOtherApp) {
@@ -1054,7 +1054,7 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
 
             KFileItemListProperties itemProperties(fileItemList);
 
-            // KFileItemActions mit &mainMenu als Parent erstellen
+            // Create KFileItemActions with &mainMenu as parent
             auto *serviceActions = new KFileItemActions(&mainMenu);
             serviceActions->setParentWidget(this);
             serviceActions->setItemListProperties(itemProperties);
@@ -1100,7 +1100,7 @@ QStringList MainWindow::getActiveViewPathList() {
 QSet<int> MainWindow::getActiveViewRowSet() {
     QSet<int> rowSet;
 
-    // 1. Alle ausgewählten Zellen/Indizes holen
+    // 1. Get all selected cells/indexes
     QModelIndexList selectedIndexes = m_selectionModel->selectedIndexes();  // we use selectedIndexes() instead of selectedRows() because the latter only list rows in which all columns are selected!
     if (selectedIndexes.isEmpty()) return rowSet;
 
@@ -1300,7 +1300,7 @@ void MainWindow::setupClipboardForCopyOrCut(const QStringList &cutFilePaths, boo
     mimeData->setUrls(urls);
 
     // For Linux on GNOME-based Desktops (Nautilus, PCManFM, etc.)
-    // Format: "cut" oder "copy", dann Zeilenumbruch, dann alle URLs (ebenfalls per \n getrennt)
+    // Format: "cut" or "copy", then a line break, then all URLs (also separated by \n)
     QByteArray gnomeData;
     if (isCut) {
         gnomeData = "cut";
@@ -1398,13 +1398,13 @@ void MainWindow::action_ListViewPasteFiles() {
 
     OperationType operationType = OperationType::Copy;
 
-    // Prüfen auf KDE-Cut-Flag
+    // Check for the KDE cut flag
     if (mimeData->hasFormat("application/x-kde-cutselection")) {
         if (mimeData->data("application/x-kde-cutselection") == "1") {
             operationType = OperationType::Move;
         }
     }
-    // Prüfen auf GNOME-Cut-Flag (falls von Nautilus o.ä. ausgeschnitten wurde)
+    // Check for the GNOME cut flag (in case it was cut by Nautilus or similar)
     else if (mimeData->hasFormat("x-special/gnome-copied-files")) {
         QString gnomeData = QString::fromUtf8(mimeData->data("x-special/gnome-copied-files"));
         if (gnomeData.startsWith("cut")) {
@@ -1459,7 +1459,7 @@ void MainWindow::fileOperation(OperationType operationType, const QList<QUrl> &u
             if (QFile::exists(fullLinkPath)) {
                 int counter = 1;
                 while (QFile::exists(fullLinkPath)) {
-                    // Erzeugt z.B. "datei (1).txt" oder "ordner (1)" (Symlink unter Linux)
+                    // Creates e.g. "file (1).txt" or "folder (1)" (symlink on Linux)
                     QString numberedName = QString("%1 (%2)%3").arg(baseName).arg(counter).arg(dotExt);
                     fullLinkPath = dir.filePath(numberedName);
                     counter++;
@@ -1477,7 +1477,7 @@ void MainWindow::fileOperation(OperationType operationType, const QList<QUrl> &u
     }
 
 
-    // Pfad zum separaten Tool im selben Ordner ermitteln
+    // Determine the path of the separate tool in the same folder
     QString programName = "mkTransactionHandler";
     QString appDir = QCoreApplication::applicationDirPath();
     QString programPath = QDir(appDir).filePath(programName);
@@ -1486,7 +1486,7 @@ void MainWindow::fileOperation(OperationType operationType, const QList<QUrl> &u
         return;
     }
 
-    // 1. Daten in ein JSON-Objekt verpacken
+    // 1. Pack the data into a JSON object
     QJsonObject jsonObj;
     jsonObj["targetDir"] = targetDir;
     jsonObj["opType"] = static_cast<int>(operationType);
@@ -1499,25 +1499,25 @@ void MainWindow::fileOperation(OperationType operationType, const QList<QUrl> &u
 
     QByteArray jsonData = QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
 
-    // 2. Einzigartigen Schlüssel erzeugen
+    // 2. Create a unique key
     QString memoryKey = "mkTransactionHandler_" + QUuid::createUuid().toString(QUuid::WithoutBraces);
 
-    // 3. Shared Memory reservieren
+    // 3. Allocate the shared memory
     auto *sharedMemory = new QSharedMemory(memoryKey, this);
     if (!sharedMemory->create(jsonData.size())) {
         qCritical() << "Konnte Shared Memory nicht erstellen:" << sharedMemory->errorString();
-        delete sharedMemory; // Objekt im Fehlerfall löschen
+        delete sharedMemory; // Delete the object in case of an error
         return;
     }
 
-    // 4. Daten sicher in den Shared Memory schreiben
+    // 4. Write the data safely into the shared memory
     if (sharedMemory->lock()) {
         char *to = static_cast<char*>(sharedMemory->data());
         memcpy(to, jsonData.constData(), jsonData.size());
         sharedMemory->unlock();
     } else {
         qCritical() << "Konnte Shared Memory nicht sperren:" << sharedMemory->errorString();
-        delete sharedMemory; // Objekt im Fehlerfall löschen
+        delete sharedMemory; // Delete the object in case of an error
         return;
     }
 
@@ -1535,7 +1535,7 @@ void MainWindow::fileOperation(OperationType operationType, const QList<QUrl> &u
             QApplication::clipboard()->clear();
         }
 
-        // Nach 10 Sekunden den Shared Memory freigeben und das Objekt aufräumen
+        // After 10 seconds, release the shared memory and clean up the object
         QTimer::singleShot(10000, sharedMemory, [sharedMemory]() {
             if (sharedMemory->isAttached()) {
                 sharedMemory->detach();
@@ -1608,7 +1608,7 @@ void MainWindow::onTimedUpdateIcons() {
     if (!m_proxyModel || m_proxyModel->rowCount() == 0) return;
     if (!m_abstractModel) return;
 
-    // 1. Herausfinden, welche View gerade sichtbar ist
+    // 1. Find out which view is currently visible
     auto *activeView = qobject_cast<QAbstractItemView*>(m_viewStack->currentWidget());
     if (!activeView) return;
 
@@ -1618,7 +1618,7 @@ void MainWindow::onTimedUpdateIcons() {
     // --- VIEW-SPEZIFISCHE ERMITTLUNG DER SICHTBARKEIT ---
 
     if (auto *tableView = qobject_cast<QTableView*>(activeView)) {
-        // Fall A: Tabelle (scrollt klassisch von oben nach unten)
+        // Case A: Table (scrolls classically from top to bottom)
         firstVisible = tableView->rowAt(0);
         lastVisible = tableView->rowAt(tableView->viewport()->height() - 1);
 
@@ -1626,44 +1626,44 @@ void MainWindow::onTimedUpdateIcons() {
         if (lastVisible == -1) lastVisible = m_proxyModel->rowCount() - 1;
 
     } else if (auto *listView = qobject_cast<QListView*>(activeView)) {
-        // Fall B: Deine Wrapping-Liste (bricht unten um, neue Spalten rechts)
+        // Case B: Your wrapping list (wraps at the bottom, new columns to the right)
 
-        // 1. Die absolut erste sichtbare Datei oben links bestimmen
+        // 1. Determine the very first visible file at the top left
         QModelIndex firstIdx = listView->indexAt(QPoint(5, 5));
         firstVisible = firstIdx.isValid() ? firstIdx.row() : 0;
 
         QRect viewportRect = listView->viewport()->rect();
         lastVisible = firstVisible;
 
-        // 2. Wir laufen von 'firstVisible' vorwärts durch die Dateien.
-        // Da die Dateien Spalte für Spalte von links nach rechts abgelegt werden,
-        // können wir den Loop abbrechen, sobald eine Datei zu weit rechts liegt!
+        // 2. We walk forward through the files starting at 'firstVisible'.
+        // Since the files are laid out column by column from left to right,
+        // we can stop the loop as soon as a file lies too far to the right!
         for (int i = firstVisible; i < m_proxyModel->rowCount(); ++i) {
             QModelIndex idx = m_proxyModel->index(i, 0);
             QRect itemRect = listView->visualRect(idx);
 
-            // Prüfen, ob die Datei im sichtbaren Viereck liegt
+            // Check whether the file lies within the visible rectangle
             if (viewportRect.intersects(itemRect)) {
-                lastVisible = i; // Gültige sichtbare Datei gefunden
+                lastVisible = i; // Found a valid visible file
             }
-            // WICHTIGER ABBRUCH: Liegt die linke Kante der Datei bereits rechts außerhalb des sichtbaren Viewports?
+            // IMPORTANT EXIT: Is the left edge of the file already to the right, outside of the visible viewport?
             else if (itemRect.left() > viewportRect.right()) {
                 break;
             }
         }
     }
 
-    // Sicherheitsnetz für die Indizes
+    // Safety net for the indexes
     firstVisible = qMax(0, firstVisible);
     lastVisible  = qMin(m_proxyModel->rowCount() - 1, lastVisible);
 
-    const int MAX_ICONS_PER_BATCH = 5; // Verhindert das Einfrieren der GUI
+    const int MAX_ICONS_PER_BATCH = 5; // Prevents the GUI from freezing
     int iconsProcessedInThisBatch = 0;
     bool processMoreLater = false;
 
     bool isThumbnailMode = (m_viewStack->currentWidget() == m_thumbnailView);
 
-    // 3. Nur die aktuell sichtbaren Zeilen durchlaufen
+    // 3. Iterate only over the currently visible rows
     for (int i = firstVisible; i <= lastVisible; ++i) {
         if (i >= m_proxyModel->rowCount()) {
             break;
@@ -1692,7 +1692,7 @@ void MainWindow::onTimedUpdateIcons() {
         }
 
         if (isThumbnailMode) {
-            // Prüfen, ob das Bild im Cache existiert UND noch aktuell ist
+            // Check whether the image exists in the cache AND is still up to date
             if (m_abstractModel->isThumbnailUpToDate(fullPath, fileInfo.lastModified())) {
                 continue;
             }
@@ -1701,12 +1701,12 @@ void MainWindow::onTimedUpdateIcons() {
                 continue;
             }
 
-            if (iconsProcessedInThisBatch >= 2) { // Kleineres Limit für Thumbnails!
+            if (iconsProcessedInThisBatch >= 2) { // Smaller limit for thumbnails!
                 processMoreLater = true;
                 break;
             }
 
-            // Unterstützte Formate statisch cachen (wird nur einmalig beim allerersten Aufruf erstellt)
+            // Cache the supported formats statically (created only once on the very first call)
             static const QSet<QByteArray> supportedFormats = []() {
                 auto formats = QImageReader::supportedImageFormats();
                 return QSet<QByteArray>(formats.begin(), formats.end());
@@ -1745,23 +1745,23 @@ void MainWindow::onTimedUpdateIcons() {
             }
         }
         else {
-            // SymLinks bekommen ein festes Icon direkt aus dem allgemeinen Cache des Modells
+            // Symlinks get a fixed icon directly from the model's general cache
             if (fileInfo.isSymbolicLink()) {
                 continue;
             }
 
-            // Prüfen, ob das Icon im Cache existiert UND noch aktuell ist
+            // Check whether the icon exists in the cache AND is still up to date
             if (m_abstractModel->isPathIconUpToDate(fullPath, fileInfo.lastModified())) {
                 continue;
             }
 
-            // Wenn wir unser Batch-Limit für diesen Frame erreicht haben, brechen wir ab und merken uns, dass wir noch nicht fertig sind!
+            // When we reach our batch limit for this frame, we stop and remember that we are not done yet!
             if (iconsProcessedInThisBatch >= MAX_ICONS_PER_BATCH) {
                 processMoreLater = true;
                 break;
             }
 
-            // 5. Feststellen, ob ein individuelles Icon benötigt wird
+            // 5. Determine whether an individual icon is needed
 
             const bool needsTrueIcon = fileInfo.isDir() ||
                                        fileInfo.isExecutable() ||
@@ -1770,21 +1770,21 @@ void MainWindow::onTimedUpdateIcons() {
             if (needsTrueIcon) {
                 QIcon trueIcon = m_iconProvider.icon(fileInfo);
 
-                // addPathIcon speichert es im Cache UND löst den Neuzeichen-Befehl für die Zeile aus
-                // WICHTIG: Wir übergeben sourceIndex.row(), damit das Modell
-                // die richtige Zeile im std::vector aktualisiert!
+                // addPathIcon stores it in the cache AND triggers the repaint of the row
+                // IMPORTANT: We pass sourceIndex.row() so that the model
+                // updates the correct row in the std::vector!
 
                 m_abstractModel->addPathIcon(fullPath, trueIcon, fileInfo.lastModified(), sourceIndex.row());
 
-                // Wir zählen nur die wirklich *geladenen* Icons, da diese CPU-Zeit kosten
+                // We only count icons that were really *loaded*, since those cost CPU time
                 iconsProcessedInThisBatch++;
             }
         }
     }
 
-    // Wenn die Schleife abgebrochen wurde, weil noch Icons fehlen,
-    // fordern wir SOFORT (0 ms) den nächsten Batch an.
-    // Qt nutzt die 0 ms, um kurz zu prüfen, ob der Nutzer geklickt oder gescrollt hat!
+    // If the loop was interrupted because icons are still missing,
+    // we request the next batch IMMEDIATELY (0 ms).
+    // Qt uses the 0 ms to briefly check whether the user clicked or scrolled!
     if (processMoreLater) {
         m_timerUpdateIcons->start(0);
     }
@@ -1813,7 +1813,7 @@ void MainWindow::parseMimeInfoCache(const QString &path) {
         QString line = in.readLine().trimmed();
 
         auto equalsPos = line.indexOf('=');
-        if (equalsPos < 1) continue;  // -1 (kein '=') und 0 (leerer mime) überspringen
+        if (equalsPos < 1) continue;  // Skip -1 (no '=') and 0 (empty mime)
 
         QString mime = line.first(equalsPos).trimmed();
         QStringList newApps = line.sliced(equalsPos + 1).split(';', Qt::SkipEmptyParts);
@@ -1845,7 +1845,7 @@ void MainWindow::parseMimeAppsList(const QString &path) {
         }
 
         auto equalsPos = line.indexOf('=');
-        if (equalsPos < 1) continue; // -1 (kein '=') und 0 (leerer mime) überspringen
+        if (equalsPos < 1) continue; // Skip -1 (no '=') and 0 (empty mime)
 
         QString mime = line.first(equalsPos).trimmed();
         QStringList apps = line.sliced(equalsPos + 1).trimmed().split(';', Qt::SkipEmptyParts);
@@ -2024,7 +2024,7 @@ void MainWindow::selectAllItems() {
     if (!activeView || !m_proxyModel || m_proxyModel->rowCount() == 0) {
         return;
     }
-    // Auswahl direkt auf dem Proxy-Modell erzeugen
+    // Create the selection directly on the proxy model
     QModelIndex topLeft = m_proxyModel->index(0, 0);
     QModelIndex bottomRight = m_proxyModel->index(m_proxyModel->rowCount() - 1, m_proxyModel->columnCount() - 1);
     QItemSelection selection(topLeft, bottomRight);
@@ -2044,13 +2044,13 @@ QPixmap MainWindow::generateThumbnailIcon(const QFileInfo &fileInfo) {
         painter.drawPixmap(x, y, icon48);
         painter.setPen(QColor(255, 255, 255, 27));
 
-        // WICHTIGE QT-BESONDERHEIT:
-        // In Qt zeichnet drawRect(x, y, w, h) bei einem 1px-Stift historisch bedingt
-        // ein Rechteck, das w+1 Pixel breit und h+1 Pixel hoch ist.
-        // Damit der Rand exakt auf den Pixeln 0 bis 95 liegt, müssen wir -1 rechnen.
+        // IMPORTANT QT QUIRK:
+        // For historical reasons, with a 1px pen drawRect(x, y, w, h) in Qt draws
+        // a rectangle that is w+1 pixels wide and h+1 pixels high.
+        // For the border to lie exactly on pixels 0 to 95, we have to subtract 1.
         painter.drawRect(0, 0, canvas.width() - 1, canvas.height() - 1);
 
-        // Der Painter wird am Ende des Scopes {} automatisch geschlossen und gespeichert
+        // The painter is closed and saved automatically at the end of the {} scope
     }
 
     return canvas;
@@ -2060,17 +2060,17 @@ QPixmap MainWindow::generateThumbnailIcon(const QFileInfo &fileInfo) {
 QImage MainWindow::generateThumbnailAsync(const QFileInfo &fileInfo) {
 
     QImageReader reader(fileInfo.absoluteFilePath());
-    reader.setAutoTransform(true); // Wichtig für EXIF-Rotationen von Smartphones
+    reader.setAutoTransform(true); // Important for EXIF rotations from smartphones
 
     if (reader.canRead()) {
-        // 1. Die echte Dimension des Bildes auslesen (kostet kaum Performance)
+        // 1. Read the real dimensions of the image (costs hardly any performance)
         QSize originalSize = reader.size();
 
-        // 2. Proportionale Größe berechnen, die in eine 96x96 Box passt
-        // Aus z.B. 1920x1080 wird hier automatisch 96x54
+        // 2. Compute a proportional size that fits into a 96x96 box
+        // e.g. 1920x1080 automatically becomes 96x54 here
         QSize scaledSize = originalSize.scaled(QSize(96, 96), Qt::KeepAspectRatio);
 
-        // 3. Dem Reader die proportionale Größe mitteilen
+        // 3. Tell the reader the proportional size
         reader.setScaledSize(scaledSize);
 
         QImage img = reader.read();
@@ -2090,7 +2090,7 @@ void MainWindow::action_toggleShowHidden() {
 void MainWindow::updateWidgetStyles() {
 
         static const QString lineEditStyleDark = QStringLiteral(
-        /* 1. Normalzustand (unfokussiert) */
+        /* 1. Normal state (unfocused) */
         "QLineEdit {"
         "  border: 1px solid #555555;"
         "  padding: 0px;"
@@ -2099,17 +2099,17 @@ void MainWindow::updateWidgetStyles() {
         "  color: #ffffff;"
         "}"
 
-        /* 2. Hover-Zustand (Maus bewegt sich darüber) */
+        /* 2. Hover state (mouse moves over it) */
         "QLineEdit:hover {"
         "  border: 1px solid #666666;"
         "}"
 
-        /* 3. Aktiver Fokus-Zustand (Control ist ausgewählt / Tastatureingabe) */
+        /* 3. Active focus state (control is selected / keyboard input) */
         "QLineEdit:focus {"
         "  border: 1px solid palette(Accent);"
         "}"
 
-        /* 4. Inaktiv / Deaktiviert (optional) */
+        /* 4. Inactive / disabled (optional) */
         "QLineEdit:disabled {"
         "  border: 1px solid #222222;"
         "  color: #666666;"
@@ -2117,7 +2117,7 @@ void MainWindow::updateWidgetStyles() {
         );
 
     static const QString lineEditStyleLight = QStringLiteral(
-        /* 1. Normalzustand (unfokussiert) */
+        /* 1. Normal state (unfocused) */
         "QLineEdit {"
         "  border: 1px solid palette(mid);"
         "  padding: 0px;"
@@ -2126,17 +2126,17 @@ void MainWindow::updateWidgetStyles() {
         "  color: palette(window-text);"
         "}"
 
-        /* 2. Hover-Zustand (Maus bewegt sich darüber) */
+        /* 2. Hover state (mouse moves over it) */
         "QLineEdit:hover {"
         "  border: 1px solid palette(Accent);"
         "}"
 
-        /* 3. Aktiver Fokus-Zustand (Control ist ausgewählt / Tastatureingabe) */
+        /* 3. Active focus state (control is selected / keyboard input) */
         "QLineEdit:focus {"
         "  border: 1px solid #ff0000;"
         "}"
 
-        /* 4. Inaktiv / Deaktiviert (optional) */
+        /* 4. Inactive / disabled (optional) */
         "QLineEdit:disabled {"
         "  border: 1px solid #222222;"
         "  color: #666666;"
@@ -2183,7 +2183,7 @@ void MainWindow::setVisibilityBasedOnPath(const QString &path) {
 
     bool isHiddenPath = false;
 
-    // Pfad in seine Einzelteile zerlegen (ignoriert doppelte Slashes)
+    // Split the path into its parts (ignores double slashes)
     QDir dir(path);
     QStringList pathComponents = dir.absolutePath().split('/', Qt::SkipEmptyParts);
 
@@ -2215,8 +2215,8 @@ void MainWindow::openPath(const QString &path) {
 }
 
 void MainWindow::closeEvent(QCloseEvent *event) {
-    // Wenn du QtConcurrent nutzt, kannst du den globalen Threadpool zwingen,
-    // nicht auf ausstehende Aufgaben zu warten (Vorsicht: Laufende Threads werden trotzdem beendet):
+    // If you use QtConcurrent, you can force the global thread pool
+    // not to wait for pending tasks (caution: running threads are terminated anyway):
     QThreadPool::globalInstance()->clear();
     event->accept();
 }
@@ -2224,7 +2224,7 @@ void MainWindow::closeEvent(QCloseEvent *event) {
 void MainWindow::changeEvent(QEvent *event) {
     QMainWindow::changeEvent(event);
 
-    // Reagiert auf System-Palette-Änderungen (z. B. Wechsel der Akzentfarbe in KDE)
+    // Reacts to system palette changes (e.g. changing the accent color in KDE)
     switch (event->type()) {
         case QEvent::ApplicationPaletteChange:
         case QEvent::PaletteChange:
@@ -2281,7 +2281,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                 if (isActivatingClick) {
                     m_activationClickActive = true;
 
-                    // Bei ALLEN Views das "SelectedClicked" bitweise entfernen
+                    // Remove "SelectedClicked" bitwise from ALL views
                     m_tableView->setEditTriggers(m_tableView->editTriggers() & ~QAbstractItemView::SelectedClicked);
                     m_listView->setEditTriggers(m_listView->editTriggers() & ~QAbstractItemView::SelectedClicked);
                     m_thumbnailView->setEditTriggers(m_thumbnailView->editTriggers() & ~QAbstractItemView::SelectedClicked);
@@ -2422,8 +2422,8 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
         }
 
 
-        // Wenn in der View gerade ein Editor offen ist (z.B. Dateiname umbenennen),
-        // dürfen wir Tasten wie "Entf", "Backspace" oder "Enter" NICHT abfangen!
+        // If an editor is currently open in the view (e.g. renaming a file),
+        // we must NOT intercept keys like "Del", "Backspace" or "Enter"!
         if (qobject_cast<QLineEdit*>(targetWidget)) {
             if (targetWidget == m_LineEdit1) {
                 if (keyEvent->key() == Qt::Key_Escape) {
@@ -2642,10 +2642,10 @@ void MainWindow::action_ListViewNewFolder() {
         folderName = QString("%1 (%2)").arg(baseName).arg(counter++);
     }
 
-    // Wir sagen dem Watcher-Slot, dass er das nächste Signal ignorieren soll
+    // We tell the watcher slot to ignore the next signal
     m_ignoreNextWatcherSignal = true;
 
-    // 2. Den Dummy-Ordner physisch auf der Festplatte erstellen
+    // 2. Physically create the dummy folder on disk
     if (!dir.mkdir(folderName)) {
         m_ignoreNextWatcherSignal = false;
         return;
@@ -2653,16 +2653,16 @@ void MainWindow::action_ListViewNewFolder() {
 
     auto *activeView = qobject_cast<QAbstractItemView*>(m_viewStack->currentWidget());
     if (!activeView) {
-        // Fallback/Sicherheit, falls im Stack mal kein valides View-Widget liegt
+        // Fallback/safety in case there is no valid view widget in the stack
         m_ignoreNextWatcherSignal = false;
         return;
     }
 
-    // 3. Modell anweisen, das Verzeichnis neu zu laden
+    // 3. Tell the model to reload the directory
     m_abstractModel->populateModel_mkFolderWidget(m_currentDirectory);
 
-    // 4. Den QModelIndex des neuen Ordners in der AKTIVEN View finden
-    // WICHTIG: Wir holen das Modell der View, die der Nutzer gerade sieht!
+    // 4. Find the QModelIndex of the new folder in the ACTIVE view
+    // IMPORTANT: We take the model of the view the user is currently looking at!
     QAbstractItemModel *currentViewModel = activeView->model();
     if (!currentViewModel) return;
 
@@ -2673,12 +2673,12 @@ void MainWindow::action_ListViewNewFolder() {
         targetIndex = matches.first();
     }
 
-    // 5. Die AKTIVE View auf den neuen Ordner ansetzen und das Inline-Editing starten
+    // 5. Point the ACTIVE view to the new folder and start inline editing
     if (targetIndex.isValid()) {
         activeView->scrollTo(targetIndex, QAbstractItemView::EnsureVisible);
         activeView->setCurrentIndex(targetIndex);
 
-        // Öffnet die Edit-Box in der View, in der der Nutzer sich gerade befindet
+        // Opens the edit box in the view the user is currently in
         activeView->edit(targetIndex);
     }
 }
@@ -2794,12 +2794,12 @@ void MainWindow::elevateInstance() {
     bool bSuccess = false;
     QStringList pkexecArgs;
     pkexecArgs << "env"
-               // Wir holen die Display-Infos des aktuellen Nutzers und übergeben sie an Root
+               // We take the display info of the current user and pass it on to root
                << QString("DISPLAY=%1").arg(QString::fromLocal8Bit(qgetenv("DISPLAY")))
                << QString("XAUTHORITY=%1").arg(QString::fromLocal8Bit(qgetenv("XAUTHORITY")))
-               // WICHTIG: Zwingt Qt zu X11/XWayland, da Wayland Root-GUIs blockiert
+               // IMPORTANT: Forces Qt to X11/XWayland, since Wayland blocks root GUIs
                << "QT_QPA_PLATFORM=xcb"
-               // Erst JETZT folgt deine App und deine Argumente
+               // Only NOW follow your app and your arguments
                << appPath
                << arguments;
     qint64 pid;
@@ -2826,10 +2826,10 @@ void MainWindow::navigateUp() {
 void MainWindow::navigateBack() {
     if (m_backHistory.isEmpty()) return;
 
-    // Letzten Pfad aus dem Verlauf holen und entfernen
+    // Take the last path from the history and remove it
     QString targetPath = m_backHistory.takeLast();
 
-    // Aktuellen Pfad in den Vorwärts-Verlauf schieben
+    // Push the current path onto the forward history
     if (!m_currentDirectory.isEmpty()) {
         m_forwardHistory.append(m_currentDirectory);
     }
@@ -2840,10 +2840,10 @@ void MainWindow::navigateBack() {
 void MainWindow::navigateForward() {
     if (m_forwardHistory.isEmpty()) return;
 
-    // Letzten Pfad aus dem Vorwärts-Verlauf holen
+    // Take the last path from the forward history
     QString targetPath = m_forwardHistory.takeLast();
 
-    // Aktuellen Pfad wieder zurück in den normalen Verlauf
+    // Put the current path back into the normal history
     if (!m_currentDirectory.isEmpty()) {
         m_backHistory.append(m_currentDirectory);
     }

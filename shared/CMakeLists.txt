@@ -1,12 +1,12 @@
-# HIER KEIN cmake_minimum_required ODER project() ERNEUT AUFRUFEN!
+# DO NOT CALL cmake_minimum_required OR project() AGAIN HERE!
 
-# Statische Bibliothek definieren
+# Define the static library
 add_library(shared STATIC
     src/customitemdelegates.h
     src/customproxystyle.h
     src/stylesheets.h)
 
-# Sourcen zuweisen
+# Assign the sources
 target_sources(shared PRIVATE
     src/helpers.h src/helpers.cpp
     src/filepropertiesdialog.h src/filepropertiesdialog.cpp
@@ -18,14 +18,14 @@ target_sources(shared PRIVATE
 
 )
 
-# Wichtig, falls dein geteilter Code Q_OBJECT-Makros, UI oder Ressourcen nutzt
+# Important in case your shared code uses Q_OBJECT macros, UI or resources
 set_target_properties(shared PROPERTIES
     AUTOMOC ON
     AUTOUIC ON
     AUTORCC ON
 )
 
-# Qt-Abhängigkeiten für den gemeinsamen Code (z.B. Core)
+# Qt dependencies for the shared code (e.g. Core)
 target_link_libraries(shared
     PUBLIC
         Qt6::Core
@@ -37,10 +37,10 @@ target_link_libraries(shared
         ZLIB::ZLIB
 )
 
-# Das ist der Clou: Jeder, der shared linkt, bekommt automatisch 
-# Zugriff auf den "include"-Ordner, ohne Pfade raten zu müssen!
+# This is the trick: everyone who links shared automatically gets 
+# access to the "include" folder without having to guess paths!
 target_include_directories(shared PUBLIC src)
 
-# Beschleunigt den Start, indem ungenutzte Shared Libraries ignoriert werden
-# INTERFACE sorgt dafür, dass die Apps das Flag beim Linken erben!
+# Speeds up startup by ignoring unused shared libraries
+# INTERFACE makes sure that the apps inherit the flag when linking!
 target_link_options(shared INTERFACE -Wl,--as-needed)

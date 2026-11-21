@@ -39,10 +39,10 @@ namespace {
     constexpr int kMaxInputLength = 8192;
     constexpr int kMaxLinesChecked = 200;
 
-    // Entfernt unsichtbare/steuernde Unicode-Zeichen, die präparierte Webseiten in
-    // kopierten Text einschleusen können (Zero-Width-Chars, Bidi-Override wie bei
-    // "Trojan Source"-Angriffen, BOM). Echte RTL-Schrift (Arabisch/Hebräisch) ist
-    // davon NICHT betroffen - das sind normale Buchstaben, keine Steuerzeichen.
+    // Removes invisible/control Unicode characters that crafted web pages can sneak into
+    // copied text (zero-width chars, bidi override as in
+    // "Trojan Source" attacks, BOM). Real RTL script (Arabic/Hebrew) is
+    // NOT affected - those are normal letters, not control characters.
     QString stripInvisibleAndControlChars(const QString &input) {
         QString out;
         out.reserve(input.size());
@@ -58,9 +58,9 @@ namespace {
         return out;
     }
 
-    // Ein einziger Durchlauf über 'input': ersetzte Werte werden NICHT erneut gescannt,
-    // daher ist eine Verkettung ($FOO expandiert zu einem String, der wieder ${...} enthält
-    // und erneut aufgelöst wird) strukturell unmöglich, nicht nur begrenzt.
+    // A single pass over 'input': substituted values are NOT scanned again,
+    // so chaining ($FOO expands to a string that contains ${...} again
+    // and gets resolved again) is structurally impossible, not just limited.
     QString expandVariablesOnce(const QString &input,
                                 const QRegularExpression &regex,
                                 const std::function<QString(const QRegularExpressionMatch&)> &resolve) {
@@ -84,12 +84,12 @@ namespace {
         return result;
     }
 
-    // Expandiert eine einzelne Zeile rein im Speicher
+    // Expands a single line purely in memory
     QString expandSingleLine(QString line) {
         line = line.trimmed();
         if (line.isEmpty()) return QString();
 
-        // 1. Anführungszeichen entfernen
+        // 1. Remove quotes
         if (line.length() >= 2 &&
             ((line.startsWith('"') && line.endsWith('"')) ||
              (line.startsWith('\'') && line.endsWith('\''))))
@@ -98,13 +98,13 @@ namespace {
             if (line.isEmpty()) return QString();
         }
 
-        // 2. file:// URLs in lokale Pfade umwandeln
+        // 2. Convert file:// URLs into local paths
         QUrl url(line);
         if (url.isLocalFile()) {
             line = url.toLocalFile();
         }
 
-        // Gilt für Linux UND macOS (POSIX-Semantik ist identisch)
+        // Applies to Linux AND macOS (POSIX semantics are identical)
         if (line == "~") {
             line = QDir::homePath();
         } else if (line.startsWith("~/") || line.startsWith("~\\")) {
@@ -123,11 +123,11 @@ namespace {
         return QDir::cleanPath(line);
     }
 
-    // Prüft reine Syntax-Kriterien ohne Dateisystem-Zugriff
+    // Checks pure syntax criteria without file system access
     bool isTechnicallyValidPath(const QString &path) {
         if (path.isEmpty()) return false;
 
-        // Nach der Expansion (~ / $HOME / %APPDATA% / file://) muss ein gültiger lokaler Pfad absolut sein
+        // After the expansion (~ / $HOME / file://), a valid local path has to be absolute
         if (!QDir::isAbsolutePath(path)) {
             return false;
         }
@@ -152,16 +152,16 @@ namespace {
 
 namespace {
 // ---------------------------------------------------------------------------------------------
-// Exec-Zeile nach der Desktop Entry Specification zerlegen und Feldcodes ersetzen
+// Split the Exec line according to the Desktop Entry Specification and replace field codes
 // https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
 // ---------------------------------------------------------------------------------------------
 
 struct ExecToken {
     QString text;
-    bool quoted = false; // Argument stand (ganz oder teilweise) in "..."
+    bool quoted = false; // Argument was (completely or partially) in "..."
 };
 
-// Stufe 1: String-Escapes, die für jeden Wert vom Typ "string" gelten (\s \n \t \r \\)
+// Stage 1: string escapes that apply to every value of type "string" (\s \n \t \r \\)
 QString unescapeDesktopString(const QString &in) {
     QString out;
     out.reserve(in.size());
@@ -180,8 +180,8 @@ QString unescapeDesktopString(const QString &in) {
     return out;
 }
 
-// Stufe 2: In Argumente zerlegen. Trenner sind Leerzeichen; in "..." sind \" \` \$ \\ Escapes.
-// Unbekannte Escapes bleiben aus Kulanz wörtlich stehen.
+// Stage 2: split into arguments. Separators are spaces; inside "..." \" \` \$ \\ are escapes.
+// Unknown escapes are kept literally as a courtesy.
 QList<ExecToken> splitDesktopExec(const QString &exec) {
     QList<ExecToken> tokens;
     ExecToken current;
@@ -217,18 +217,18 @@ QList<ExecToken> splitDesktopExec(const QString &exec) {
     return tokens;
 }
 
-// Enthält das Argument einen der Feldcodes aus 'codes' (z.B. "fu")? %% wird korrekt übersprungen.
+// Does the argument contain one of the field codes from 'codes' (e.g. "fu")? %% is skipped correctly.
 bool containsFieldCode(const QString &token, const QString &codes) {
     for (qsizetype i = 0; i + 1 < token.size(); ++i) {
         if (token.at(i) != '%') continue;
         if (codes.contains(token.at(i + 1))) return true;
-        ++i; // "%%" oder anderer Code -> nächstes Zeichen überspringen
+        ++i; // "%%" or another code -> skip the next character
     }
     return false;
 }
 
-// Ersetzt die Feldcodes innerhalb eines Arguments. Rückgabe false = Argument entfällt
-// (%f/%u ohne Datei, sowie %F/%U/%i, die nur als eigenständiges Argument gültig sind).
+// Replaces the field codes within an argument. Returns false = argument is dropped
+// (%f/%u without a file, as well as %F/%U/%i, which are only valid as standalone arguments).
 bool expandFieldCodes(const QString &token, const QString *file, const DesktopEntry &entry, QString &out) {
     out.clear();
     for (qsizetype i = 0; i < token.size(); ++i) {
@@ -248,7 +248,7 @@ bool expandFieldCodes(const QString &token, const QString *file, const DesktopEn
         case 'c': out += entry.name; break;
         case 'k': out += QFileInfo(entry.path).absoluteFilePath(); break;
         case 'd': case 'D': case 'n': case 'N': case 'v': case 'm':
-            break; // veraltet -> entfernen
+            break; // obsolete -> remove
         case 'F': case 'U': case 'i':
             return false;
         default:
@@ -273,7 +273,7 @@ namespace Helpers {
     QString cleanFileName(const QString &fileName) {
         QString pattern;
 
-        // Linux/Unix verbotene Zeichen: / und der Null-Terminator \0
+        // Characters forbidden on Linux/Unix: / and the null terminator \0
         pattern = "[/\\x00]";
 
         static const QRegularExpression re(pattern);
@@ -284,8 +284,8 @@ namespace Helpers {
         return cleanedName;
     }
 
-    // Liefert eine eindeutige Identität des Dateisystem-Objekts (folgt Symlinks), oder einen leeren String bei Fehler.
-    // Unix: Gerät + Inode, Windows: Volume-Seriennummer + File-Index.
+    // Returns a unique identity of the file system object (follows symlinks), or an empty string on error.
+    // Device + inode.
     QString fileIdentity(const QString &path) {
         if (path.isEmpty()) return QString();
 
@@ -294,9 +294,9 @@ namespace Helpers {
         return QStringLiteral("%1:%2").arg(static_cast<quint64>(st.st_dev)).arg(static_cast<quint64>(st.st_ino));
     }
 
-    // Prüft, ob zwei Pfade auf DASSELBE Dateisystem-Objekt zeigen (folgt Symlinks).
-    // Erkennt damit auch Symlink-Pfade, Bind-Mounts und abweichende Groß-/Kleinschreibung
-    // auf case-insensitiven Dateisystemen, die ein reiner String-Vergleich übersieht.
+    // Checks whether two paths point to THE SAME file system object (follows symlinks).
+    // This also recognizes symlink paths, bind mounts and differing upper/lower case
+    // on case-insensitive file systems, which a pure string comparison misses.
     bool isSameFile(const QString &pathA, const QString &pathB) {
         const QString idA = fileIdentity(pathA);
         return !idA.isEmpty() && idA == fileIdentity(pathB);
@@ -320,11 +320,11 @@ namespace Helpers {
 
         int precision = 0;
         if (size < 10.0) {
-            precision = 2; // z.B. 1,23 MiB
+            precision = 2; // e.g. 1,23 MiB
         } else if (size < 100.0) {
-            precision = 1; // z.B. 12,3 MiB
+            precision = 1; // e.g. 12,3 MiB
         } else {
-            precision = 0; // z.B. 123 MiB
+            precision = 0; // e.g. 123 MiB
         }
 
         return locale.toString(size, 'f', precision) + " " + units[unitIndex];
@@ -401,7 +401,7 @@ namespace Helpers {
                 if (line.startsWith("Name=")) iniName = line.mid(5);
                 else if (line.startsWith(localKey)) iniNameLocalised = line.mid(localKey.size());
                 else if (line.startsWith("Type=")) currentEntry.type = line.mid(5);
-                // URL (fängt sowohl "URL=" als auch "URL[$e]=" ab)
+                // URL (catches both "URL=" and "URL[$e]=")
                 else if (line.startsWith("URL=") || line.startsWith("URL[")) {
                     int idx = line.indexOf('=');
                     if (idx != -1) currentEntry.url = line.mid(idx + 1).trimmed();
@@ -471,8 +471,8 @@ namespace Helpers {
         }
     }
 
-    // Wandelt die Exec-Zeile in eine Liste von Aufrufen (Programm + Argumente) um.
-    // Mehrere Aufrufe gibt es nur bei %f/%u mit mehreren Dateien (laut Spezifikation einmal pro Datei).
+    // Turns the Exec line into a list of invocations (program + arguments).
+    // There are several invocations only for %f/%u with several files (once per file according to the specification).
     QList<QStringList> expandDesktopExec(const DesktopEntry &entry, const QStringList &files) {
         const QList<ExecToken> tokens = splitDesktopExec(unescapeDesktopString(entry.exec));
         if (tokens.isEmpty()) return {};
@@ -490,7 +490,7 @@ namespace Helpers {
 
         auto buildInvocation = [&](const QString *file) {
             QStringList args;
-            args << tokens.first().text; // Programm: keine Feldcodes
+            args << tokens.first().text; // Program: no field codes
             for (qsizetype t = 1; t < tokens.size(); ++t) {
                 const ExecToken &tok = tokens.at(t);
                 if (!tok.quoted && (tok.text == "%F" || tok.text == "%U")) {
@@ -503,7 +503,7 @@ namespace Helpers {
                 }
                 QString expanded;
                 if (!expandFieldCodes(tok.text, file, entry, expanded)) continue;
-                if (expanded.isEmpty() && !tok.text.isEmpty() && !tok.quoted) continue; // z.B. nur "%d"
+                if (expanded.isEmpty() && !tok.text.isEmpty() && !tok.quoted) continue; // e.g. only "%d"
                 args << expanded;
             }
             return args;
@@ -519,7 +519,7 @@ namespace Helpers {
                 for (const QString &file : files) invocations << buildInvocation(&file);
             }
         } else {
-            // Kein Datei-Feldcode: Dateien anhängen (bisheriges Verhalten, ähnlich wie KDE)
+            // No file field code: append the files (previous behavior, similar to KDE)
             QStringList args = buildInvocation(nullptr);
             args << files;
             invocations << args;
@@ -531,20 +531,20 @@ namespace Helpers {
         if (!info.isValid) return;
 
         // ==========================================
-        // 1. Handhabung von Type=Link oder verknüpften URLs
+        // 1. Handling of Type=Link or linked URLs
         // ==========================================
         if (info.type.compare(QLatin1String("Link"), Qt::CaseInsensitive) == 0 || !info.url.isEmpty()) {
             QString rawUrl = info.url.trimmed();
             if (rawUrl.isEmpty()) return;
 
-            // 1. Direkt testen, ob es bereits eine valide Netzwerk-URL mit Schema ist (http, https, ftp, etc.)
+            // 1. Test right away whether it already is a valid network URL with a scheme (http, https, ftp, etc.)
             QUrl url(rawUrl);
             if (!url.scheme().isEmpty() && url.isValid()) {
                 QDesktopServices::openUrl(url);
                 return;
             }
 
-            // 2. Erst wenn kein Schema vorliegt, Pfade auflösen (~/, $HOME, relative Pfade)
+            // 2. Only if there is no scheme, resolve paths (~/, $HOME, relative paths)
             QString urlStr = Helpers::expandPath(rawUrl);
 
             QFileInfo fileInfo(urlStr);
@@ -553,7 +553,7 @@ namespace Helpers {
                 urlStr = desktopFileDir.absoluteFilePath(urlStr);
             }
 
-            // Lokale Pfade explizit als File-URL konvertieren
+            // Convert local paths explicitly into file URLs
             url = QUrl::fromLocalFile(urlStr);
             if (!url.isValid()) {
                 url = QUrl::fromUserInput(urlStr);
@@ -568,7 +568,7 @@ namespace Helpers {
         }
 
         // ==========================================
-        // 2. Handhabung von Type=Application (Normaler Exec-Start)
+        // 2. Handling of Type=Application (normal Exec start)
         // ==========================================
         if (info.exec.isEmpty()) return;
 
@@ -591,7 +591,7 @@ namespace Helpers {
             // ==========================================
             if (info.useTerminal) {
                 QString terminal;
-                // Priorisierte Liste bekannter Linux-Terminals (Konsole zuerst wegen KDE)
+                // Prioritized list of known Linux terminals (Konsole first because of KDE)
                 const QStringList terminalCandidates = {
                     "konsole", "gnome-terminal", "xfce4-terminal", "alacritty", "kitty", "xterm"
                 };
@@ -606,20 +606,20 @@ namespace Helpers {
                 if (!terminal.isEmpty()) {
                     QStringList terminalArgs;
 
-                    // Ältere/Schlanke Terminals wie xterm/alacritty brauchen meist '-e'
-                    // Moderne Desktoptop-Terminals (konsole, gnome-terminal) bevorzugen '--'
+                    // Older/lightweight terminals like xterm/alacritty usually need '-e'
+                    // Modern desktop terminals (konsole, gnome-terminal) prefer '--'
                     if (terminal.endsWith("gnome-terminal")) {
                         terminalArgs << "--" << program << args;
                     } else {
                         terminalArgs << "-e" << program << args;
                     }
 
-                    // Das Terminal wird zum Hauptprogramm, die App wandert in die Argumente
+                    // The terminal becomes the main program, the app moves into the arguments
                     program = terminal;
                     args = terminalArgs;
                 } else {
-                    // Fallback: Wenn absolut kein Terminal gefunden wurde,
-                    // loggen wir eine Warnung und starten es normal im Hintergrund.
+                    // Fallback: if no terminal at all was found,
+                    // we log a warning and start it normally in the background.
                     qWarning("Konnte keinen Terminal-Emulator finden. Starte App normal.");
                 }
             }
@@ -647,31 +647,31 @@ namespace Helpers {
             return;
         }
 
-        // 1. Daten in ein JSON-Objekt verpacken
+        // 1. Pack the data into a JSON object
         QJsonObject jsonObj;
         jsonObj["targetDir"] = targetDir;
         jsonObj["pathList"] = QJsonArray::fromStringList(pathList);
         QByteArray jsonData = QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
 
-        // 2. Einzigartigen Schlüssel erzeugen
+        // 2. Create a unique key
         QString memoryKey = "mkBatchRename_" + QUuid::createUuid().toString(QUuid::WithoutBraces);
 
-        // 3. Shared Memory reservieren
+        // 3. Allocate the shared memory
         auto *sharedMemory = new QSharedMemory(memoryKey, parent);
         if (!sharedMemory->create(jsonData.size())) {
             qCritical() << "Konnte Shared Memory nicht erstellen:" << sharedMemory->errorString();
-            delete sharedMemory; // Objekt im Fehlerfall löschen
+            delete sharedMemory; // Delete the object in case of an error
             return;
         }
 
-        // 4. Daten sicher in den Shared Memory schreiben
+        // 4. Write the data safely into the shared memory
         if (sharedMemory->lock()) {
             char *to = static_cast<char*>(sharedMemory->data());
             memcpy(to, jsonData.constData(), jsonData.size());
             sharedMemory->unlock();
         } else {
             qCritical() << "Konnte Shared Memory nicht sperren:" << sharedMemory->errorString();
-            delete sharedMemory; // Objekt im Fehlerfall löschen
+            delete sharedMemory; // Delete the object in case of an error
             return;
         }
 
@@ -685,7 +685,7 @@ namespace Helpers {
         if (success) {
             qDebug() << "mkBatchRename erfolgreich gestartet. PID:" << pid;
 
-            // Nach 10 Sekunden den Shared Memory freigeben und das Objekt aufräumen
+            // After 10 seconds, release the shared memory and clean up the object
             QTimer::singleShot(10000, sharedMemory, [sharedMemory]() {
                 if (sharedMemory->isAttached()) {
                     sharedMemory->detach();
@@ -742,7 +742,7 @@ namespace Helpers {
     }
 
     QPixmap generateThumbnail(const QFileInfo &fileInfo) {
-        // Unterstützte Formate statisch cachen (wird nur einmalig beim allerersten Aufruf erstellt)
+        // Cache the supported formats statically (created only once on the very first call)
         static const QSet<QByteArray> supportedFormats = []() {
             auto formats = QImageReader::supportedImageFormats();
             return QSet<QByteArray>(formats.begin(), formats.end());
@@ -750,17 +750,17 @@ namespace Helpers {
 
         if (supportedFormats.contains(fileInfo.suffix().toLower().toUtf8())) {
             QImageReader reader(fileInfo.absoluteFilePath());
-            reader.setAutoTransform(true); // Wichtig für EXIF-Rotationen von Smartphones
+            reader.setAutoTransform(true); // Important for EXIF rotations from smartphones
 
             if (reader.canRead()) {
-                // 1. Die echte Dimension des Bildes auslesen (kostet kaum Performance)
+                // 1. Read the real dimensions of the image (costs hardly any performance)
                 QSize originalSize = reader.size();
 
-                // 2. Proportionale Größe berechnen, die in eine 96x96 Box passt
-                // Aus z.B. 1920x1080 wird hier automatisch 96x54
+                // 2. Compute a proportional size that fits into a 96x96 box
+                // e.g. 1920x1080 automatically becomes 96x54 here
                 QSize scaledSize = originalSize.scaled(QSize(96, 96), Qt::KeepAspectRatio);
 
-                // 3. Dem Reader die proportionale Größe mitteilen
+                // 3. Tell the reader the proportional size
                 reader.setScaledSize(scaledSize);
 
                 QImage img = reader.read();
@@ -803,26 +803,26 @@ namespace Helpers {
     }
 
     void createInternetShortcut(const QString &urlStr, const QString &targetDir, const QString &webTitle) {
-        // 1. Basis-Dateinamen bestimmen (Trimmen entfernt führende/nachstehende Leerzeichen)
+        // 1. Determine the base file name (trimming removes leading/trailing whitespace)
         QString fileName = webTitle.trimmed();
 
-        // Fallback A: Wenn data->text() leer war, nutzen wir die Domain (z.B. "www.wikipedia.org")
+        // Fallback A: if data->text() was empty, we use the domain (e.g. "www.wikipedia.org")
         if (fileName.isEmpty()) {
             QUrl url(urlStr);
             fileName = url.host();
         }
 
-        // Fallback B: Wenn auch die Domain fehlschlägt (z.B. ungültige URL), generischer Name
+        // Fallback B: if the domain fails as well (e.g. invalid URL), a generic name
         if (fileName.isEmpty()) {
             fileName = "Internet-Link";
         }
 
-        // 2. Dateinamen bereinigen (Sanitize)
-        // Ersetzt alle im Windows/Linux/macOS-Dateisystem verbotenen Zeichen durch einen Unterstrich: \ / : * ? " < > |
+        // 2. Sanitize the file name
+        // Replaces all characters forbidden in Windows/Linux/macOS file systems with an underscore: \ / : * ? " < > |
         fileName.replace(QRegularExpression("[\\\\/:*?\"<>|]"), "_");
         fileName = fileName.trimmed();
 
-        // Sicherheitsprüfung: Falls nach der Bereinigung nichts mehr übrig ist
+        // Safety check: in case nothing is left after sanitizing
         if (fileName.isEmpty()) {
             fileName = "Internet-Link";
         }
@@ -833,19 +833,19 @@ namespace Helpers {
             fileName += extension;
         }
 
-        // 3. Zielverzeichnis prüfen
+        // 3. Check the target directory
         QDir dir(targetDir);
         if (!dir.exists()) {
             qWarning() << "Zielverzeichnis existiert nicht:" << targetDir;
             return;
         }
 
-        // 4. Kollisionsschutz: Falls die Datei schon existiert, eine Nummerierung anhängen
-        // REPARATUR: QFileInfo nutzen statt hartem chop(4), da ".desktop" 8 Zeichen lang ist!
+        // 4. Collision protection: if the file already exists, append a number
+        // FIX: use QFileInfo instead of a hard chop(4), since ".desktop" is 8 characters long!
         QString fullPath = dir.filePath(fileName);
         QFileInfo fileInfo(fileName);
         QString baseName = fileInfo.completeBaseName();
-        QString finalAnzeigename = baseName; // Merken für das 'Name=' Feld unter Linux
+        QString finalAnzeigename = baseName; // Remember for the 'Name=' field on Linux
 
         if (QFile::exists(fullPath)) {
             int counter = 1;
@@ -857,15 +857,15 @@ namespace Helpers {
             }
         }
 
-        // 5. Die Datei schreiben
+        // 5. Write the file
         QFile file(fullPath);
         if (file.open(QIODevice::WriteOnly | QIODevice::Text)) {
             QTextStream out(&file);
 
-            // Linux .desktop Format für Web-Links
+            // Linux .desktop format for web links
             out << "[Desktop Entry]\n";
-            out << "Icon=text-html\n";                  // Standard-Icon für HTML/Web-Links
-            out << "Name=" << finalAnzeigename << "\n"; // Das ist der Text, den Linux anzeigt
+            out << "Icon=text-html\n";                  // Default icon for HTML/web links
+            out << "Name=" << finalAnzeigename << "\n"; // This is the text Linux displays
             out << "Type=Link\n";
             out << "URL=" << urlStr << "\n";
 
@@ -903,9 +903,9 @@ namespace Helpers {
 
         // Match search terms separately
         bool bMatchType1 = true;
-        bool bMatchType2 = false; // Wortgrenze/Start im Dateinamen
-        bool bMatchType3 = false; // Erstes Wort bei Index 0 im Dateinamen
-        bool bMatchType4 = false; // Mindestens ein Wort musste in den Pfad ausweichen
+        bool bMatchType2 = false; // Word boundary/start in the file name
+        bool bMatchType3 = false; // First word at index 0 in the file name
+        bool bMatchType4 = false; // At least one word had to fall back to the path
         int iIndex = 0;
 
         for (const QString &word : std::as_const(searchStringSplit)) {
@@ -958,9 +958,9 @@ namespace Helpers {
     }
 
     uint getContentMatchCount(const QFileInfo &fileInfo, const QString &searchStringContent, Qt::CaseSensitivity caseSensitivity, const QSet<QString> &FileExtTextSet) {
-        // Nur reguläre Dateien lesen: FIFOs, Sockets und Gerätedateien (von QDir::System mitgelistet)
-        // würden QFile::open() bzw. read() dauerhaft blockieren und damit die ganze GUI einfrieren.
-        // isFile() ist auch für Symlinks auf reguläre Dateien true.
+        // Only read regular files: FIFOs, sockets and device files (also listed by QDir::System)
+        // would block QFile::open() or read() forever and thereby freeze the whole GUI.
+        // isFile() is also true for symlinks to regular files.
         if (!fileInfo.isFile()) {
             return 0;
         }
@@ -982,10 +982,10 @@ namespace Helpers {
 
         QTextStream in(&file);
 
-        // Option A: explizit UTF-8 erzwingen (aktuelles Verhalten dokumentieren)
-        //in.setEncoding(QStringConverter::Utf8);
-        // Option B: Locale-basiert dekodieren (breiter, aber langsamer)
-        //in.setEncoding(QStringConverter::System);
+        // Option A: force UTF-8 explicitly (documents the current behavior)
+        // in.setEncoding(QStringConverter::Utf8);
+        // Option B: decode based on the locale (broader, but slower)
+        // in.setEncoding(QStringConverter::System);
 
         QString fileContent = in.readAll();
 
@@ -1001,9 +1001,9 @@ namespace Helpers {
     }
 
     uint getRegExContentMatchCount(const QFileInfo &fileInfo, const QRegularExpression &re, const QSet<QString> &FileExtTextSet) {
-        // Nur reguläre Dateien lesen: FIFOs, Sockets und Gerätedateien (von QDir::System mitgelistet)
-        // würden QFile::open() bzw. read() dauerhaft blockieren und damit die ganze GUI einfrieren.
-        // isFile() ist auch für Symlinks auf reguläre Dateien true.
+        // Only read regular files: FIFOs, sockets and device files (also listed by QDir::System)
+        // would block QFile::open() or read() forever and thereby freeze the whole GUI.
+        // isFile() is also true for symlinks to regular files.
         if (!fileInfo.isFile()) {
             return 0;
         }
@@ -1042,43 +1042,43 @@ namespace Helpers {
         QString currentName = info.fileName();
         QDir parentDir = info.dir();
 
-        // Abbruch, falls der Parent-Ordner nicht existiert oder der Pfad ungültig ist
+        // Abort if the parent folder does not exist or the path is invalid
         if (!parentDir.exists() || currentName.isEmpty()) {
             return QString();
         }
 
-        // Nur Ordner auflisten, "." und ".." ignorieren.
-        // QDir::Unsorted spart CPU-Zeit, da wir die Liste ohnehin selbst sortieren.
+        // Only list folders, ignore "." and "..".
+        // QDir::Unsorted saves CPU time, since we sort the list ourselves anyway.
         parentDir.setFilter({QDir::Dirs, QDir::NoDotAndDotDot});
         parentDir.setSorting(QDir::Unsorted);
 
         QStringList siblings = parentDir.entryList();
 
-        // QCollator konfigurieren
+        // Configure the QCollator
         QCollator collator;
-        collator.setNumericMode(true); // "Natural Sorting": 2 kommt vor 10
-        collator.setCaseSensitivity(Qt::CaseInsensitive); // a und A gleich behandeln
+        collator.setNumericMode(true); // "Natural sorting": 2 comes before 10
+        collator.setCaseSensitivity(Qt::CaseInsensitive); // Treat a and A the same
 
-        // QStringList mit dem QCollator als Funktor sortieren.
-        // QCollator hat den operator() überladen, std::sort akzeptiert ihn daher direkt.
+        // Sort the QStringList with the QCollator as a functor.
+        // QCollator overloads operator(), so std::sort accepts it directly.
         std::sort(siblings.begin(), siblings.end(), collator);
 
-        // Position des aktuellen Ordners in der nun natürlich sortierten Liste finden
+        // Find the position of the current folder in the now naturally sorted list
         int currentIndex = siblings.indexOf(currentName);
 
         if (currentIndex == -1) {
             return QString();
         }
 
-        // Ziel-Index berechnen
+        // Compute the target index
         int targetIndex = previous ? (currentIndex - 1) : (currentIndex + 1);
 
-        // Prüfen, ob wir noch im Gültigkeitsbereich der Liste sind
+        // Check whether we are still within the bounds of the list
         if (targetIndex >= 0 && targetIndex < siblings.size()) {
             return parentDir.absoluteFilePath(siblings.at(targetIndex));
         }
 
-        // Am Anfang oder Ende der Liste angekommen -> Kein Sibling verfügbar
+        // Reached the beginning or end of the list -> no sibling available
         return QString();
     }
 
@@ -1113,8 +1113,8 @@ namespace Helpers {
         text = stripInvisibleAndControlChars(text);
         if (text.trimmed().isEmpty()) return QString();
 
-        // Guides/Tutorials landen oft mit Zeilenumbrüchen in der Zwischenablage.
-        // Wir nehmen die erste Zeile, die zu einem gültigen existierenden Pfad führt.
+        // Guides/tutorials often end up in the clipboard with line breaks.
+        // We take the first line that leads to a valid existing path.
         const QStringList lines = text.split(QRegularExpression(R"(\r\n|\r|\n)"), Qt::SkipEmptyParts);
 
         int checked = 0;
@@ -1142,11 +1142,11 @@ namespace Helpers {
 
         QVariantList args;
         args << appName                        // App-Name
-             << uint(0)                        // Replaces ID (0 = neu)
+             << uint(0)                        // Replaces ID (0 = new)
              << "dialog-information"           // Icon-Name
-             << title                          // Titel
-             << body                           // Inhalt
-             << QStringList()                  // Aktionen (leer)
+             << title                          // Title
+             << body                           // Content
+             << QStringList()                  // Actions (empty)
              << QVariantMap()                  // Hints (leer)
              << int(5000);                     // Timeout in ms (-1 = standard)
 
@@ -1159,15 +1159,15 @@ namespace Helpers {
             return;
         }
 
-        // Pfade in QUrl umwandeln
+        // Convert paths into QUrl
         QList<QUrl> urls;
         urls.reserve(filePaths.size());
         for (const QString &path : filePaths) {
             urls.append(QUrl::fromLocalFile(path));
         }
 
-        // Öffnet den nativen KDE/Dolphin-Eigenschaften-Dialog
-        // Kümmert sich automatisch um Einzel- und Mehrfachauswahl!
+        // Opens the native KDE/Dolphin properties dialog
+        // Takes care of single and multiple selection automatically!
         KPropertiesDialog::showDialog(urls, parent);
     }
 
@@ -1176,13 +1176,13 @@ namespace Helpers {
 
         QMimeDatabase mimeDb;
 
-        // Hilfsstruktur für die Gruppierung
+        // Helper struct for grouping
         struct AppGroup {
             KService::Ptr service;
             QList<QUrl> urls;
         };
 
-        // Schlüssel ist jetzt QString (storageId, z.B. "org.kde.kate.desktop")
+        // The key is a QString now (storageId, e.g. "org.kde.kate.desktop")
         QHash<QString, AppGroup> appGroups;
 
         for (const QUrl &url : urls) {
@@ -1190,20 +1190,20 @@ namespace Helpers {
             KService::Ptr service = KApplicationTrader::preferredService(mime.name());
 
             if (service) {
-                QString appId = service->storageId(); // Eindeutige App-ID
+                QString appId = service->storageId(); // Unique app ID
 
                 if (!appGroups.contains(appId)) {
                     appGroups[appId] = { service, {} };
                 }
                 appGroups[appId].urls.append(url);
             } else {
-                // Fallback für Dateien ohne zugewiesene App
+                // Fallback for files without an assigned app
                 auto *job = new KIO::OpenUrlJob(url);
                 job->start();
             }
         }
 
-        // Jetzt wird genau EIN Aufruf pro Anwendung getätigt
+        // Now exactly ONE call per application is made
         for (auto it = appGroups.constBegin(); it != appGroups.constEnd(); ++it) {
             KService::Ptr service = it.value().service;
             const QList<QUrl> &groupUrls = it.value().urls;
@@ -1212,7 +1212,7 @@ namespace Helpers {
             qDebug() << "  App-ID:      " << it.key();                    // "org.kde.kate.desktop"
             qDebug() << "  App-Name:    " << service->name();              // "Kate"
             qDebug() << "  Exec-Command: " << service->exec();              // "kate --new %U"
-            qDebug() << "  URLs:        " << groupUrls;                     // Enthält jetzt ALLE 3 URLs!
+            qDebug() << "  URLs:        " << groupUrls;                     // Now contains ALL 3 URLs!
 
             auto *job = new KIO::ApplicationLauncherJob(service);
             job->setUrls(groupUrls);

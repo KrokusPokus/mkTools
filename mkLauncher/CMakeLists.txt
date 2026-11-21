@@ -21,7 +21,7 @@ target_link_libraries(mkLauncher
         ZLIB::ZLIB
 )
 
-# Beschleunigt den Start, indem ungenutzte Shared Libraries ignoriert werden
+# Speeds up startup by ignoring unused shared libraries
 target_link_options(mkLauncher PRIVATE -Wl,--as-needed)
 
 install(TARGETS mkLauncher

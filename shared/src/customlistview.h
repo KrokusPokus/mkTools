@@ -54,7 +54,7 @@ protected:
     void keyPressEvent(QKeyEvent *event) override;
     void setSelection(const QRect &rect, QItemSelectionModel::SelectionFlags command) override;
     void currentChanged(const QModelIndex &current, const QModelIndex &previous) override;
-    bool viewportEvent(QEvent *event) override;     // Workaround: verschluckter Release unter Plasma Wayland
+    bool viewportEvent(QEvent *event) override;     // Workaround: swallowed release on Plasma Wayland
 };
 
 #endif // CUSTOMLISTVIEW_H

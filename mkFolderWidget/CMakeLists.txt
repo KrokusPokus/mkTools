@@ -20,7 +20,7 @@ target_link_libraries(mkFolderWidget
         ZLIB::ZLIB
 )
 
-# Beschleunigt den Start, indem ungenutzte Shared Libraries ignoriert werden
+# Speeds up startup by ignoring unused shared libraries
 target_link_options(mkFolderWidget PRIVATE -Wl,--as-needed)
 
 install(TARGETS mkFolderWidget

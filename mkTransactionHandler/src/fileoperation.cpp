@@ -14,12 +14,12 @@
 #include <sys/stat.h> // stat(), mkfifo(), S_ISFIFO ...
 #include <cstdio>     // ::rename()
 
-#include <sys/resource.h> // Für getpriority/setpriority (CPU)
+#include <sys/resource.h> // For getpriority/setpriority (CPU)
 #include <sys/syscall.h>
 #include <unistd.h>
 #include <kio/jobuidelegatefactory.h>
 
-// Da glibc keine Header dafür hat, definieren wir die Kernel-Konstanten selbst
+// Since glibc has no headers for this, we define the kernel constants ourselves
 #ifndef IOPRIO_WHO_PROCESS
 #define IOPRIO_WHO_PROCESS 1
 #endif
@@ -34,9 +34,9 @@
 
 namespace {
 
-// Sonderdateien (nur Unix): FIFO, Socket, Zeichen- oder Blockgerät. Sie melden alle die Größe 0 und dürfen
-// NIEMALS wie eine Datei gelesen werden: open() einer FIFO blockiert für immer, ein Gerät wie "zero" liefert
-// endlos Daten (Zieldatei wächst bis die Platte voll ist).
+// Special files (Unix only): FIFO, socket, character or block device. They all report size 0 and must
+// NEVER be read like a file: open() on a FIFO blocks forever, a device like "zero" delivers
+// endless data (the target file grows until the disk is full).
 enum class SpecialFileKind { None, Fifo, Other };
 
 SpecialFileKind specialFileKind(const QString &path, unsigned int *permissions = nullptr) {
@@ -47,8 +47,8 @@ SpecialFileKind specialFileKind(const QString &path, unsigned int *permissions =
     return S_ISFIFO(st.st_mode) ? SpecialFileKind::Fifo : SpecialFileKind::Other;
 }
 
-// Liefert true, wenn 'path' (muss nicht existieren) gleich 'dir' ist oder irgendwo darunter liegt.
-// Läuft dazu von 'path' aufwärts und vergleicht jeden existierenden Vorfahren per Helpers::isSameFile().
+// Returns true if 'path' (does not have to exist) equals 'dir' or lies anywhere below it.
+// To do so, it walks up from 'path' and compares every existing ancestor via Helpers::isSameFile().
 bool isSameOrInsideDir(const QString &dir, const QString &path) {
     QString current = QDir::cleanPath(QFileInfo(path).absoluteFilePath());
 
@@ -57,7 +57,7 @@ bool isSameOrInsideDir(const QString &dir, const QString &path) {
             return true;
         }
         const QString parent = QFileInfo(current).path();
-        if (parent == current) break; // Wurzel erreicht
+        if (parent == current) break; // Reached the root
         current = parent;
     }
     return false;
@@ -69,7 +69,7 @@ struct LinuxBackgroundPriorityGuard {
     LinuxBackgroundPriorityGuard() {
         m_oldIoPrio = syscall(SYS_ioprio_get, IOPRIO_WHO_PROCESS, 0);
 
-        // I/O auf Best-Effort (Klasse 2) mit niedrigster Prio (Stufe 7) drosseln
+        // Throttle I/O to best effort (class 2) with the lowest priority (level 7)
         int targetIoPrio = IOPRIO_PRIO_VALUE(IOPRIO_CLASS_BE, 7);
         syscall(SYS_ioprio_set, IOPRIO_WHO_PROCESS, 0, targetIoPrio);
     }
@@ -143,11 +143,11 @@ void FileOperation::run() {
 
         if (m_operationType == OperationType::Copy || m_operationType == OperationType::Move) {
             QString dstPath;
-            // Identitätsvergleich statt String-Vergleich: Erkennt denselben Ordner auch über
-            // Symlinks, Bind-Mounts oder abweichende Groß-/Kleinschreibung.
+            // Identity comparison instead of string comparison: recognizes the same folder even via
+            // symlinks, bind mounts or differing upper/lower case.
             if (Helpers::isSameFile(srcInfo.absolutePath(), m_targetDir)) {
                 if (m_operationType == OperationType::Move) {
-                    // Verschieben in den eigenen Ordner ist ein No-Op -> überspringen
+                    // Moving into its own folder is a no-op -> skip
                     auto skipStats = std::make_pair(srcInfo.size(), 1);
                     if (srcInfo.isDir() && !srcInfo.isSymbolicLink() && !srcInfo.isJunction()) {
                         skipStats = calculateStats({srcPath});
@@ -164,7 +164,7 @@ void FileOperation::run() {
 
             bool isSymlink = srcInfo.isSymbolicLink() || srcInfo.isJunction();
 
-            // FALL 1: Ziel unterstützt KEINE Symlinks -> Deep Copy Fallback
+            // CASE 1: Target does NOT support symlinks -> deep copy fallback
             if (isSymlink && !targetSupportsSymlinks()) {
                 QString targetResolved = srcInfo.isJunction() ? srcInfo.junctionTarget() : srcInfo.symLinkTarget();
                 QFileInfo resolvedInfo(targetResolved);
@@ -174,7 +174,7 @@ void FileOperation::run() {
                     m_failedItems.append(FailedItem{srcPath, dstPath, m_operationType, tr("Symlink target does not exist")});
                     result = FileOpResult::Error;
                 } else {
-                    // Bei Move erzwingen wir für den Inhalt ein Kopieren, damit das Quell-Ziel des Links nicht gelöscht wird
+                    // For a move, we force a copy of the content so that the source target of the link is not deleted
                     bool forceCopyOnly = (m_operationType == OperationType::Move);
 
                     if (resolvedInfo.isDir()) {
@@ -183,7 +183,7 @@ void FileOperation::run() {
                         result = copyOrMoveFile(targetResolved, dstPath, isCrossDevice, forceCopyOnly);
                     }
 
-                    // Nach erfolgreichem Verschieben des Inhalts löschen wir NUR die Verknüpfung selbst
+                    // After the content has been moved successfully, we delete ONLY the link itself
                     if (result == FileOpResult::Success && m_operationType == OperationType::Move) {
                         removeReadOnlyAttribute(srcPath);
                         if (!QFile::remove(srcPath)) {
@@ -194,7 +194,7 @@ void FileOperation::run() {
                     }
                 }
             }
-            // FALL 2: Ziel unterstützt Symlinks ODER normale Datei/Ordner
+            // CASE 2: Target supports symlinks OR normal file/folder
             else {
                 if (srcInfo.isDir() && !isSymlink) {
                     result = copyOrMoveDir(srcPath, dstPath, isCrossDevice, false);
@@ -209,8 +209,8 @@ void FileOperation::run() {
             if (m_operationType == OperationType::Recycle) {
                 success = QFile::moveToTrash(srcPath);
                 if (success) {
-                    // Da moveToTrash extrem schnell ist (OS-Schnittstelle),
-                    // können wir hier die pauschalen Dir-Stats dazurechnen
+                    // Since moveToTrash is extremely fast (OS interface),
+                    // we can add the overall dir stats here
 
                     auto dirStats = std::make_pair(srcInfo.size(), 1);
                     if (srcInfo.isDir() && !srcInfo.isSymbolicLink() && !srcInfo.isJunction()) {
@@ -246,7 +246,7 @@ void FileOperation::run() {
             QString dstPath = QDir(m_targetDir).filePath(baseName);
             QFileInfo linkDstInfo(dstPath);
 
-            // Konfliktprüfung mit dem neuen Namen
+            // Conflict check with the new name
             if (linkDstInfo.exists() || linkDstInfo.isSymbolicLink()) {
                 dstPath = generateUniqueCopyName(QFileInfo(dstPath), m_targetDir);
             }
@@ -277,7 +277,7 @@ void FileOperation::run() {
         emit wasFinished(m_stats, m_failedItems);
     }
 
-    // <- Hier wird 'priorityGuard' zerstört und der Thread-Modus automatisch zurückgesetzt
+    // <- 'priorityGuard' is destroyed here and the thread mode is reset automatically
 }
 
 void FileOperation::doCancel() {
@@ -285,18 +285,18 @@ void FileOperation::doCancel() {
 
     KJob* jobToKill = nullptr;
     {
-        // Mutex NUR für das Auslesen des Zeigers sperren
+        // Lock the mutex ONLY for reading the pointer
         QMutexLocker locker(&m_mutex);
         jobToKill = m_currentKioJob;
-    } // <-- Mutex wird HIER sofort wieder freigegeben!
+    } // <-- The mutex is released again RIGHT HERE!
 
     if (jobToKill) {
-        // Triggert jetzt gefahrlos synchron das result-Signal,
-        // welches im Lambda m_mutex wieder ohne Deadlock sperren kann.
+        // Now safely triggers the result signal synchronously,
+        // which can lock m_mutex again in the lambda without a deadlock.
         jobToKill->kill(KJob::EmitResult);
     }
 
-    // Falls der Thread in der Pause-Bedingung schläft -> Aufwecken!
+    // If the thread is sleeping in the pause condition -> wake it up!
     {
         QMutexLocker pauseLocker(&m_pauseMutex);
         m_pauseCond.wakeAll();
@@ -316,23 +316,23 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
     m_stats.currentName = calculateRelativeDisplayPath(srcInfo);
     updateProgress();
 
-    // Effektiver Move-Status: Wenn forceCopyOnly == true ist (z.B. bei Deep Copy eines Symlinks),
-    // behandeln wir die Operation intern strikt als Copy, damit die Quelldatei NICHT gelöscht wird!
+    // Effective move status: if forceCopyOnly == true (e.g. for a deep copy of a symlink),
+    // we treat the operation internally strictly as a copy, so that the source file is NOT deleted!
     const bool isMove = (m_operationType == OperationType::Move) && !forceCopyOnly;
 
     const bool isSymlinkSource = srcInfo.isSymbolicLink() || srcInfo.isJunction();
     const bool isSymlinkTarget = dstInfo.isSymbolicLink() || dstInfo.isJunction();
 
-    qint64 fileSizeSource = isSymlinkSource ? 0 : srcInfo.size(); // Symlinks verbrauchen keinen Platz im globalen Byte-Zähler
+    qint64 fileSizeSource = isSymlinkSource ? 0 : srcInfo.size(); // Symlinks don't take up space in the global byte counter
 
-    // Sonderdateien erkennen (Symlinks selbst sind keine - sie werden als Link behandelt)
+    // Detect special files (symlinks themselves are not - they are treated as links)
     unsigned int specialPermissions = 0;
     const SpecialFileKind specialKind = isSymlinkSource ? SpecialFileKind::None : specialFileKind(src, &specialPermissions);
     const bool isSpecialSource = (specialKind != SpecialFileKind::None);
     const bool canMoveSpecialByRename = isMove && !isCrossDevice;
 
-    // Geräte und Sockets lassen sich nicht sinnvoll kopieren (Gerät neu anlegen nur als root, ein Socket ist ohne
-    // seinen Prozess wertlos). Nur ein Verschieben per Umbenennen auf demselben Laufwerk ist möglich.
+    // Devices and sockets cannot be copied in a meaningful way (recreating a device only works as root, a socket
+    // is worthless without its process). Only moving by renaming on the same drive is possible.
     if (specialKind == SpecialFileKind::Other && !canMoveSpecialByRename) {
         m_stats.filesError++;
         updateProgress();
@@ -340,11 +340,11 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
         return FileOpResult::Error;
     }
 
-    // SCHUTZ: Quelle und Ziel sind physisch dieselbe Datei (z.B. über Symlink-Pfad, Bind-Mount,
-    // Groß-/Kleinschreibung oder ein Quell-Symlink, der auf das Ziel zeigt).
-    // Ohne diesen Schutz würde der Vergleich "identisch" ergeben und bei Move die einzige Kopie gelöscht,
-    // bzw. bei Overwrite das Ziel (= die Quelle bzw. das Link-Ziel) zerstört.
-    // Ist das Ziel selbst ein Symlink, wird nur der Link ersetzt -> unkritisch, daher ausgenommen.
+    // PROTECTION: Source and target are physically the same file (e.g. via a symlink path, bind mount,
+    // upper/lower case or a source symlink pointing to the target).
+    // Without this protection the comparison would yield "identical" and a move would delete the only copy,
+    // or an overwrite would destroy the target (= the source or the link target).
+    // If the target itself is a symlink, only the link is replaced -> not critical, so it is excluded.
     if (!isSymlinkTarget && dstInfo.exists() && Helpers::isSameFile(src, dst)) {
         m_stats.filesError++;
         updateProgress();
@@ -352,11 +352,11 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
         return FileOpResult::Error;
     }
 
-    // true = Ziel existiert und soll ersetzt werden. Das alte Ziel bleibt bis zum erfolgreichen
-    // Abschluss erhalten und wird erst dann per swapIntoPlace() ausgetauscht.
+    // true = target exists and is to be replaced. The old target is kept until the operation
+    // completes successfully and only then swapped out via swapIntoPlace().
     bool replaceExisting = false;
 
-    // Ein Konflikt besteht, wenn das Ziel existiert ODER ein (ggf. defekter) Symlink dort liegt
+    // There is a conflict if the target exists OR a (possibly broken) symlink is there
     if (dstInfo.exists() || isSymlinkTarget) {
         ConflictResolution resolution = m_applyToAll ? m_applyToAllResolution : ConflictResolution::Skip;
 
@@ -375,15 +375,15 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
             case ConflictResolution::Cancel:
                 return FileOpResult::Cancelled;
             case ConflictResolution::Overwrite:
-                // Ordner NICHT vorab löschen: Er wird erst nach erfolgreichem Kopieren ersetzt (siehe swapIntoPlace)
+                // Do NOT delete the folder beforehand: it is only replaced after copying succeeded (see swapIntoPlace)
                 replaceExisting = true;
                 break;
             }
         }
         else {
-            // Abkürzung "beide 0 Byte" und Inhaltsvergleich NUR, wenn beide Seiten reguläre Dateien sind:
-            // Sonderdateien melden immer 0 Byte (sind aber nicht "identisch"), und ein Vergleich würde eine
-            // FIFO am Ziel öffnen und damit für immer blockieren. Sonst -> normaler Konfliktdialog.
+            // Shortcut "both 0 bytes" and content comparison ONLY if both sides are regular files:
+            // special files always report 0 bytes (but are not "identical"), and a comparison would open a
+            // FIFO at the target and thereby block forever. Otherwise -> normal conflict dialog.
             if (!isSymlinkSource && !isSymlinkTarget && srcInfo.isFile() && dstInfo.isFile() && !isSpecialSource) {
                 qint64 fileSizeTarget = dstInfo.size();
 
@@ -429,8 +429,8 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
                                 qDebug() << "Move-source with identical content deleted:" << src;
 
                                 m_stats.filesDuplicate++;
-                                m_stats.filesWritten++; // Zählt als erfolgreich verarbeitete Datei
-                                m_stats.bytesWritten += fileSizeSource; // Fortschrittsbalken auffüllen
+                                m_stats.filesWritten++; // Counts as a successfully processed file
+                                m_stats.bytesWritten += fileSizeSource; // Fill up the progress bar
                                 updateProgress();
                                 if (!checkInterruption()) return FileOpResult::Cancelled;
                                 return FileOpResult::Success;
@@ -469,7 +469,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
             case ConflictResolution::Cancel:
                 return FileOpResult::Cancelled;
             case ConflictResolution::Overwrite:
-                // Ziel NICHT vorab löschen: Es wird erst ersetzt, wenn die neue Version vollständig geschrieben ist
+                // Do NOT delete the target beforehand: it is only replaced once the new version has been written completely
                 replaceExisting = true;
                 break;
             }
@@ -482,15 +482,15 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
     QString failReason;
 
     if (isSpecialSource) {
-        // Sonderdatei: niemals über QFile::rename (fällt bei EXDEV still auf Kopieren = Lesen zurück)
-        // und niemals über copyFileInChunks.
+        // Special file: never via QFile::rename (silently falls back to copying = reading on EXDEV)
+        // and never via copyFileInChunks.
         if (canMoveSpecialByRename && !replaceExisting) {
             ok = (::rename(QFile::encodeName(src).constData(), QFile::encodeName(dst).constData()) == 0);
             movedViaRename = ok;
         }
 
         if (!ok && specialKind == SpecialFileKind::Fifo) {
-            // FIFO am Ziel mit denselben Rechten neu anlegen (wie "cp -a"); bei Überschreiben erst daneben
+            // Recreate the FIFO at the target with the same permissions (like "cp -a"); when overwriting, next to it first
             const QString writePath = replaceExisting ? uniqueSiblingPath(dst, QStringLiteral(".mkpart")) : dst;
             ok = (::mkfifo(QFile::encodeName(writePath).constData(), static_cast<mode_t>(specialPermissions)) == 0);
             if (!ok) {
@@ -503,17 +503,17 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
             failReason = tr("Special file (device or socket) cannot be copied, skipped");
         }
     } else if (isMove && !isCrossDevice) {
-        // Verschieben auf demselben Laufwerk durch einfaches Umbenennen
-        // (bei Überschreiben: altes Ziel wird erst nach erfolgreichem Umbenennen entfernt)
+        // Move on the same drive by simply renaming
+        // (when overwriting: the old target is only removed after the rename succeeded)
         ok = replaceExisting ? swapIntoPlace(src, dst) : QFile::rename(src, dst);
         if (ok) {
             movedViaRename = true;
         }
     }
 
-    if (!ok && !isSpecialSource) { // OperationType::Copy ODER Cross-Device Move ODER forceCopyOnly ODER Fallback, falls Umbenennen fehlschlug
-        // Beim Überschreiben zuerst in eine temporäre Datei neben dem Ziel schreiben.
-        // Schlägt das Kopieren fehl (Platte voll, Lesefehler, Abbruch), bleibt das alte Ziel unangetastet.
+    if (!ok && !isSpecialSource) { // OperationType::Copy OR cross-device move OR forceCopyOnly OR fallback if renaming failed
+        // When overwriting, write to a temporary file next to the target first.
+        // If copying fails (disk full, read error, abort), the old target stays untouched.
         const QString writePath = replaceExisting ? uniqueSiblingPath(dst, QStringLiteral(".mkpart")) : dst;
 
         if (isSymlinkSource) {
@@ -525,7 +525,7 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
         if (ok && replaceExisting && !swapIntoPlace(writePath, dst)) {
             QFile::remove(writePath);
             if (!isSymlinkSource) {
-                // copyFileInChunks hat die Datei bereits als geschrieben gezählt -> zurücknehmen
+                // copyFileInChunks already counted the file as written -> revert
                 m_stats.filesWritten--;
                 m_stats.bytesWritten -= fileSizeSource;
             }
@@ -536,16 +536,16 @@ FileOpResult FileOperation::copyOrMoveFile(const QString &src, const QString &ds
     bool sourceDeleteFailed = false;
 
     if (ok && isMove && !movedViaRename) {
-        if (!QFile::remove(src)) { // Löschen der Quelle NUR bei Move und wenn es nicht schon durch rename() verschoben wurde
-            // Wenn das Löschen der Quelle fehlschlägt, war die Move-Operation fehlerhaft
+        if (!QFile::remove(src)) { // Delete the source ONLY for a move and if it has not already been moved by rename()
+            // If deleting the source fails, the move operation failed
             qDebug() << "Verschieben unvollständig: Quelldatei konnte nicht gelöscht werden:" << src;
             sourceDeleteFailed = true;
         }
     }
 
     if (ok && !sourceDeleteFailed) {
-        // Hinweis: copyFileInChunks erhöht filesWritten/bytesWritten bereits intern!
-        // Wir erhöhen hier nur, wenn es via rename() oder link() ging.
+        // Note: copyFileInChunks already increases filesWritten/bytesWritten internally!
+        // We only increase them here if it was done via rename() or link().
         if (movedViaRename || isSymlinkSource || isSpecialSource) {
             m_stats.bytesWritten += fileSizeSource;
             m_stats.filesWritten++;
@@ -578,9 +578,9 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
     m_stats.currentName = calculateRelativeDisplayPath(srcInfo);
     updateProgress();
 
-    // SCHUTZ: Ziel ist der Quellordner selbst oder liegt darin (z.B. /A nach /A/B kopieren,
-    // per Einfügen, Drop auf den Hintergrund oder über Symlink-Pfade).
-    // Ohne diesen Schutz: endlose Rekursion (Platte läuft voll) bzw. bei Merge-Move Datenverlust.
+    // PROTECTION: Target is the source folder itself or lies inside it (e.g. copying /A to /A/B,
+    // via paste, drop onto the background or via symlink paths).
+    // Without this protection: endless recursion (disk fills up) or data loss for a merge move.
     if (isSameOrInsideDir(src, dst)) {
         m_stats.filesError++;
         updateProgress();
@@ -588,10 +588,10 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
         return FileOpResult::Error;
     }
 
-    // SCHUTZ: Symlink-Schleife bei Deep Copy (Ziel ohne Symlink-Support).
-    // Liegt z.B. in /A ein Symlink, der auf /A (oder einen Vorfahren) zurückzeigt, würde die Rekursion
-    // denselben Ordner endlos erneut betreten. Wir merken uns daher alle Ordner auf dem AKTUELLEN
-    // Rekursionspfad. Derselbe Ordner in getrennten Zweigen (zwei Links auf ein Ziel) bleibt erlaubt.
+    // PROTECTION: Symlink loop during a deep copy (target without symlink support).
+    // If e.g. /A contains a symlink pointing back to /A (or an ancestor), the recursion would
+    // enter the same folder again endlessly. We therefore remember all folders on the CURRENT
+    // recursion path. The same folder in separate branches (two links to one target) is still allowed.
     const QString srcDirId = Helpers::fileIdentity(src);
     if (!srcDirId.isEmpty() && m_activeDirIds.contains(srcDirId)) {
         m_stats.filesError++;
@@ -603,17 +603,17 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
     if (!srcDirId.isEmpty()) {
         m_activeDirIds.insert(srcDirId);
     }
-    // Beim Verlassen der Funktion (egal über welches return) wieder vom Rekursionspfad entfernen
+    // Remove it from the recursion path again when leaving the function (no matter via which return)
     struct ActiveDirGuard {
         QSet<QString> &set;
         QString id;
         ~ActiveDirGuard() { if (!id.isEmpty()) set.remove(id); }
     } activeDirGuard{m_activeDirIds, srcDirId};
 
-    // Wenn wir einen Ordner auf demselben Laufwerk verschieben, können wir uns die komplette Rekursion sparen!
-    // Aber NUR, wenn das Ziel noch nicht existiert und wir NICHT im forceCopyOnly-Modus sind!
+    // When moving a folder on the same drive, we can skip the whole recursion!
+    // But ONLY if the target does not exist yet and we are NOT in forceCopyOnly mode!
     if (m_operationType == OperationType::Move && !forceCopyOnly && !isCrossDevice && !dstInfo.exists()) {
-        // Wir müssen die Stats VOR dem Rename holen, weil danach der Quellpfad weg ist.
+        // We have to get the stats BEFORE the rename, since the source path is gone afterwards.
         auto dirStats = calculateStats({src});
 
         if (QFile::rename(src, dst)) {
@@ -628,7 +628,7 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
         ConflictResolution resolution = m_applyToAll ? m_applyToAllResolution : ConflictResolution::Skip;
 
         // Note: src can at this point only be a directory - anything else is already handled by copyOrMoveFile()
-        // If target is file OR ein Symlink/Junction: delete and replace with actual directory
+        // If target is file OR a symlink/junction: delete and replace with actual directory
         if (!dstInfo.isDir() || dstInfo.isSymbolicLink() || dstInfo.isJunction()) {
             if (!m_applyToAll) {
                 resolution = askUserForResolution({ src, dst });
@@ -646,8 +646,8 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
             case ConflictResolution::Cancel:
                 return FileOpResult::Cancelled;
             case ConflictResolution::Overwrite:
-                // Lösche die blockierende Datei, damit danach der Ordner erstellt werden kann
-                // (QFile::remove löscht bei einem Symlink NUR die Verknüpfung, nicht den Inhalt des Ordners, auf den sie zeigt.)
+                // Delete the blocking file so that the folder can be created afterwards
+                // (For a symlink, QFile::remove deletes ONLY the link, not the content of the folder it points to.)
                 if (!QFile::remove(dst)) {
                     if (!checkInterruption()) return FileOpResult::Cancelled;
                     m_stats.filesError++;
@@ -664,12 +664,12 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
                     return FileOpResult::Error;
                 }
 
-                m_stats.filesWritten++; // Ordner erfolgreich erstellt
+                m_stats.filesWritten++; // Folder created successfully
                 updateProgress();
                 break;
             }
         } else {
-            // Konflikt: Zielordner existiert bereits → nachfragen
+            // Conflict: target folder already exists → ask
             if (!m_applyToAll) {
                 resolution = askUserForResolution({ src, dst });
             }
@@ -686,9 +686,9 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
             case ConflictResolution::Cancel:
                 return FileOpResult::Cancelled;
             case ConflictResolution::Overwrite:
-                m_stats.filesWritten++; // Ordner erfolgreich zusammengeführt (Merge)
+                m_stats.filesWritten++; // Folder merged successfully
                 updateProgress();
-                break; // Zusammenführen, weiter in die Rekursion
+                break; // Merge, continue with the recursion
             }
         }
     } else { // Destination does not exist as file or directory -> create directory
@@ -699,7 +699,7 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
             m_failedItems.append({src, dst, forceCopyOnly ? OperationType::Copy : m_operationType, tr("Failed to create target directory")});
             return FileOpResult::Error;
         }
-        m_stats.filesWritten++; // Ordner erfolgreich erstellt
+        m_stats.filesWritten++; // Folder created successfully
         updateProgress();
     }
 
@@ -718,7 +718,7 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
 
         bool isSymlink = entry.isSymbolicLink() || entry.isJunction();
 
-        // --- NEU: SYMLINK AUF ZIEL OHNE SYMLINK-SUPPORT (DEEP COPY FALLBACK) ---
+        // --- NEW: SYMLINK ON A TARGET WITHOUT SYMLINK SUPPORT (DEEP COPY FALLBACK) ---
         if (isSymlink && !targetSupportsSymlinks()) {
             QString targetResolved = entry.isJunction() ? entry.junctionTarget() : entry.symLinkTarget();
             QFileInfo resolvedInfo(targetResolved);
@@ -736,7 +736,7 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
                     r = copyOrMoveFile(targetResolved, childDst, isCrossDevice, childForceCopy);
                 }
 
-                // Bei Move: Wenn der Inhalt kopiert wurde, löschen wir NUR den Symlink selbst
+                // For a move: if the content was copied, we delete ONLY the symlink itself
                 if (r == FileOpResult::Success && m_operationType == OperationType::Move && !forceCopyOnly) {
                     removeReadOnlyAttribute(entry.filePath());
                     if (!QFile::remove(entry.filePath())) {
@@ -747,7 +747,7 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
                 }
             }
         }
-        // --- DEINE ORIGINALE UNTERSCHEIDUNG (mit weitergegebenem forceCopyOnly) ---
+        // --- YOUR ORIGINAL DISTINCTION (with forceCopyOnly passed on) ---
         else if (entry.isDir() && !isSymlink) {
             r = copyOrMoveDir(entry.filePath(), childDst, isCrossDevice, forceCopyOnly);
         } else {
@@ -759,7 +759,7 @@ FileOpResult FileOperation::copyOrMoveDir(const QString &src, const QString &dst
         if (r == FileOpResult::Skipped)   anySkipped = true;
     }
 
-    // Bei Move: Quellordner am Ende nur löschen, wenn kein Fehler/Skip auftrat UND nicht forceCopyOnly aktiv ist
+    // For a move: only delete the source folder at the end if no error/skip occurred AND forceCopyOnly is not active
     if (!anyErrors && !anySkipped && m_operationType == OperationType::Move && !forceCopyOnly) {
         if (!srcDir.removeRecursively()) {
             anyErrors = true;
@@ -786,13 +786,13 @@ FileOpResult FileOperation::deleteDirRecursively(const QString &dirPath) {
 
         const bool isSymLink = entry.isSymbolicLink() || entry.isJunction();
 
-        // Rekursion NUR wenn es ein echtes Verzeichnis ist, KEIN Symlink!
+        // Recurse ONLY if it is a real directory, NOT a symlink!
         if (entry.isDir() && !isSymLink) {
             FileOpResult r = deleteDirRecursively(entry.filePath());
             if (r == FileOpResult::Cancelled) return FileOpResult::Cancelled;
             if (r == FileOpResult::Error)     anyErrors = true;
         } else {
-            // Symlinks (egal ob Datei oder Ordner) und normale Dateien hier löschen
+            // Delete symlinks (no matter if file or folder) and normal files here
             m_stats.currentName = calculateRelativeDisplayPath(entry);
 
             if (!isSymLink) {
@@ -813,13 +813,13 @@ FileOpResult FileOperation::deleteDirRecursively(const QString &dirPath) {
         }
     }
 
-    // Wenn der Inhalt des Ordners erfolgreich geleert wurde,
-    // löschen wir jetzt den (nun leeren) Ordner selbst
+    // If the content of the folder was emptied successfully,
+    // we now delete the (now empty) folder itself
     if (!anyErrors) {
         removeReadOnlyAttribute(dirPath);
 
         if (QDir().rmdir(dirPath)) {
-            m_stats.filesWritten++; // Auch der Ordner zählt als verarbeitetes Element
+            m_stats.filesWritten++; // The folder also counts as a processed item
             updateProgress();
             return FileOpResult::Success;
         } else {
@@ -838,8 +838,8 @@ void FileOperation::resolveConflict(ConflictResolution resolution, bool applyToA
 
     ConflictState expected = ConflictState::WaitingForUser;
 
-    // CAS-Operation: Nur wenn der Status ECHT WaitingForUser war,
-    // wird er zu SignalSent und wir betreten das if.
+    // CAS operation: only if the status REALLY was WaitingForUser
+    // does it become SignalSent and we enter the if.
     if (m_conflictState.compare_exchange_strong(expected, ConflictState::SignalSent)) {
         m_pendingResolution = resolution;
         m_applyToAll = applyToAll;
@@ -862,7 +862,7 @@ bool FileOperation::isOnSameDevice(const QString &src, const QString &dst) const
            (storageSrc == storageDst);
 }
 
-// Liefert einen noch nicht existierenden Pfad neben 'path', z.B. "datei.txt.mkpart-1a2b3c4d".
+// Returns a not yet existing path next to 'path', e.g. "file.txt.mkpart-1a2b3c4d".
 QString FileOperation::uniqueSiblingPath(const QString &path, const QString &tag) const {
     while (true) {
         const QString candidate = QStringLiteral("%1%2-%3").arg(path, tag).arg(QRandomGenerator::global()->generate(), 8, 16, QChar('0'));
@@ -873,10 +873,10 @@ QString FileOperation::uniqueSiblingPath(const QString &path, const QString &tag
     }
 }
 
-// Ersetzt 'target' durch 'replacement' (beide im selben Ordner bzw. auf demselben Laufwerk).
-// Das alte Ziel wird zuerst beiseite umbenannt und erst NACH dem erfolgreichen Austausch gelöscht.
-// Scheitert der Austausch, wird das alte Ziel wiederhergestellt. 'target' darf eine Datei,
-// ein Symlink oder ein Ordner sein.
+// Replaces 'target' with 'replacement' (both in the same folder or on the same drive).
+// The old target is first renamed aside and only deleted AFTER the swap succeeded.
+// If the swap fails, the old target is restored. 'target' may be a file,
+// a symlink or a folder.
 bool FileOperation::swapIntoPlace(const QString &replacement, const QString &target) {
     const QFileInfo targetInfo(target);
     if (!targetInfo.exists() && !targetInfo.isSymbolicLink()) {
@@ -898,7 +898,7 @@ bool FileOperation::swapIntoPlace(const QString &replacement, const QString &tar
         return false;
     }
 
-    // Austausch erfolgreich -> altes Ziel endgültig entfernen
+    // Swap successful -> remove the old target for good
     const QFileInfo backupInfo(backupPath);
     bool removed = false;
     if (backupInfo.isDir() && !backupInfo.isSymbolicLink() && !backupInfo.isJunction()) {
@@ -943,61 +943,61 @@ std::pair<qint64, int> FileOperation::calculateStats(const QStringList &filePath
     QSet<QString> visitedDirs;
     QStack<QString> dirStack;
 
-    // Hilfs-Lambda zur einheitlichen Bewertung jedes FileInfo-Objekts
+    // Helper lambda to evaluate every FileInfo object in the same way
     auto processInfo = [&](const QFileInfo &info) {
         // --- SYMLINKS & JUNCTIONS ---
         if (info.isSymbolicLink() || info.isJunction()) {
-            // Case 1: Löschen, Papierkorb oder Link erstellen -> Immer nur das Link-Objekt selbst zählen
+            // Case 1: Delete, trash or create link -> always count only the link object itself
             if (m_operationType == OperationType::Delete ||
                 m_operationType == OperationType::Recycle ||
                 m_operationType == OperationType::Link)
             {
                 totalFiles++;
             }
-            // Case 2: Copy oder Move UND Ziel unterstützt Symlinks -> schlank als Link zählen
+            // Case 2: Copy or move AND target supports symlinks -> count lean as a link
             else if (targetSupportsSymlinks()) {
                 totalFiles++;
             }
-            // Case 3: Copy oder Move UND Ziel unterstützt KEINE Symlinks -> Deep Copy (Ziel auflösen)
+            // Case 3: Copy or move AND target does NOT support symlinks -> deep copy (resolve the target)
             else {
                 QString targetPath = info.isJunction() ? info.junctionTarget() : info.symLinkTarget();
                 QFileInfo targetInfo(targetPath);
 
                 if (targetInfo.exists()) {
                     if (targetInfo.isDir()) {
-                        // Verzeichnis-Symlink: Einfach auf den Stack legen.
-                        // Phase 2 kümmert sich um Zyklenschutz und Entfaltung!
+                        // Directory symlink: just push it onto the stack.
+                        // Phase 2 takes care of cycle protection and unfolding!
                         dirStack.push(targetPath);
                     } else {
-                        // Datei-Symlink: Echtes Ziel muss kopiert werden -> Größe & Datei mitzählen
+                        // File symlink: the real target has to be copied -> count size & file
                         totalFiles++;
                         totalBytes += targetInfo.size();
                     }
                 }
             }
         }
-        // --- NORMALE ORDNER ---
+        // --- NORMAL FOLDERS ---
         else if (info.isDir()) {
             totalFiles++;
             if (m_operationType != OperationType::Link) {
-                // Einfach auf den Stack legen. Phase 2 übernimmt Dedupe/Verarbeitung.
+                // Just push it onto the stack. Phase 2 takes care of dedupe/processing.
                 dirStack.push(info.absoluteFilePath());
             }
         }
-        // --- NORMALE DATEIEN ---
+        // --- NORMAL FILES ---
         else {
             totalBytes += info.size();
             totalFiles++;
         }
     };
 
-    // PHASE 1: Top-Level-Items verarbeiten (Einstiegspunkt aus 'items')
+    // PHASE 1: Process the top-level items (entry point from 'items')
     for (const QString &path : filePaths) {
         if (!checkInterruption()) return {totalBytes, totalFiles};
         processInfo(QFileInfo(path));
     }
 
-    // PHASE 2: Unterordner speicherschonend abarbeiten
+    // PHASE 2: Process subfolders in a memory-saving way
     while (!dirStack.isEmpty()) {
         if (!checkInterruption()) return {totalBytes, totalFiles};
 
@@ -1005,9 +1005,9 @@ std::pair<qint64, int> FileOperation::calculateStats(const QStringList &filePath
         QFileInfo dirInfo(currentDir);
         QString canonical = dirInfo.canonicalFilePath();
 
-        // ZYKLENSCHUTZ & DEDUPLIZIERUNG (EINZIGE ZENTRALE PRÜFUNG)
-        // Wenn der Pfad ungültig ist oder wir den kanonischen Zielordner
-        // schon einmal betreten haben (z. B. durch rekursive Symlinks), überspringen.
+        // CYCLE PROTECTION & DEDUPLICATION (THE ONLY CENTRAL CHECK)
+        // If the path is invalid or we have already entered the canonical target folder
+        // before (e.g. through recursive symlinks), skip it.
         if (canonical.isEmpty() || visitedDirs.contains(canonical)) {
             continue;
         }
@@ -1040,7 +1040,7 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
     bool success = true;
 
     while (!srcFile.atEnd()) {
-        // 1. Abbruchprüfung VOR dem nächsten Lese/Schreibzyklus
+        // 1. Abort check BEFORE the next read/write cycle
         if (!checkInterruption()) {
             success = false;
             break;
@@ -1049,43 +1049,43 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
         qint64 bytesRead = srcFile.read(buffer.data(), bufferSize);
         if (bytesRead <= 0) {
             if (bytesRead < 0) {
-                // ECHTER LESEFEHLER! (z.B. Lesefehler auf Datenträger)
+                // REAL READ ERROR! (e.g. read error on the storage device)
                 qWarning() << "Lesefehler beim Kopieren von" << src << ":" << srcFile.errorString();
                 success = false;
             }
-            break; // Sauberes EOF (0) oder Lesefehler (-1) -> Schleife beenden
+            break; // Clean EOF (0) or read error (-1) -> end the loop
         }
 
         qint64 bytesWritten = dstFile.write(buffer.data(), bytesRead);
 
-        // 2. Fehlerprüfung beim Schreiben (z.B. Festplatte voll)
+        // 2. Error check while writing (e.g. disk full)
         if (bytesWritten != bytesRead) {
             qWarning() << "Schreibfehler bei" << dst << ":" << dstFile.errorString();
             success = false;
             break;
         }
 
-        // Qt-Puffer an Kernel übergeben
+        // Hand the Qt buffer over to the kernel
         dstFile.flush();
 
-        // Kernel zwingen, den Chunk SOFORT physisch auf das Medium zu schreiben
-        // fdatasync ist unter Linux einen Tick schneller als fsync, da es nur Daten
-        // und keine irrelevanten Metadaten/Timestamps pro Chunk synchronisiert!
-        // Schreibfehler (EIO, ENOSPC, EDQUOT, Stick abgezogen, Netzwerkfehler) melden sich oft
-        // ERST hier -> dann ist die Kopie fehlgeschlagen und die Quelle darf nicht gelöscht werden.
+        // Force the kernel to write the chunk to the medium physically RIGHT NOW
+        // On Linux, fdatasync is a tad faster than fsync, since it only synchronizes data
+        // and no irrelevant metadata/timestamps per chunk!
+        // Write errors (EIO, ENOSPC, EDQUOT, USB stick unplugged, network error) often only show up
+        // HERE -> then the copy has failed and the source must not be deleted.
         int syncResult;
         do {
             syncResult = ::fdatasync(dstFile.handle());
         } while (syncResult == -1 && errno == EINTR);
 
-        // EINVAL/EROFS: Ziel unterstützt keine Synchronisation -> wie bisher ohne Sync weiterkopieren
+        // EINVAL/EROFS: target does not support synchronization -> keep copying without sync as before
         if (syncResult == -1 && errno != EINVAL && errno != EROFS) {
             qWarning() << "Synchronisationsfehler (fdatasync) bei" << dst << ":" << qt_error_string(errno);
             success = false;
             break;
         }
 
-        // Erst JETZT ist der Chunk physikalisch geschrieben -> Statistik & UI aktualisieren
+        // Only NOW is the chunk physically written -> update statistics & UI
         m_stats.bytesWritten += bytesWritten;
         updateProgress();
     }
@@ -1101,20 +1101,20 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
         dstFile.setFileTime(srcInfo.fileTime(QFileDevice::FileAccessTime), QFileDevice::FileAccessTime);
     }
 
-    // 3. WICHTIG: Erst explizit schließen, damit das OS die Sperre aufhebt!
+    // 3. IMPORTANT: Close explicitly first, so that the OS releases the lock!
     srcFile.close();
     dstFile.close();
 
-    // close() kann (v.a. auf NFS/CIFS) noch einen Schreibfehler melden. Nach QFileDevice::close()
-    // ist error() genau dann NoError, wenn Flush und Schließen erfolgreich waren.
+    // close() can still report a write error (especially on NFS/CIFS). After QFileDevice::close(),
+    // error() is NoError exactly when flushing and closing succeeded.
     if (success && dstFile.error() != QFileDevice::NoError) {
         qWarning() << "Fehler beim Schließen von" << dst << ":" << dstFile.errorString();
         success = false;
     }
 
-    // 4. MÜLLBESEITIGUNG: Wenn abgebrochen wurde oder ein Fehler auftrat, Fragment löschen
+    // 4. CLEANUP: If aborted or an error occurred, delete the fragment
     if (!success || !checkInterruption()) {
-        QFile::remove(dst); // Löscht die unvollständige Datei im Zielverzeichnis
+        QFile::remove(dst); // Deletes the incomplete file in the target directory
         return false;
     }
 
@@ -1125,7 +1125,7 @@ bool FileOperation::copyFileInChunks(const QString &src, const QString &dst) {
 void FileOperation::updateProgress(bool force) {
     m_stats.elapsedMs = m_timer.elapsed();
 
-    // Sende das Signal NUR, wenn 40ms vergangen sind ODER wir ein finales Update erzwingen
+    // Send the signal ONLY if 40ms have passed OR we force a final update
     if (force || !m_progressEmitTimer.isValid() || m_progressEmitTimer.elapsed() >= 40) {
         emit progress(m_stats);
         m_progressEmitTimer.restart();
@@ -1149,8 +1149,8 @@ QString FileOperation::calculateRelativeDisplayPath(const QFileInfo &info) {
     return info.fileName();
 }
 
-// Vergleicht zwei Dateien Byte für Byte.
-// Rückgabe: true = identisch, false = unterschiedlich, std::nullopt = Lesefehler oder Abbruch.
+// Compares two files byte by byte.
+// Returns: true = identical, false = different, std::nullopt = read error or abort.
 std::optional<bool> FileOperation::filesAreIdentical_interruptable(const QString &fileA, const QString &fileB) {
     QFile a(fileA);
     QFile b(fileB);
@@ -1181,13 +1181,13 @@ std::optional<bool> FileOperation::filesAreIdentical_interruptable(const QString
         const qint64 readB = b.read(bufB.data(), bufferSize);
 
         if (readA < 0 || readB < 0) {
-            return std::nullopt; // Echter Lesefehler
+            return std::nullopt; // Real read error
         }
         if (readA != readB) {
-            return false; // Datei hat sich während des Lesens verändert o.ä.
+            return false; // File changed while reading or similar
         }
         if (readA == 0) {
-            return true; // Beide gleichzeitig am Ende -> identisch
+            return true; // Both at the end at the same time -> identical
         }
         if (memcmp(bufA.constData(), bufB.constData(), static_cast<size_t>(readA)) != 0) {
             return false;
@@ -1202,9 +1202,9 @@ ConflictResolution FileOperation::askUserForResolution(const Conflict &conflict)
         return ConflictResolution::Cancel;
     }
 
-    // SCHUTZ: Diese Funktion blockiert, bis der GUI-Thread den Konfliktdialog beantwortet.
-    // Läuft sie selbst im GUI-Thread, kann der Dialog nie erscheinen -> Deadlock (eingefrorenes Fenster).
-    // Statt einzufrieren: laut melden und sicher überspringen (Skip verändert nichts am Ziel).
+    // PROTECTION: This function blocks until the GUI thread answers the conflict dialog.
+    // If it runs in the GUI thread itself, the dialog can never appear -> deadlock (frozen window).
+    // Instead of freezing: report loudly and skip safely (skip changes nothing at the target).
     if (QThread::currentThread() == QCoreApplication::instance()->thread()) {
         qCritical() << "askUserForResolution() im GUI-Thread aufgerufen - Konflikt wird übersprungen:" << conflict.sourcePath << "->" << conflict.targetPath;
         Q_ASSERT_X(false, "FileOperation::askUserForResolution", "must not be called from the GUI thread");
@@ -1214,8 +1214,8 @@ ConflictResolution FileOperation::askUserForResolution(const Conflict &conflict)
     {
         QMutexLocker locker(&m_mutex);
 
-        // Schnelle, nicht-blockierender re-check falls doCancel() zwischen
-        // obigem checkInterruption() und hier durchgelaufen ist.
+        // Fast, non-blocking re-check in case doCancel() ran between
+        // the checkInterruption() above and here.
         if (m_isCancelled.load()) {
             return ConflictResolution::Cancel;
         }
@@ -1224,18 +1224,18 @@ ConflictResolution FileOperation::askUserForResolution(const Conflict &conflict)
         m_conflictState.store(ConflictState::WaitingForUser);
     }
 
-    emit conflictDetected(conflict);    // GUI-Thread verarbeitet das via QueuedConnection
-    m_semaphore.acquire();              // wartet auf GUI
+    emit conflictDetected(conflict);    // The GUI thread handles this via QueuedConnection
+    m_semaphore.acquire();              // waits for the GUI
 
     {
         QMutexLocker locker(&m_mutex);
         m_conflictState.store(ConflictState::Idle);
     }
 
-    // GUI-Thread schreibt m_pendingResolution via resolveConflict()
-    // Kein Mutex nötig: m_semaphore.acquire() fungiert als Memory-Barrier,
-    // die garantiert, dass resolveConflict() vollständig abgeschlossen ist
-    // bevor wir m_pendingResolution lesen.
+    // The GUI thread writes m_pendingResolution via resolveConflict()
+    // No mutex needed: m_semaphore.acquire() acts as a memory barrier
+    // that guarantees that resolveConflict() has completed
+    // before we read m_pendingResolution.
 
     return m_pendingResolution;
 }
@@ -1246,7 +1246,7 @@ bool FileOperation::removeReadOnlyAttribute(const QString &path) {
     QFileInfo info(path);
     if (!info.exists()) return true;
 
-    // Permissions auslesen, Schreibrechte für den Besitzer hinzufügen und neu setzen
+    // Read the permissions, add write permission for the owner and set them again
     QFile::Permissions permissions = info.permissions();
     if (!(permissions & QFileDevice::WriteUser)) {
         permissions |= QFileDevice::WriteUser;
@@ -1259,29 +1259,29 @@ void FileOperation::doPause() {
     m_isPaused.store(true);
 
     if (m_currentKioJob) {
-        // Pausiert den asynchronen KIO-Job direkt
+        // Pauses the asynchronous KIO job directly
         if (m_currentKioJob->doSuspend()) {
             emit wasPaused();
         }
         return;
     }
 
-    // Bei non-KIO (Worker-Thread) sendet checkInterruption()
-    // das wasPaused()-Signal, sobald der Thread schlafen geht.
+    // For non-KIO (worker thread), checkInterruption() sends
+    // the wasPaused() signal as soon as the thread goes to sleep.
 }
 
 void FileOperation::doContinue() {
     m_isPaused.store(false);
 
     if (m_currentKioJob) {
-        // Setzt den KIO-Job fort
+        // Resumes the KIO job
         if (m_currentKioJob->doResume()) {
             emit wasContinued();
         }
         return;
     }
 
-    // Bei non-KIO: Worker-Thread aus dem m_pauseCond.wait() aufwecken
+    // For non-KIO: wake the worker thread from m_pauseCond.wait()
     m_pauseCond.wakeAll();
 }
 
@@ -1290,18 +1290,18 @@ void FileOperation::doRetry() {
         return;
     }
 
-    // 1. Die alte Fehlerliste für den neuen Versuch umkopieren
+    // 1. Copy the old error list over for the new attempt
     QList<FailedItem> itemsToRetry = std::move(m_failedItems);
-    m_failedItems.clear(); // Für den neuen Versuch frisch leeren
+    m_failedItems.clear(); // Clear it for the new attempt
 
-    // 2. Status/Flags zurücksetzen
+    // 2. Reset status/flags
     m_isCancelled.store(false);
     m_isPaused.store(false);
     m_applyToAll = false;
 
-    // KIO-Operationen (nicht-lokale URLs) NICHT über den lokalen Retry-Code wiederholen: Dort würden
-    // URL-Strings wie lokale Pfade behandelt. Stattdessen den KIO-Job mit der ursprünglichen Liste neu starten;
-    // bereits übertragene Dateien behandelt KIO selbst über seinen Konfliktdialog (z.B. "Alle überspringen").
+    // Do NOT repeat KIO operations (non-local URLs) via the local retry code: there, URL strings
+    // would be treated like local paths. Instead, restart the KIO job with the original list;
+    // KIO handles files that were already transferred itself via its conflict dialog (e.g. "Skip all").
     if (m_isKioMode) {
         QMetaObject::invokeMethod(this, [this]() {
             startKioAsync();
@@ -1309,9 +1309,9 @@ void FileOperation::doRetry() {
         return;
     }
 
-    // 3. Einen gezielten Retry-Durchlauf anfordern
-    // FALSCH: run(); -> Würde den GUI-Thread blockieren
-    // RICHTIG: Signalisiert dem Worker-Thread, run() in SEINEM Thread auszuführen
+    // 3. Request a targeted retry pass
+    // WRONG: run(); -> would block the GUI thread
+    // RIGHT: signals the worker thread to execute run() in ITS thread
     QMetaObject::invokeMethod(this, [this, itemsToRetry = std::move(itemsToRetry)]() {
         runRetryList(itemsToRetry);
     }, Qt::QueuedConnection);
@@ -1321,7 +1321,7 @@ void FileOperation::doRetry() {
 void FileOperation::runRetryList(const QList<FailedItem> &itemsToRetry) {
     LinuxBackgroundPriorityGuard priorityGuard;
 
-    // 1. STATISTIKEN ZURÜCKSETZEN & NEU BERECHNEN
+    // 1. RESET & RECALCULATE STATISTICS
     m_stats = CopyStats();
     m_stats.currentName = tr("Scanning files for retry...");
     m_timer.start();
@@ -1336,7 +1336,7 @@ void FileOperation::runRetryList(const QList<FailedItem> &itemsToRetry) {
     m_stats.totalBytes = totalBytes;
     m_stats.totalFiles = totalFiles;
 
-    // isSameDevice aus dem ersten Pfad ableiten (falls relevant)
+    // Derive isSameDevice from the first path (if relevant)
     if (!itemsToRetry.isEmpty()) {
         m_stats.isSameDevice = isOnSameDevice(itemsToRetry.first().sourcePath, m_targetDir);
     }
@@ -1363,7 +1363,7 @@ void FileOperation::runRetryList(const QList<FailedItem> &itemsToRetry) {
             bool isCrossDevice = !isOnSameDevice(item.sourcePath, item.targetPath);
             bool isSymlink = srcInfo.isSymbolicLink() || srcInfo.isJunction();
 
-            // Ziel unterstützt KEINE Symlinks -> Deep Copy Fallback beim Retry
+            // Target does NOT support symlinks -> deep copy fallback on retry
             if (isSymlink && !targetSupportsSymlinks()) {
                 QString targetResolved = srcInfo.isJunction() ? srcInfo.junctionTarget() : srcInfo.symLinkTarget();
                 QFileInfo resolvedInfo(targetResolved);
@@ -1466,7 +1466,7 @@ bool FileOperation::checkInterruption() {
         emit wasPaused();
 
         QMutexLocker locker(&m_pauseMutex);
-        // Schlafen legen, solange Pause aktiv ist und kein Abbruch kommt
+        // Go to sleep while pause is active and no abort comes in
         while (m_isPaused.load() && !m_isCancelled.load()) {
             m_pauseCond.wait(&m_pauseMutex);
         }
@@ -1475,7 +1475,7 @@ bool FileOperation::checkInterruption() {
             return false;
         }
 
-        emit wasContinued(); // Thread läuft wieder weiter
+        emit wasContinued(); // Thread continues running
     }
 
     return true;
@@ -1489,7 +1489,7 @@ bool FileOperation::checkTargetSymlinkSupport(const QString &targetDir) const {
         }
     }
 
-    // Eindeutige, temporäre Namen für Test-Ordner und Test-Link generieren
+    // Generate unique, temporary names for the test folder and test link
     quint32 randomId = QRandomGenerator::global()->generate();
     qint64 pid = QCoreApplication::applicationPid();
 
@@ -1499,19 +1499,19 @@ bool FileOperation::checkTargetSymlinkSupport(const QString &targetDir) const {
     QString testTargetAbs = target.filePath(testTargetName);
     QString testLinkAbs   = target.filePath(testLinkName);
 
-    // 1. Temporären Test-Ordner im Zielverzeichnis anlegen
+    // 1. Create a temporary test folder in the target directory
     if (!QDir().mkdir(testTargetAbs)) {
         return false;
     }
 
-    // 2. Versuchen, einen echten Symlink darauf zu erstellen
+    // 2. Try to create a real symlink to it
     bool supportsSymlinks = QFile::link(testTargetAbs, testLinkAbs);
 
-    // 3. Sofortiges Aufräumen der Spuren
+    // 3. Clean up the traces right away
     if (supportsSymlinks) {
-        QFile::remove(testLinkAbs); // Löscht nur das Symlink-Element
+        QFile::remove(testLinkAbs); // Deletes only the symlink item
     }
-    QDir().rmdir(testTargetAbs); // Löscht den Test-Ordner
+    QDir().rmdir(testTargetAbs); // Deletes the test folder
 
     return supportsSymlinks;
 }
@@ -1548,7 +1548,7 @@ void FileOperation::startKioAsync() {
     m_kioCurrentSource.clear();
     m_kioCurrentTarget.clear();
 
-    // Merken, welches Element KIO gerade überträgt - KJob::result() verrät das bei einem Fehler nicht
+    // Remember which item KIO is currently transferring - KJob::result() does not tell in case of an error
     auto trackCurrent = [this](const QUrl &from, const QUrl &to) {
         m_kioCurrentSource = from.toDisplayString(QUrl::PreferLocalFile);
         m_kioCurrentTarget = to.toDisplayString(QUrl::PreferLocalFile);
@@ -1559,8 +1559,8 @@ void FileOperation::startKioAsync() {
         m_kioCurrentSource = target;
         m_kioCurrentTarget = to.toDisplayString(QUrl::PreferLocalFile);
     });
-    // KIO legt zuerst alle Zielordner an und kopiert erst danach die Dateien. Scheitert das Anlegen,
-    // gab es noch kein copying()-Signal -> den betroffenen Zielordner merken (KIO nennt dabei keine Quelle).
+    // KIO first creates all target folders and copies the files only afterwards. If creating fails,
+    // there was no copying() signal yet -> remember the affected target folder (KIO names no source then).
     connect(job, &KIO::CopyJob::creatingDir, this, [this](KIO::Job *, const QUrl &dir) {
         m_kioCurrentSource.clear();
         m_kioCurrentTarget = dir.toDisplayString(QUrl::PreferLocalFile);
@@ -1575,7 +1575,7 @@ void FileOperation::startKioAsync() {
     m_timer.start();
 
     connect(job, &KJob::description, this, [this](KJob *, const QString &, const QPair<QString, QString> &field1, const QPair<QString, QString> &field2) {
-        m_stats.currentName = field1.second;    // field1.second enthält den Pfad der Quelldatei
+        m_stats.currentName = field1.second;    // field1.second contains the path of the source file
         updateProgress();
     });
 
@@ -1589,9 +1589,9 @@ void FileOperation::startKioAsync() {
         updateProgress();
     });
 
-    // Merken, welche Ziele dieser Job nachweislich selbst neu angelegt hat.
-    // Nur diese dürfen bei einem Abbruch wieder entfernt werden - niemals bereits vorher existierende
-    // Dateien gleichen Namens (übersprungene Konflikte) oder fertig verschobene Dateien.
+    // Remember which targets this job has verifiably created itself.
+    // Only these may be removed again on abort - never files with the same name that existed
+    // before (skipped conflicts) or files that were already moved completely.
     m_kioCreatedTargets.clear();
 
     connect(job, &KIO::CopyJob::copyingDone, this, [this](KIO::Job *, const QUrl &, const QUrl &to, const QDateTime &, bool directory, bool) {
@@ -1610,7 +1610,7 @@ void FileOperation::startKioAsync() {
         bool cancelled = m_isCancelled.load() || (kjob && kjob->error() == KJob::KilledJobError);
 
         if (cancelled) {
-            // 1. Unvollständige .part-Fragmente entfernen (werden ausschließlich von KIO selbst erzeugt)
+            // 1. Remove incomplete .part fragments (they are created exclusively by KIO itself)
             for (const QUrl &srcUrl : std::as_const(m_urls)) {
                 const QString partFilePath = QDir(m_targetDir).filePath(srcUrl.fileName()) + ".part";
                 if (QFile::exists(partFilePath)) {
@@ -1618,23 +1618,23 @@ void FileOperation::startKioAsync() {
                 }
             }
 
-            // 2. Bei Copy/Link: nur die von DIESEM Job fertig angelegten Ziele zurückrollen.
-            //    Bei Move NIEMALS: Dort ist die Quelle bereits gelöscht - das Ziel ist die einzige Kopie!
+            // 2. For copy/link: only roll back the targets completed by THIS job.
+            //    NEVER for a move: there the source is already deleted - the target is the only copy!
             if (m_operationType != OperationType::Move) {
                 for (const QString &createdPath : std::as_const(m_kioCreatedTargets)) {
-                    QFile::remove(createdPath); // Bei Symlinks wird nur der Link entfernt
+                    QFile::remove(createdPath); // For symlinks only the link is removed
                 }
             }
             m_kioCreatedTargets.clear();
         } else if (kjob && kjob->error()) {
             m_stats.filesError++;
-            // Fehler dem Element zuordnen, das KIO zuletzt bearbeitet hat. Tritt der Fehler auf, bevor die
-            // erste Übertragung begann (z.B. Verbindung schon beim Start weg), gibt es kein solches Element:
-            // dann eine einzelne Quelle direkt nennen bzw. bei mehreren Quellen den Zielordner.
+            // Assign the error to the item KIO processed last. If the error occurs before the
+            // first transfer started (e.g. connection already gone at the start), there is no such item:
+            // then name a single source directly, or the target folder if there are several sources.
             QString failedSource = m_kioCurrentSource;
             QString failedTarget = m_kioCurrentTarget;
             if (failedSource.isEmpty() && !failedTarget.isEmpty()) {
-                failedSource = failedTarget; // Fehler beim Anlegen eines Zielordners: den Ordner selbst nennen
+                failedSource = failedTarget; // Error while creating a target folder: name the folder itself
             } else if (failedSource.isEmpty()) {
                 failedSource = (m_urls.size() == 1) ? m_urls.first().toDisplayString(QUrl::PreferLocalFile)
                                                     : m_targetDir;

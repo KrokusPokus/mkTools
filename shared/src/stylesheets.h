@@ -4,20 +4,20 @@
 #include <QString>
 #include <QStringBuilder>
 
-// Die StyleSheets sind in kleine, überschneidungsfreie Bausteine zerlegt, die in den
-// MainWindows mit operator% (QStringBuilder) kombiniert werden. Jede Kombination aus
-// Selektor und Eigenschaft kommt in genau einem Baustein vor, daher ist die Reihenfolge
-// der Bausteine beim Kombinieren ohne Bedeutung.
+// The style sheets are split into small, non-overlapping building blocks that are combined in the
+// MainWindows with operator% (QStringBuilder). Every combination of
+// selector and property appears in exactly one building block, so the order
+// of the building blocks does not matter when combining them.
 //
-// Bewusst keine kombinierten Selektoren wie "QTableView, QListView": Ein StyleSheet wirkt
-// auch auf Kind-Widgets (z.B. Editoren), daher bekommt jeder View nur Regeln für seinen Typ.
+// Deliberately no combined selectors like "QTableView, QListView": a style sheet also affects
+// child widgets (e.g. editors), so every view only gets rules for its own type.
 
 namespace Styles {
 
     using namespace Qt::StringLiterals;
 
     // =========================================================================
-    // 1. STRUKTUR (Rahmen, Abstände, Zeilenhöhe)
+    // 1. STRUCTURE (frame, spacing, row height)
     // =========================================================================
 
     inline const auto tableViewBase = uR"(
@@ -34,7 +34,7 @@ namespace Styles {
             }
         )"_s;
 
-    // Feste Zeilenhöhe für die Listenansicht (nicht für Thumbnails!)
+    // Fixed row height for the list view (not for thumbnails!)
     inline const auto listViewItemHeight = uR"(
             QListView::item {
                 padding-top: 0px;
@@ -43,7 +43,7 @@ namespace Styles {
             }
         )"_s;
 
-    // Dunkler Tabellenkopf
+    // Dark table header
     inline const auto headerViewDark = uR"(
             QHeaderView {
                 background-color: #404040;
@@ -61,7 +61,7 @@ namespace Styles {
             }
         )"_s;
 
-    // Ecke unten rechts zwischen den Scrollbars
+    // Bottom right corner between the scrollbars
     inline const auto scrollAreaCornerDark = uR"(
             QAbstractScrollArea::corner {
                 background: #1b1b1b;
@@ -70,7 +70,7 @@ namespace Styles {
         )"_s;
 
     // =========================================================================
-    // 2. FARBEN (Hintergrund, alternierende Zeilen, Text)
+    // 2. COLORS (background, alternating rows, text)
     // =========================================================================
 
     inline const auto tableViewColorsElevated = uR"(
@@ -119,7 +119,7 @@ namespace Styles {
         )"_s;
 
     // =========================================================================
-    // 3. HOVER (Hover-Hervorhebung unterdrücken: Hintergrund bleibt unverändert)
+    // 3. HOVER (suppress hover highlighting: the background stays unchanged)
     // =========================================================================
 
     inline const auto tableViewHoverElevated = uR"(
@@ -168,7 +168,7 @@ namespace Styles {
         )"_s;
 
     // =========================================================================
-    // 4. SELEKTION (Textfarbe und Hintergrund ausgewählter Einträge)
+    // 4. SELECTION (text color and background of selected entries)
     // =========================================================================
 
     inline const auto tableViewSelectionElevated = uR"(

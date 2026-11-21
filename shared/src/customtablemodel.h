@@ -35,7 +35,7 @@ struct CustomFileInfo {
     bool isExecutable;
     bool isHidden;
     bool isNameCollision = false;
-    QString nameCollisionReason; // Grund für isNameCollision (Tooltip in der Vorschau)
+    QString nameCollisionReason; // Reason for isNameCollision (tooltip in the preview)
 };
 
 Q_DECLARE_METATYPE(CustomFileInfo)
@@ -155,7 +155,7 @@ struct FilterRule {
     QString filter;
     bool matchCase = false;
 
-    // Überladung für Vergleiche auf Änderung
+    // Overload for change comparisons
     bool operator==(const FilterRule &other) const = default; // C++20
     bool operator!=(const FilterRule &other) const { return !(*this == other); }
 };
@@ -195,7 +195,7 @@ public:
         eColQuality = 6,
         eColCount = 7,
         eColCRC = 8,
-        ColumnCount // Ein oft genutzter Trick: Steht immer am Ende und gibt automatisch die Gesamtzahl der Spalten an (hier 8)
+        ColumnCount // A commonly used trick: always comes last and automatically gives the total number of columns (8 here)
     };
 
     enum ModelRoles {
@@ -222,13 +222,13 @@ public:
 
     // Drag&Drop related
     Qt::DropActions supportedDragActions() const override;
-    Qt::DropActions supportedDropActions() const override;                  // Gibt an, welche Aktionen (Kopieren/Verschieben) erlaubt sind
-    QStringList mimeTypes() const override;                                 // Sagt dem System, dass wir mit Datei-Pfaden arbeiten
-    QMimeData* mimeData(const QModelIndexList &indexes) const override;     // Packt die ausgewählten Dateien beim Draggen in das Clipboard/Mime-Objekt
-    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) override;           // Verarbeitet das Loslassen (Drop) der Dateien
-    bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const override;  // Verarbeitet das Mauszeiger-Feedback während dem Ziehen
+    Qt::DropActions supportedDropActions() const override;                  // Specifies which actions (copy/move) are allowed
+    QStringList mimeTypes() const override;                                 // Tells the system that we work with file paths
+    QMimeData* mimeData(const QModelIndexList &indexes) const override;     // Packs the selected files into the clipboard/mime object when dragging
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) override;           // Handles the release (drop) of the files
+    bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const override;  // Handles the mouse cursor feedback while dragging
 
-    // Funktion, um später deine eingelesenen Daten zu übergeben
+    // Function to hand over your loaded data later
     void setFiles(const std::vector<CustomFileInfo> &files);
     void clear();
     void abort();
@@ -283,10 +283,10 @@ private:
     std::atomic<bool> m_abortSearch{false};
 
     QFileIconProvider m_iconProvider;
-    mutable QHash<QString, QIcon> m_iconCache;                            // Icon-Cache für Suffixe (z.B. "txt", "pdf")
+    mutable QHash<QString, QIcon> m_iconCache;                            // Icon cache for suffixes (e.g. "txt", "pdf")
     mutable QHash<QString, QIcon> m_thumbnailCache;
 
-    mutable QHash<QString, IconCacheEntry> m_individualIconCache;         // Icon-Cache für individuelle Pfade (z.B. exe-Dateien)
+    mutable QHash<QString, IconCacheEntry> m_individualIconCache;         // Icon cache for individual paths (e.g. executables)
     mutable QHash<QString, ThumbnailCacheEntry> m_individualThumbnailCache;
     mutable QHash<QString, CrcCacheEntry> m_CrcCache;
 

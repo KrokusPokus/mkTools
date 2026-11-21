@@ -28,7 +28,7 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     auto *mainLayout = new QVBoxLayout(this);
     mainLayout->setSpacing(15);
 
-    // Grid für Daten
+    // Grid for data
     auto *gridLayout = new QGridLayout();
     gridLayout->setHorizontalSpacing(16);
     gridLayout->setVerticalSpacing(4);
@@ -80,7 +80,7 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
     QLabel *pathDstLabel = new QLabel(conflict.targetPath, this);
     pathDstLabel->setWordWrap(true);
 
-    // Grid befüllen
+    // Fill the grid
     int iCol = 0;
     gridLayout->addWidget(lblSrcIcon,  0, iCol);
     gridLayout->addWidget(lblSrcTitle, 1, iCol);
@@ -134,23 +134,23 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
         });
     }
 
-    // 1. Pfad-Labels dynamisch über restlichen Spalten spannen
+    // 1. Span the path labels dynamically across the remaining columns
     int totalPathSpan = iCol - pathStartCol + 1;
     gridLayout->addWidget(pathSrcLabel, 0, pathStartCol, 1, totalPathSpan);
     gridLayout->addWidget(pathDstLabel, 3, pathStartCol, 1, totalPathSpan);
 
-    // 0 = Spalte wächst nicht (bleibt so kompakt wie möglich)
-    // 1 = Spalte teilt sich den restlichen Platz des Fensters
-    // Alle vorderen Spalten (0 bis iCol-1) bleiben kompakt (0)
+    // 0 = column does not grow (stays as compact as possible)
+    // 1 = column shares the remaining space of the window
+    // All leading columns (0 to iCol-1) stay compact (0)
     for (int c = 0; c < iCol; ++c) {
         gridLayout->setColumnStretch(c, 0);
     }
-    // Die allerletzte Spalte bekommt Stretch 1
+    // The very last column gets stretch 1
     gridLayout->setColumnStretch(iCol, 1);
 
     mainLayout->addLayout(gridLayout);
 
-    // Trennlinie
+    // Separator line
     auto *line = new QFrame(this);
     line->setFrameShape(QFrame::HLine);
     line->setFrameShadow(QFrame::Sunken);
@@ -213,7 +213,7 @@ QString ConflictDialog::getTypeString(const QFileInfo &fileInfo) {
             return pix;
         }
 
-        // 2. Unterstützte Formate statisch cachen (wird nur einmalig beim allerersten Aufruf erstellt)
+        // 2. Cache the supported formats statically (created only once on the very first call)
         static const QSet<QByteArray> supportedFormats = []() {
             auto formats = QImageReader::supportedImageFormats();
             return QSet<QByteArray>(formats.begin(), formats.end());
@@ -221,17 +221,17 @@ QString ConflictDialog::getTypeString(const QFileInfo &fileInfo) {
 
         if (supportedFormats.contains(fileInfo.suffix().toLower().toUtf8())) {
             QImageReader reader(fileInfo.absoluteFilePath());
-            reader.setAutoTransform(true); // Wichtig für EXIF-Rotationen von Smartphones
+            reader.setAutoTransform(true); // Important for EXIF rotations from smartphones
 
             if (reader.canRead()) {
-                // 1. Die echte Dimension des Bildes auslesen (kostet kaum Performance)
+                // 1. Read the real dimensions of the image (costs hardly any performance)
                 QSize originalSize = reader.size();
 
-                // 2. Proportionale Größe berechnen, die in eine 96x96 Box passt
-                // Aus z.B. 1920x1080 wird hier automatisch 96x54
+                // 2. Compute a proportional size that fits into a 96x96 box
+                // e.g. 1920x1080 automatically becomes 96x54 here
                 QSize scaledSize = originalSize.scaled(QSize(96, 96), Qt::KeepAspectRatio);
 
-                // 3. Dem Reader die proportionale Größe mitteilen
+                // 3. Tell the reader the proportional size
                 reader.setScaledSize(scaledSize);
 
                 QImage img = reader.read();

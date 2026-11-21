@@ -19,7 +19,7 @@ target_link_libraries(mkFileSearch
         ZLIB::ZLIB
 )
 
-# Beschleunigt den Start, indem ungenutzte Shared Libraries ignoriert werden
+# Speeds up startup by ignoring unused shared libraries
 target_link_options(mkFileSearch PRIVATE -Wl,--as-needed)
 
 install(TARGETS mkFileSearch

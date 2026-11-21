@@ -17,16 +17,16 @@
 bool delegateNonLocalToDolphin(const QString &inputArg) {
     if (inputArg.isEmpty()) return false;
 
-    // Pfad/URL parsen
+    // Parse the path/URL
     QUrl url = QUrl::fromUserInput(inputArg);
 
-    // Prüfen, ob es KEIN lokaler Pfad ist (z. B. smb://, nfs://, sftp://, trash://, etc.)
+    // Check whether it is NOT a local path (e.g. smb://, nfs://, sftp://, trash://, etc.)
     bool isRemoteOrVirtual = !url.isLocalFile() && !url.scheme().isEmpty() && url.scheme() != QLatin1String("file");
 
     if (isRemoteOrVirtual) {
         QString dolphin = QStandardPaths::findExecutable(QStringLiteral("dolphin"));
         if (!dolphin.isEmpty()) {
-            // An Dolphin übergeben und mkFolderWidget-Start abbrechen
+            // Hand over to Dolphin and abort the mkFolderWidget start
             QProcess::startDetached(dolphin, { inputArg });
             return true;
         }
@@ -101,15 +101,15 @@ int main(int argc, char *argv[])
 
     //-----------------------------------------------------------------------------------------
 
-    // Holen aller optionslosen Argumente
+    // Get all arguments without an option
     const QStringList positionalArgs = parser.positionalArguments();
 
-    // .value(0) gibt das erste Argument zurück oder einen leeren QString(),
-    // falls kein Argument übergeben wurde (ohne Out-of-bounds Absturz)
+    // .value(0) returns the first argument, or an empty QString()
+    // if no argument was passed (without an out-of-bounds crash)
     QString targetDir = positionalArgs.value(0);
 
     if (delegateNonLocalToDolphin(targetDir)) {
-        return 0; // Sofort beenden, Dolphin übernimmt
+        return 0; // Exit right away, Dolphin takes over
     }
 
     targetDir = QDir::cleanPath(targetDir);
@@ -124,23 +124,23 @@ int main(int argc, char *argv[])
     if (!rawFocus.isEmpty()) {
         QFileInfo focusInfo(rawFocus);
 
-        // focusInfo.absolutePath() gibt den Ordner ZUR Datei zurück
-        // (z. B. aus "/home/user/bla/blub.txt" wird "/home/user/bla")
+        // focusInfo.absolutePath() returns the folder OF the file
+        // (e.g. "/home/user/bla/blub.txt" becomes "/home/user/bla")
         targetDir = focusInfo.absolutePath();
 
-        // focusPath speichert den bereinigten, absoluten Pfad zur Datei für den Fokus
+        // focusPath stores the cleaned, absolute path of the file to focus
         focusPath = focusInfo.absoluteFilePath();
     }
 
     MainWindow w(targetDir, focusPath);
 
     if ((parser.isSet(xOpt) && parser.isSet(yOpt)) || (parser.isSet(wOpt) && parser.isSet(hOpt))) {
-        w.ensurePolished(); // Bereitet das Widget-Styling vor
-        w.winId();          // Erzwingt die Erstellung des nativen OS-Fenster-Handles
+        w.ensurePolished(); // Prepares the widget styling
+        w.winId();          // Forces the creation of the native OS window handle
 
         if (QWindow *window = w.windowHandle()) {
-            window->create(); // Zwingt das OS, die Fensterdekoration (Rahmen) zu berechnen
-            QMargins margins = window->frameMargins(); // Hier bekommen wir die exakten Rahmenbreiten
+            window->create(); // Forces the OS to compute the window decoration (frame)
+            QMargins margins = window->frameMargins(); // This is where we get the exact frame widths
             int left = margins.left();
             int right = margins.right();
             int bottom = margins.bottom();

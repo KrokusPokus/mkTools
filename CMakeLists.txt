@@ -14,10 +14,10 @@ if(result)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-# -O3: Aggressive Optimierung
-# -march=native: Nutzt SSE/AVX der aktuellen CPU
+# -O3: Aggressive optimization
+# -march=native: Uses SSE/AVX of the current CPU
 # -flto: Link Time Optimization (removed here, since enabled by "set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)" above
-# -fomit-frame-pointer: Befreit ein Register für Daten (statt Stack-Tracking)
+# -fomit-frame-pointer: Frees a register for data (instead of stack tracking)
 add_compile_options(-O3 -march=native -fomit-frame-pointer)
 
 # --- 2. QT & STANDARD SETUP ---
@@ -32,10 +32,10 @@ find_package(KF6KIO REQUIRED)
 find_package(ZLIB REQUIRED)
 
 # --- 4. SUBDIRECTORIES ---
-# 1. Zuerst die gemeinsame Bibliothek einbinden
+# 1. Add the shared library first
 add_subdirectory(shared)
 
-# 2. Danach die Apps, die darauf zugreifen
+# 2. Then the apps that use it
 add_subdirectory(mkBatchRename)
 add_subdirectory(mkFileSearch)
 add_subdirectory(mkFolderWidget)
@@ -48,7 +48,7 @@ install(DIRECTORY kwin/mkFolderWidgetTiler/ DESTINATION ${CMAKE_INSTALL_DATADIR}
 install(DIRECTORY kwin/mkNewWindowAutoPos/  DESTINATION ${CMAKE_INSTALL_DATADIR}/kwin/scripts/mknewwindowautopos)
 
 # =====================================================================
-# ZENTRALE ÜBERSETZUNG FÜR DAS GESAMTE PROJEKT
+# CENTRAL TRANSLATION FOR THE WHOLE PROJECT
 # =====================================================================
 if(TARGET shared)
     qt_add_translations(shared

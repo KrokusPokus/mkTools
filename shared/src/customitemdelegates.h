@@ -20,7 +20,7 @@ public:
         bool isCut = index.data(CustomTableModel::IsCutRole).toBool();
         bool isHidden = index.data(CustomTableModel::IsHiddenRole).toBool();
 
-        // Referenz statt Kopie, da opt nicht verändert wird (paint() läuft für jede Zelle).
+        // Reference instead of a copy, since opt is not modified (paint() runs for every cell).
         const QStyleOptionViewItem &opt = option;
 
         if (isCut || isHidden) {
@@ -47,11 +47,11 @@ public:
         return QStyledItemDelegate::sizeHint(option, index); // fallback
     }
 
-    // Wird aufgerufen, sobald die EditBox geöffnet wird (egal ob durch F2 oder Klick)
+    // Called as soon as the edit box is opened (no matter whether by F2 or by a click)
     QWidget* createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override {
         QWidget *editor = QStyledItemDelegate::createEditor(parent, option, index);
         if (editor) {
-            // Da diese Qt-Methode 'const' ist, müssen wir das Signal über const_cast abfeuern
+            // Since this Qt method is 'const', we have to fire the signal via const_cast
             emit const_cast<ListItemDelegate*>(this)->editingStarted();
         }
         return editor;
@@ -64,14 +64,14 @@ public:
             QString text = lineEdit->text();
             QString displayName = index.data(CustomTableModel::DisplayNameRole).toString();
 
-            // Prüfen, ob displayName nicht leer ist UND tatsächlich den Anfang von text bildet
+            // Check whether displayName is not empty AND really is the beginning of text
             if (!displayName.isEmpty() && text.startsWith(displayName)) {
                 int displayNameLength = displayName.length();
                 QTimer::singleShot(0, lineEdit, [lineEdit, displayNameLength]() {
                     lineEdit->setSelection(0, displayNameLength);
                 });
             } else {
-                // Fallback für .desktop-Dateien oder abweichende DisplayNames
+                // Fallback for .desktop files or differing display names
                 lineEdit->selectAll();
             }
         }
@@ -79,7 +79,7 @@ public:
 
 signals:
     void editingStarted();
-    // Hinweis: Das Gegenstück 'closeEditor' erbt diese Klasse bereits automatisch von Qt!
+    // Note: This class already inherits the counterpart 'closeEditor' automatically from Qt!
 
 protected:
     void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override {
@@ -134,19 +134,19 @@ public:
             }
         }
 
-        // 3. WICHTIG: Direkt den Style-Zeichenbefehl aufrufen!
-        // Würden wir QStyledItemDelegate::paint() aufrufen, würde Qt unsere 'opt' wieder überschreiben.
+        // 3. IMPORTANT: Call the style drawing command directly!
+        // If we called QStyledItemDelegate::paint(), Qt would overwrite our 'opt' again.
         QStyle *style = opt.widget ? opt.widget->style() : QApplication::style();
         style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, opt.widget);
 
         painter->restore();
     }
 
-    // Wird aufgerufen, sobald die EditBox geöffnet wird (egal ob durch F2 oder Klick)
+    // Called as soon as the edit box is opened (no matter whether by F2 or by a click)
     QWidget* createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override {
         QWidget *editor = QStyledItemDelegate::createEditor(parent, option, index);
         if (editor) {
-            // Da diese Qt-Methode 'const' ist, müssen wir das Signal über const_cast abfeuern
+            // Since this Qt method is 'const', we have to fire the signal via const_cast
             emit const_cast<TableItemDelegate*>(this)->editingStarted();
         }
         return editor;
@@ -159,14 +159,14 @@ public:
             QString text = lineEdit->text();
             QString displayName = index.data(CustomTableModel::DisplayNameRole).toString();
 
-            // Prüfen, ob displayName nicht leer ist UND tatsächlich den Anfang von text bildet
+            // Check whether displayName is not empty AND really is the beginning of text
             if (!displayName.isEmpty() && text.startsWith(displayName)) {
                 int displayNameLength = displayName.length();
                 QTimer::singleShot(0, lineEdit, [lineEdit, displayNameLength]() {
                     lineEdit->setSelection(0, displayNameLength);
                 });
             } else {
-                // Fallback für .desktop-Dateien oder abweichende DisplayNames
+                // Fallback for .desktop files or differing display names
                 lineEdit->selectAll();
             }
         }
@@ -174,7 +174,7 @@ public:
 
 signals:
     void editingStarted();
-    // Hinweis: Das Gegenstück 'closeEditor' erbt diese Klasse bereits automatisch von Qt!
+    // Note: This class already inherits the counterpart 'closeEditor' automatically from Qt!
 
 protected:
     void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override {
@@ -205,7 +205,7 @@ public:
     using QStyledItemDelegate::QStyledItemDelegate;
 
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override {
-        // Feste Icon-Box berechnen (Nutzt die 96px aus der View)
+        // Compute a fixed icon box (uses the 96px from the view)
         int iconBoxSize = option.decorationSize.isValid() ? option.decorationSize.height() : 96;
 
         QStyleOptionViewItem opt = option;
@@ -217,7 +217,7 @@ public:
         painter->save();
 
         // =====================================================================
-        // Deine Deckkraft-Logik steuert jetzt das gesamte Custom-Rendering
+        // Your opacity logic now controls the whole custom rendering
         // =====================================================================
         if (isCut || isHidden) {
             if (isCut && isHidden) {
@@ -227,7 +227,7 @@ public:
             }
         }
 
-        // 2. Hintergrund zeichnen (Hover, Selektion, Fokus-Rechteck)
+        // 2. Draw the background (hover, selection, focus rectangle)
         QStyle *style = opt.widget ? opt.widget->style() : QApplication::style();
         style->drawPrimitive(QStyle::PE_PanelItemViewItem, &opt, painter, opt.widget);
 
@@ -238,22 +238,22 @@ public:
                           iconBoxSize,
                           iconBoxSize);
 
-        // Icon innerhalb der festen 96x96 Box zentrieren und zeichnen
+        // Center and draw the icon within the fixed 96x96 box
         if (!opt.icon.isNull()) {
             QSize actualSize = opt.icon.actualSize(QSize(iconBoxSize, iconBoxSize), (opt.state & QStyle::State_Selected) ? QIcon::Selected : QIcon::Normal);
             QRect targetIconRect = QStyle::alignedRect(opt.direction, Qt::AlignCenter, actualSize, iconBoxRect);
             opt.icon.paint(painter, targetIconRect, Qt::AlignCenter, (opt.state & QStyle::State_Enabled) ? QIcon::Normal : QIcon::Disabled);
         }
 
-        // 4. Text-Box berechnen (strikt unterhalb der 96px Icon-Box)
+        // 4. Compute the text box (strictly below the 96px icon box)
         QRect textRect = itemRect;
-        textRect.setTop(iconBoxRect.bottom() + 4); // 4px Abstand halten
+        textRect.setTop(iconBoxRect.bottom() + 4); // Keep 4px spacing
         QRect elideRect = textRect.adjusted(4, 0, -4, 0);
 
         if (!opt.text.isEmpty()) {
             painter->setFont(opt.font);
 
-            // Textfarbe ermitteln
+            // Determine the text color
             QPalette::ColorGroup cg = (opt.state & QStyle::State_Enabled) ? QPalette::Normal : QPalette::Disabled;
             if (opt.state & QStyle::State_Selected) {
                 painter->setPen(opt.palette.color(cg, QPalette::HighlightedText));
@@ -262,13 +262,13 @@ public:
             }
 
             // =====================================================================
-            // NEU: Intelligenter Umbruch (Wortgrenze ODER überall)
+            // NEW: Smart wrapping (at word boundaries OR anywhere)
             // =====================================================================
             QTextOption textOption;
             textOption.setAlignment(Qt::AlignHCenter | Qt::AlignTop);
             textOption.setWrapMode(QTextOption::WrapAtWordBoundaryOrAnywhere);
 
-            // Wichtig: Überladung mit QRectF und QTextOption nutzen!
+            // Important: use the overload with QRectF and QTextOption!
             painter->drawText(QRectF(elideRect), opt.text, textOption);
         }
 
@@ -276,19 +276,19 @@ public:
     }
 
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override {
-        // 1. Icon-Box bestimmen
+        // 1. Determine the icon box
         int iconBoxSize = option.decorationSize.isValid() ? option.decorationSize.height() : 96;
         if (iconBoxSize <= 0) iconBoxSize = 96;
 
-        int targetWidth = 104; // Deine Spaltenbreite
-        int textPadding = 8;   // 4px links, 4px rechts
+        int targetWidth = 104; // Your column width
+        int textPadding = 8;   // 4px left, 4px right
         int availableTextWidth = targetWidth - textPadding;
 
-        // 2. Text holen
+        // 2. Get the text
         QString text = index.data(Qt::DisplayRole).toString();
 
         // =====================================================================
-        // NEU: Höhenberechnung via QTextLayout mit Smart-Wrap
+        // NEW: Height calculation via QTextLayout with smart wrap
         // =====================================================================
         int textHeight = 0;
         if (!text.isEmpty()) {
@@ -311,11 +311,11 @@ public:
             }
             layout.endLayout();
 
-            // Die Gesamthöhe des Textblocks auslesen (aufgerundet auf ganze Pixel)
+            // Read the total height of the text block (rounded up to whole pixels)
             textHeight = static_cast<int>(qCeil(layout.boundingRect().height()));
         }
 
-        // 3. Gesamthöhe = Icon-Box + Abstand + gemessene Texthöhe + Puffer unten
+        // 3. Total height = icon box + spacing + measured text height + bottom padding
         int calculatedHeight = 4 + iconBoxSize + 4 + textHeight + 4;
 
         return QSize(targetWidth, calculatedHeight);
@@ -324,7 +324,7 @@ public:
     QWidget* createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override {
         QWidget *editor = QStyledItemDelegate::createEditor(parent, option, index);
         if (editor) {
-            // Da diese Qt-Methode 'const' ist, müssen wir das Signal über const_cast abfeuern
+            // Since this Qt method is 'const', we have to fire the signal via const_cast
             emit const_cast<ThumbItemDelegate*>(this)->editingStarted();
         }
         if (auto *lineEdit = qobject_cast<QLineEdit*>(editor)) {
@@ -340,14 +340,14 @@ public:
             QString text = lineEdit->text();
             QString displayName = index.data(CustomTableModel::DisplayNameRole).toString();
 
-            // Prüfen, ob displayName nicht leer ist UND tatsächlich den Anfang von text bildet
+            // Check whether displayName is not empty AND really is the beginning of text
             if (!displayName.isEmpty() && text.startsWith(displayName)) {
                 int displayNameLength = displayName.length();
                 QTimer::singleShot(0, lineEdit, [lineEdit, displayNameLength]() {
                     lineEdit->setSelection(0, displayNameLength);
                 });
             } else {
-                // Fallback für .desktop-Dateien oder abweichende DisplayNames
+                // Fallback for .desktop files or differing display names
                 lineEdit->selectAll();
             }
         }
@@ -356,7 +356,7 @@ public:
 
 signals:
     void editingStarted();
-    // Hinweis: Das Gegenstück 'closeEditor' erbt diese Klasse bereits automatisch von Qt!
+    // Note: This class already inherits the counterpart 'closeEditor' automatically from Qt!
 
 protected:
     void initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const override {

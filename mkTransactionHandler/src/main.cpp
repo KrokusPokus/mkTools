@@ -16,11 +16,11 @@
 #include <KIO/JobUiDelegateFactory>
 #include <QTimer>
 
-// Überlässt die gesamte Operation KIO (Setting "mkTransactionHandler/UseKdeFileOperations"):
-// Konfliktdialoge, Fehlermeldungen und die Fortschrittsanzeige im Plasma-Benachrichtigungsbereich kommen dann von KDE.
-// Der Job läuft im GUI-Thread, da KIOs Dialoge Widgets sind (KIO-Jobs sind ohnehin asynchron).
+// Leaves the whole operation to KIO (setting "mkTransactionHandler/UseKdeFileOperations"):
+// conflict dialogs, error messages and the progress display in the Plasma notification area then come from KDE.
+// The job runs in the GUI thread, since KIO's dialogs are widgets (KIO jobs are asynchronous anyway).
 static int runKdeFileOperation(QApplication &app, OperationType opType, const QList<QUrl> &urls, const QString &targetDir) {
-    // Ohne desktopFileName verwirft KUiServerV2JobTracker den Job stillschweigend -> keine Anzeige in Plasma
+    // Without desktopFileName, KUiServerV2JobTracker silently discards the job -> no display in Plasma
     QGuiApplication::setDesktopFileName(QStringLiteral("mkTransactionHandler"));
 
     const QUrl destUrl = QUrl::fromLocalFile(targetDir);
@@ -30,7 +30,7 @@ static int runKdeFileOperation(QApplication &app, OperationType opType, const QL
     case OperationType::Copy:    job = KIO::copy(urls, destUrl); break;
     case OperationType::Move:    job = KIO::move(urls, destUrl); break;
     case OperationType::Link:    job = KIO::link(urls, destUrl); break;
-    case OperationType::Recycle: job = KIO::trash(urls); break; // Bestätigung erfolgte bereits in mkFolderWidget
+    case OperationType::Recycle: job = KIO::trash(urls); break; // Confirmation already happened in mkFolderWidget
     case OperationType::Delete:  job = KIO::del(urls); break;   // dto.
     }
 
@@ -39,7 +39,7 @@ static int runKdeFileOperation(QApplication &app, OperationType opType, const QL
         return -4;
     }
 
-    // Schließen eines Konfliktdialogs darf das Programm nicht beenden, solange der Job noch läuft
+    // Closing a conflict dialog must not quit the program while the job is still running
     app.setQuitOnLastWindowClosed(false);
     job->setUiDelegate(KIO::createDefaultJobUiDelegate(KJobUiDelegate::AutoHandlingEnabled, nullptr));
 
@@ -47,8 +47,8 @@ static int runKdeFileOperation(QApplication &app, OperationType opType, const QL
     QObject::connect(job, &KJob::result, &app, [&app, &exitCode](KJob *finishedJob) {
         exitCode = (finishedJob->error() && finishedJob->error() != KJob::KilledJobError) ? 1 : 0;
 
-        // KIO zeigt Fehlermeldungen zeitversetzt (queued) in eigenen Dialogen an.
-        // Erst beenden, wenn kein Fenster mehr sichtbar ist, sonst verschwänden sie ungelesen.
+        // KIO shows error messages delayed (queued) in its own dialogs.
+        // Only quit when no window is visible anymore, otherwise they would disappear unread.
         auto *waitForDialogs = new QTimer(&app);
         QObject::connect(waitForDialogs, &QTimer::timeout, &app, [&app, waitForDialogs]() {
             const QWidgetList widgets = QApplication::topLevelWidgets();
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 
     QSharedMemory sharedMemory(memoryKey);
     if (sharedMemory.attach(QSharedMemory::ReadOnly)) {
-        // Niemals über das Segment hinaus lesen: Die Größe aus argv ist nicht vertrauenswürdig
+        // Never read beyond the segment: the size from argv is not trustworthy
         if (expectedSize > sharedMemory.size()) {
             qDebug() << "[mkTransactionHandler] Error: Data size" << expectedSize << "exceeds shared memory size" << sharedMemory.size();
             sharedMemory.detach();

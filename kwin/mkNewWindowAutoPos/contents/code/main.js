@@ -1,12 +1,12 @@
 console.log("mknewwindowautopos: Initializing");
 
-// Variable zum Speichern des "echten" vorherigen Fensters
+// Variable to store the "real" previous window
 var lastRealActiveWindow = null;
 
-// Wir tracken JEDE Fokus-Änderung im System
+// We track EVERY focus change in the system
 workspace.windowActivated.connect(function(window) {
-	// Nur speichern, wenn das aktivierte Fenster NICHT mkFileSearch ist
-	// So bleibt das "alte" Fenster in der Variable, während mkFileSearch startet
+	// Only store it if the activated window is NOT mkFileSearch
+	// That way the "old" window stays in the variable while mkFileSearch starts
 	if (window && window.resourceClass !== "mkFileSearch") {
 		lastRealActiveWindow = window;
 	}

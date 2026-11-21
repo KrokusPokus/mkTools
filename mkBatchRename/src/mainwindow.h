@@ -31,10 +31,10 @@ public:
     using QSpinBox::QSpinBox;
 
 protected:
-    // Wird von Qt aufgerufen, wenn die Eingabe ungültig/leer ist
+    // Called by Qt when the input is invalid/empty
     void fixup(QString &input) const override {
         if (input.trimmed().isEmpty()) {
-            input = QString::number(minimum()); // Setzt den Text auf das Minimum (z.B. "0")
+            input = QString::number(minimum()); // Sets the text to the minimum (e.g. "0")
         } else {
             QSpinBox::fixup(input);
         }

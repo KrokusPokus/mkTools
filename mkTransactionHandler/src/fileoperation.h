@@ -18,7 +18,7 @@
 #include <atomic>
 #include <optional>
 
-// KDE KIO Framework (Linux-spezifisch)
+// KDE KIO framework (Linux-specific)
 #include <KIO/CopyJob>
 #include <KIO/JobUiDelegate>
 #include <KJob>
@@ -32,10 +32,10 @@ struct CopyStats {
     int filesError = 0;
     int filesDuplicate = 0;
     qint64 elapsedMs = 0;
-    QString currentName;       // %relativer_Pfad%
-    QString currentSourceDir;  // %source_Ordner%
-    QString currentTargetDir;  // %target_Ordner%
-    bool isSameDevice = false; // Für "Same/Different Drive"
+    QString currentName;       // %relative_path%
+    QString currentSourceDir;  // %source_folder%
+    QString currentTargetDir;  // %target_folder%
+    bool isSameDevice = false; // For "Same/Different Drive"
 };
 
 struct Conflict {
@@ -68,7 +68,7 @@ public:
 
 signals:
     void progress(const CopyStats &stats);
-    void conflictDetected(const Conflict &conflict);  // blockierend via Qt::BlockingQueuedConnection
+    void conflictDetected(const Conflict &conflict);  // blocking via Qt::BlockingQueuedConnection
     void wasContinued();
     void wasPaused();
     void wasFinished(const CopyStats &stats, const QList<FailedItem> &failedItems);
@@ -102,9 +102,9 @@ private:
     bool targetSupportsSymlinks(); // Lazy Evaluator
 
     KIO::CopyJob *m_currentKioJob = nullptr;
-    QStringList m_kioCreatedTargets; // Vom KIO-Job nachweislich neu angelegte Ziel-Dateien/Links (für Cleanup bei Abbruch)
-    bool m_isKioMode = false;        // Operation läuft über KIO (GUI-Thread) statt über den lokalen Worker-Thread
-    QString m_kioCurrentSource;      // Element, das KIO gerade überträgt (für eine korrekte Fehlerzuordnung)
+    QStringList m_kioCreatedTargets; // Target files/links verifiably created by the KIO job (for cleanup on abort)
+    bool m_isKioMode = false;        // Operation runs via KIO (GUI thread) instead of the local worker thread
+    QString m_kioCurrentSource;      // Item KIO is currently transferring (for correct error assignment)
     QString m_kioCurrentTarget;
 
     CopyStats m_stats;
@@ -117,7 +117,7 @@ private:
     OperationType m_operationType;
     QList<FailedItem> m_failedItems;
     mutable std::optional<bool> m_targetSupportsSymlinks;
-    QSet<QString> m_activeDirIds; // Identitäten der Ordner auf dem aktuellen copyOrMoveDir-Rekursionspfad (Schleifenschutz)
+    QSet<QString> m_activeDirIds; // Identities of the folders on the current copyOrMoveDir recursion path (loop protection)
 
     bool m_applyToAll = false;
     ConflictResolution m_pendingResolution;
@@ -131,9 +131,9 @@ private:
     bool checkInterruption();
 
     enum class ConflictState {
-        Idle,           // Worker tut andere Dinge
-        WaitingForUser, // Worker blockiert und wartet auf Antwort
-        SignalSent      // GUI oder Cancel hat die Semaphore bereits geöffnet
+        Idle,           // The worker does other things
+        WaitingForUser, // Worker blocks and waits for an answer
+        SignalSent      // GUI or cancel has already opened the semaphore
     };
 
     std::atomic<ConflictState> m_conflictState{ConflictState::Idle};

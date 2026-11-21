@@ -6,8 +6,8 @@
 FileSortProxyModel::FileSortProxyModel(QObject *parent)
     : QSortFilterProxyModel(parent)
 {
-    m_collator.setNumericMode(true);                    // Sorgt dafür, dass "9" < "10" ist
-    m_collator.setCaseSensitivity(Qt::CaseInsensitive); // Groß-/Kleinschreibung ignorieren
+    m_collator.setNumericMode(true);                    // Makes sure that "9" < "10"
+    m_collator.setCaseSensitivity(Qt::CaseInsensitive); // Ignore upper/lower case
 }
 
 bool FileSortProxyModel::lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const {
@@ -21,7 +21,7 @@ bool FileSortProxyModel::lessThan(const QModelIndex &source_left, const QModelIn
         return (sortOrder() == Qt::AscendingOrder) ? leftIsDir : rightIsDir;
     }
 
-    // Wenn beide identisch, dann nach Spalte sortieren
+    // If both are identical, sort by column
     QVariant leftData = sourceModel()->data(source_left, Qt::EditRole);
     QVariant rightData = sourceModel()->data(source_right, Qt::EditRole);
 

@@ -101,13 +101,13 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
         }
     }
     else if (role == Qt::DecorationRole) {
-        if (col != eColName) return QVariant(); // Icons nur in der Namensspalte anzeigen
+        if (col != eColName) return QVariant(); // Show icons only in the name column
 
         QString absolutePath = file.filePath;
         if (m_viewMode == ViewMode::Thumbnail) {
             auto itThumb = m_individualThumbnailCache.find(absolutePath);
             if (itThumb != m_individualThumbnailCache.end()) {
-                return itThumb.value().thumbnail; // Liefert das fertige 96x96 Bild
+                return itThumb.value().thumbnail; // Returns the finished 96x96 image
             }
 
             if (file.isDir) {
@@ -128,8 +128,8 @@ QVariant CustomTableModel::data(const QModelIndex &index, int role) const {
             }
         }
         else {
-            // SymLinks haben Vorrang vor Datei/Ordner und vor individuellen Icons:
-            // ein festes Icon, einmalig erzeugt und im allgemeinen Cache abgelegt.
+            // Symlinks take precedence over file/folder and over individual icons:
+            // a fixed icon, created once and stored in the general cache.
             if (file.isSymbolicLink) {
                 auto it = m_iconCache.find("//symlink//");
                 if (it == m_iconCache.end()) {
@@ -275,7 +275,7 @@ QVariant CustomTableModel::headerData(int section, Qt::Orientation orientation, 
         }
     }
 
-    // Für die vertikalen Header (Zeilennummern 1, 2, 3...) nutzen wir das Standardverhalten von Qt
+    // For the vertical headers (row numbers 1, 2, 3...) we use Qt's default behavior
     return QAbstractTableModel::headerData(section, orientation, role);
 }
 
@@ -287,13 +287,13 @@ Qt::ItemFlags CustomTableModel::flags(const QModelIndex &index) const {
         return Qt::NoItemFlags;
     }
 
-    // Die Standard-Flags holen (Selectable, Enabled)
+    // Get the default flags (Selectable, Enabled)
     Qt::ItemFlags cellFlags = QAbstractTableModel::flags(index);
 
     if (index.column() == 0) {
         cellFlags |= Qt::ItemIsEditable | Qt::ItemIsDragEnabled;
 
-        // Nur Ordner dürfen als Drop-Ziel dienen
+        // Only folders may serve as drop targets
         int row = index.row();
         if (row >= 0 && row < static_cast<int>(m_files.size())) {
             if (m_files[row].isDir) {
@@ -314,7 +314,7 @@ bool CustomTableModel::setData(const QModelIndex &index, const QVariant &value, 
         return false;
     }
 
-    // View für die einzelne Zeile benachrichtigen
+    // Notify the view about the single row
     emit dataChanged(index, index, {Qt::DisplayRole, Qt::EditRole});
 
     return true;
@@ -327,12 +327,12 @@ bool CustomTableModel::renameFileInternal(int row, const QString &rawNewName) {
 
     QString newName = Helpers::cleanFileName(rawNewName.trimmed());
 
-    // Abbrechen, wenn der Name leer ist oder sich gar nicht geändert hat
+    // Stop if the name is empty or has not changed at all
     if (newName.isEmpty() || newName == m_files[row].name) {
         return false;
     }
 
-    // 1. Datei auf der Festplatte umbenennen
+    // 1. Rename the file on disk
     QString oldPath = m_files[row].filePath;
     QString newPath = QDir::cleanPath(m_files[row].path + "/" + newName);
 
@@ -340,12 +340,12 @@ bool CustomTableModel::renameFileInternal(int row, const QString &rawNewName) {
         return false;
     }
 
-    // 2. Struct im Speicher aktualisieren
+    // 2. Update the struct in memory
     applyRenamedFileInfo(row, newName, newPath);
     return true;
 }
 
-// Aktualisiert die Metadaten einer Zeile, nachdem die Datei auf der Platte umbenannt wurde
+// Updates the metadata of a row after the file was renamed on disk
 void CustomTableModel::applyRenamedFileInfo(int row, const QString &newName, const QString &newPath) {
     CustomFileInfo &info = m_files[row];
     info.name = newName;
@@ -356,7 +356,7 @@ void CustomTableModel::applyRenamedFileInfo(int row, const QString &newName, con
     if (!info.isDir) {
         int lastDot = newName.lastIndexOf('.');
         if (lastDot > 0) {
-            ext = info.name.sliced(lastDot + 1).toLower(); // falls sich der Typ geändert hat
+            ext = info.name.sliced(lastDot + 1).toLower(); // in case the type has changed
 
             if (!m_settings->showFileExtensions && m_settings->knownExts.contains(ext)) {
                 info.displayName = newName.sliced(0, lastDot);
@@ -368,12 +368,12 @@ void CustomTableModel::applyRenamedFileInfo(int row, const QString &newName, con
 }
 
 void CustomTableModel::sort(int column, Qt::SortOrder order) {
-    // We're not using any of it. The Proxy-Modell will take over this job.
+    // We're not using any of it. The proxy model will take over this job.
     Q_UNUSED(column);
     Q_UNUSED(order);
 }
 
-// Daten neu setzen und der View signalisieren, dass sie sich neu zeichnen muss
+// Set the data again and signal the view that it has to repaint
 void CustomTableModel::setFiles(const std::vector<CustomFileInfo> &files) {
     beginResetModel();
     m_files = files;
@@ -404,10 +404,10 @@ QString CustomTableModel::filePath(const QModelIndex &index) const {
     return m_files[row].filePath;
 }
 
-// Festes Icon für SymLinks (Dateien und Ordner gleichermaßen).
-// Einzige Stelle, an der die Icon-Quelle festgelegt wird.
+// Fixed icon for symlinks (files and folders alike).
+// The only place where the icon source is defined.
 QIcon CustomTableModel::symlinkIcon() {
-    // PROVISORISCH: Theme-Emblem (Linux), Fallback auf das Qt-Style-Icon.
+    // PROVISIONAL: theme emblem (Linux), fallback to the Qt style icon.
     QIcon icon = QIcon::fromTheme("emblem-symbolic-link");
     if (icon.isNull()) {
         icon = QApplication::style()->standardIcon(QStyle::SP_FileLinkIcon);
@@ -420,14 +420,14 @@ bool CustomTableModel::isPathIconUpToDate(const QString &path, const QDateTime &
     if (it == m_individualIconCache.end()) {
         return false;
     }
-    // Wenn das Datum im Cache ungültig ist (Laufwerk-Dummy) oder exakt übereinstimmt -> Aktuell bzw. passt schon!
+    // If the date in the cache is invalid or matches exactly -> up to date / fits already!
     return !it.value().lastModified.isValid() || it.value().lastModified == currentDate;
 }
 
 void CustomTableModel::addPathIcon(const QString &path, const QIcon &icon, const QDateTime &lastModified, int row) {
     m_individualIconCache.insert(path, {icon, lastModified});
 
-    // Sofort die View benachrichtigen, dass genau DIESE Zeile (Spalte 0) neu gezeichnet werden muss
+    // Immediately notify the view that exactly THIS row (column 0) has to be repainted
     QModelIndex idx = createIndex(row, 0);
     emit dataChanged(idx, idx, {Qt::DecorationRole});
 }
@@ -437,7 +437,7 @@ bool CustomTableModel::isThumbnailUpToDate(const QString &path, const QDateTime 
     if (it == m_individualThumbnailCache.end()) {
         return false;
     }
-    // Wenn das Datum im Cache ungültig ist (Laufwerk-Dummy) oder exakt übereinstimmt -> Aktuell bzw. passt schon!
+    // If the date in the cache is invalid or matches exactly -> up to date / fits already!
     return !it.value().lastModified.isValid() || it.value().lastModified == currentDate;
 }
 
@@ -467,7 +467,7 @@ bool CustomTableModel::isCrcUpToDate(const QString &path, const QDateTime &curre
     if (it == m_CrcCache.end()) {
         return false;
     }
-    // Wenn das Datum im Cache ungültig ist (Laufwerk-Dummy) oder exakt übereinstimmt -> Aktuell bzw. passt schon!
+    // If the date in the cache is invalid or matches exactly -> up to date / fits already!
     return !it.value().lastModified.isValid() || it.value().lastModified == currentDate;
 }
 
@@ -497,7 +497,7 @@ void CustomTableModel::addCRC(const QString &path, const QString &crc, const QDa
 }
 
 void CustomTableModel::setCutMarkers(const QStringList &absolutePaths) {
-    // Wir wandeln die Liste zur performanten Suche in ein QSet um
+    // We convert the list into a QSet for fast lookups
     QSet<QString> cutSet(absolutePaths.begin(), absolutePaths.end());
 
     for (size_t i = 0; i < m_files.size(); ++i) {
@@ -542,12 +542,12 @@ void CustomTableModel::setRenameRows(const QSet<int> &rowSet, const QList<int> &
 }
 
 namespace {
-// Vergleichsschlüssel für Pfade: unter Windows ist das Dateisystem case-insensitiv
+// Comparison key for paths (the file system is case-sensitive on Linux)
 QString renameKey(const QString &path) {
     return QDir::cleanPath(path);
 }
 
-// Noch nicht existierender temporärer Name neben 'path' (zum Auflösen von Umbenennungs-Zyklen)
+// Not yet existing temporary name next to 'path' (for resolving rename cycles)
 QString uniqueTempRenamePath(const QString &path) {
     while (true) {
         const QString candidate = QStringLiteral("%1.mkren-%2").arg(path).arg(QRandomGenerator::global()->generate(), 8, 16, QChar('0'));
@@ -558,8 +558,8 @@ QString uniqueTempRenamePath(const QString &path) {
 } // namespace
 
 void CustomTableModel::recalculateNewNames() {
-    // 1. Neue Namen berechnen - bereits bereinigt, damit Vorschau, Konfliktprüfung und Ausführung
-    //    garantiert denselben Namen sehen (vorher wurde erst beim Umbenennen bereinigt).
+    // 1. Compute the new names - already sanitized, so that preview, conflict check and execution
+    //    are guaranteed to see the same name (previously, sanitizing only happened when renaming).
     int seqIndex = 0;
     for (int row : std::as_const(m_renameRowsList)) {
         if (row >= 0 && row < static_cast<int>(m_files.size())) {
@@ -571,19 +571,19 @@ void CustomTableModel::recalculateNewNames() {
         }
     }
 
-    // 2. Welche Quellen geben ihren Namen frei, und wie oft wird jedes Ziel beansprucht?
+    // 2. Which sources free up their name, and how often is each target claimed?
     QSet<QString> movingSources;
     QHash<QString, int> targetUseCount;
     for (int row : std::as_const(m_renameRowsList)) {
         if (row >= 0 && row < static_cast<int>(m_files.size())) {
             const auto &file = m_files[row];
-            if (file.newName == file.name) continue; // unverändert -> belegt seinen Namen weiterhin
+            if (file.newName == file.name) continue; // unchanged -> keeps occupying its name
             movingSources.insert(renameKey(file.filePath));
             targetUseCount[renameKey(QDir(file.path).filePath(file.newName))]++;
         }
     }
 
-    // 3. Konflikte bestimmen
+    // 3. Determine conflicts
     int conflicts = 0;
     for (int row : std::as_const(m_renameRowsList)) {
         if (row < 0 || row >= static_cast<int>(m_files.size())) continue;
@@ -599,9 +599,9 @@ void CustomTableModel::recalculateNewNames() {
         } else if (targetUseCount.value(targetKey) > 1) {
             reason = tr("Several files would get this name");
         } else {
-            // Ziel existiert auf der Platte (auch herausgefilterte Dateien!) und wird nicht durch eine
-            // andere Umbenennung im Stapel frei. Ausnahme: reine Groß-/Kleinschreibungs-Änderung auf einem
-            // case-insensitiven Dateisystem (Ziel ist physisch die Datei selbst).
+            // Target exists on disk (including filtered-out files!) and is not freed by another
+            // rename in the batch. Exception: a pure upper/lower case change on a
+            // case-insensitive file system (the target physically is the file itself).
             const QFileInfo targetInfo(target);
             const bool occupied = targetInfo.exists() || targetInfo.isSymLink();
             const bool caseOnlyRename = target.compare(file.filePath, Qt::CaseInsensitive) == 0 && Helpers::isSameFile(file.filePath, target);
@@ -695,17 +695,17 @@ QString CustomTableModel::computeNewName(const CustomFileInfo &item, int seqInde
     return fileName;
 }
 
-// Führt die Stapel-Umbenennung als "alles oder nichts" aus:
-//  - Bei Konflikten (siehe recalculateNewNames) wird gar nicht erst begonnen.
-//  - Reihenfolge nach Abhängigkeiten: Wer ein Ziel braucht, das noch von einer anderen Quelle belegt ist,
-//    wartet, bis diese umbenannt wurde. Ketten wie 1->2, 2->3 funktionieren so ohne Zwischennamen.
-//  - Echte Zyklen (a<->b, a->b->c->a) werden aufgelöst, indem ein Eintrag kurz auf einen temporären Namen ausweicht.
-//  - Schlägt eine Umbenennung fehl, werden alle bisherigen in umgekehrter Reihenfolge zurückgedreht.
+// Performs the batch rename as "all or nothing":
+//  - If there are conflicts (see recalculateNewNames), it does not even start.
+//  - Order by dependencies: whoever needs a target that is still occupied by another source
+//    waits until that one has been renamed. Chains like 1->2, 2->3 thus work without intermediate names.
+//  - Real cycles (a<->b, a->b->c->a) are resolved by moving one entry to a temporary name for a moment.
+//  - If a rename fails, all previous ones are reverted in reverse order.
 bool CustomTableModel::applyBatchRename(QString *errorMessage) {
     if (m_files.empty() || m_renameRowsList.isEmpty())
         return true;
 
-    // Mit aktuellem Plattenzustand neu prüfen (seit der Vorschau kann sich etwas geändert haben)
+    // Check again with the current disk state (something may have changed since the preview)
     recalculateNewNames();
     if (m_renameConflictCount > 0) {
         if (errorMessage) *errorMessage = tr("Renaming was not started because of %n name conflict(s).", nullptr, m_renameConflictCount);
@@ -722,7 +722,7 @@ bool CustomTableModel::applyBatchRename(QString *errorMessage) {
     }
     if (ops.empty()) return true;
 
-    // Abhängigkeitsgraph: pendingSource[key(Quelle)] = Op; waiterFor[key(Quelle)] = Op, dessen Ziel diese Quelle ist
+    // Dependency graph: pendingSource[key(source)] = op; waiterFor[key(source)] = op whose target is this source
     QHash<QString, int> pendingSource;
     QHash<QString, int> waiterFor;
     QList<int> ready;
@@ -749,18 +749,18 @@ bool CustomTableModel::applyBatchRename(QString *errorMessage) {
         }
     };
 
-    QList<QPair<QString, QString>> journal; // Durchgeführte Umbenennungen (von, nach) für das Zurückdrehen
+    QList<QPair<QString, QString>> journal; // Renames performed (from, to) for reverting
     QString failedFrom, failedTo, failedReason;
     int remaining = static_cast<int>(ops.size());
 
     while (remaining > 0) {
         if (ready.isEmpty()) {
-            // Zyklus: Einen wartenden Eintrag, auf dessen Quelle jemand wartet, temporär ausweichen lassen
+            // Cycle: let a waiting entry whose source someone is waiting for move aside temporarily
             int c = -1;
             for (int i = 0; i < static_cast<int>(ops.size()); ++i) {
                 if (!ops[i].done && waiterFor.contains(renameKey(ops[i].from))) { c = i; break; }
             }
-            if (c == -1) { // Darf nicht vorkommen - sicherheitshalber abbrechen statt Endlosschleife
+            if (c == -1) { // Must not happen - abort to be safe instead of looping endlessly
                 failedReason = tr("Internal error while ordering the renames");
                 break;
             }
@@ -791,7 +791,7 @@ bool CustomTableModel::applyBatchRename(QString *errorMessage) {
     }
 
     if (remaining > 0) {
-        // FEHLER -> alles in umgekehrter Reihenfolge zurückdrehen
+        // ERROR -> revert everything in reverse order
         QStringList notReverted;
         for (int k = static_cast<int>(journal.size()) - 1; k >= 0; --k) {
             if (!QFile::rename(journal[k].second, journal[k].first)) {
@@ -816,7 +816,7 @@ bool CustomTableModel::applyBatchRename(QString *errorMessage) {
         return false;
     }
 
-    // ERFOLG -> Metadaten aller Zeilen aktualisieren, ein einziges dataChanged-Signal
+    // SUCCESS -> update the metadata of all rows, one single dataChanged signal
     int minRow = -1, maxRow = -1;
     for (const Op &op : ops) {
         applyRenamedFileInfo(op.row, op.finalName, op.to);
@@ -908,7 +908,7 @@ QString CustomTableModel::applyMoveCopyRule(const QString &input, const MoveCopy
         //---------------------------------------------------------------------
         QString remaining = workingCopy;
 
-        // Anzahl der zu kopierenden/verschiebenden Zeichen auf die Dateinamen-Länge begrenzen
+        // Limit the number of characters to copy/move to the file name length
         int count = std::min(rule.fromPos, static_cast<int>(remaining.size()));
         if (count <= 0) {
             return input;
@@ -916,7 +916,7 @@ QString CustomTableModel::applyMoveCopyRule(const QString &input, const MoveCopy
 
         QString extracted;
 
-        // 1. Sektion extrahieren (und bei "Move" aus 'remaining' entfernen)
+        // 1. Extract the section (and remove it from 'remaining' for "Move")
         switch (rule.fromMode) {
             case 1: // Copy first n
                 extracted = remaining.first(count);
@@ -940,7 +940,7 @@ QString CustomTableModel::applyMoveCopyRule(const QString &input, const MoveCopy
             return input;
         }
 
-        // 2. Extrahierten Text an der Zielposition in den Dateinamen einfügen
+        // 2. Insert the extracted text into the file name at the target position
         switch (rule.toMode) {
             case 1: // To start
                 if (!remaining.isEmpty() && !rule.separator.isEmpty()) {
@@ -1057,7 +1057,7 @@ QString CustomTableModel::applyAddFolderNameRule(const QString &input, const Add
     // QString rule.separator
     // int rule.levels
 
-    // Pfad-Separatoren vereinheitlichen und säubern
+    // Unify and clean up path separators
     QString cleanPath = QDir::cleanPath(path);
     QStringList parts = cleanPath.split('/', Qt::SkipEmptyParts);
 
@@ -1065,11 +1065,11 @@ QString CustomTableModel::applyAddFolderNameRule(const QString &input, const Add
         return input;
     }
 
-    // Anzahl der gewünschten Ordner-Ebenen ermitteln (begrenzt auf verfügbare Ordner)
+    // Determine the number of desired folder levels (limited to the available folders)
     int levelsToTake = std::min(rule.levels, static_cast<int>(parts.size()));
     QStringList selectedFolders = parts.mid(parts.size() - levelsToTake, levelsToTake);
 
-    // Ordnernamen mit dem Trennzeichen zusammenfügen
+    // Join the folder names with the separator
     QString folderString = selectedFolders.join(rule.separator);
     if (folderString.isEmpty()) {
         return input;
@@ -1078,8 +1078,8 @@ QString CustomTableModel::applyAddFolderNameRule(const QString &input, const Add
     QString workingCopy;
     workingCopy = input;
 
-    //---------------------------------------------------------------------
-    // 1: Prefix (Voranstellen)
+    // ---------------------------------------------------------------------
+    // 1: Prefix (prepend)
     if (rule.mode == 1) {
         if (!workingCopy.isEmpty() && !rule.separator.isEmpty()) {
             workingCopy = folderString + rule.separator + workingCopy;
@@ -1087,7 +1087,7 @@ QString CustomTableModel::applyAddFolderNameRule(const QString &input, const Add
             workingCopy = folderString + workingCopy;
         }
     }
-    // 2: Suffix (Anhängen)
+    // 2: Suffix (append)
     else if (rule.mode == 2) {
         if (!workingCopy.isEmpty() && !rule.separator.isEmpty()) {
             workingCopy = workingCopy + rule.separator + folderString;
@@ -1139,19 +1139,19 @@ QString CustomTableModel::applyNumberManipulationRule(const QString &input, cons
                 numStr = QString::number(newNumber);
             }
 
-            // 2. Führende Nullen anwenden / Länge anpassen (falls aktiviert)
+            // 2. Apply leading zeros / adjust the length (if enabled)
             if (rule.addLeadEnabled && rule.addLeadCount > 0) {
                 if (numStr.length() < rule.addLeadCount) {
                     numStr = numStr.rightJustified(rule.addLeadCount, QChar('0'));
                 } else if (numStr.length() > rule.addLeadCount) {
-                    // Führende Nullen entfernen, solange die Solllänge überschritten ist
+                    // Remove leading zeros as long as the target length is exceeded
                     while (numStr.length() > rule.addLeadCount && numStr.startsWith('0')) {
                         numStr.remove(0, 1);
                     }
                 }
             }
 
-            // Ersetze die ursprüngliche Ziffernfolge im Dateinamen
+            // Replace the original digit sequence in the file name
             workingCopy.replace(match.capturedStart(), match.capturedLength(), numStr);
         }
     }
@@ -1212,7 +1212,7 @@ Qt::DropActions CustomTableModel::supportedDropActions() const {
 
 QStringList CustomTableModel::mimeTypes() const {
     QStringList types;
-    types << "text/uri-list"; // Der Standard-MIME-Type für Dateien im OS
+    types << "text/uri-list"; // The default MIME type for files in the OS
     return types;
 }
 
@@ -1220,7 +1220,7 @@ QMimeData* CustomTableModel::mimeData(const QModelIndexList &indexes) const {
     QMimeData *mimeData = new QMimeData();
 
     QList<QUrl> urls;
-    QSet<int> processedRows; // Verhindert Duplikate bei Mehrfachauswahl von Spalten
+    QSet<int> processedRows; // Prevents duplicates when multiple columns are selected
 
     for (const QModelIndex &index : indexes) {
         if (index.isValid()) {
@@ -1241,47 +1241,47 @@ QMimeData* CustomTableModel::mimeData(const QModelIndexList &indexes) const {
 }
 
 bool CustomTableModel::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const {
-    // Basis-Check: Wenn keine URLs im Drag stecken, direkt verbieten
+    // Basic check: if there are no URLs in the drag, reject right away
     if (!data || !data->hasUrls()) {
         return false;
     }
 
-    // Drop "zwischen" Items verbieten!
-    // Wenn row != -1 ist, schwebt die Maus an den Rändern eines Items (oberhalb/unterhalb).
-    // Durch das 'false' blendet Qt die Einfüge-Linie aus und wechselt sofort in den "OnItem"-Modus.
+    // Do not allow dropping "between" items!
+    // If row != -1, the mouse is hovering over the edges of an item (above/below).
+    // With 'false', Qt hides the insertion line and switches to "OnItem" mode right away.
     if (row != -1) {
         return false;
     }
 
-    // FALL 1: Die Maus schwebt über dem leeren Hintergrund (parent ist ungültig)
+    // CASE 1: The mouse hovers over the empty background (parent is invalid)
     if (!parent.isValid()) {
         return true;
     }
 
-    // FALL 2: Maus schwebt über einem konkreten Item (z. B. einem Ordner)
+    // CASE 2: The mouse hovers over a specific item (e.g. a folder)
     int parentRow = parent.row();
     if (parentRow >= 0 && parentRow < static_cast<int>(m_files.size())) {
 
-        // Wir prüfen das Ganze nur, wenn das Ziel-Item ein Ordner ist
+        // We only check all this if the target item is a folder
         if (m_files[parentRow].isDir) {
-            // Das ist der absolute Pfad des Ordners, über dem die Maus gerade schwebt:
+            // This is the absolute path of the folder the mouse is currently hovering over:
             QString targetFolderPath = m_files[parentRow].filePath;
 
-            // Schleife über alle Dateien/Ordner, am Mauszeiger hängen
+            // Loop over all files/folders attached to the mouse cursor
             QList<QUrl> urls = data->urls();
             for (const QUrl &url : std::as_const(urls)) {
                 QString draggedPath = url.toLocalFile();
 
-                // SCHUTZ 1: Ordner auf sich selbst droppen (Identischer Pfad)
-                // Verhindert z.B. das Droppen von /Projekte/A auf /Projekte/A in Instanz 2
+                // PROTECTION 1: Dropping a folder onto itself (identical path)
+                // Prevents e.g. dropping /Projekte/A onto /Projekte/A in instance 2
                 if (draggedPath == targetFolderPath) {
-                    return false; // Sofort blockieren! Zeigt das Verbots-Schild.
+                    return false; // Block right away! Shows the "not allowed" sign.
                 }
 
-                // SCHUTZ 2: Ordner in einen eigenen Unterordner droppen
-                // Verhindert das physikalisch unmögliche Verschieben von /A in /A/B/C
+                // PROTECTION 2: Dropping a folder into one of its own subfolders
+                // Prevents the physically impossible move of /A into /A/B/C
                 if (targetFolderPath.startsWith(draggedPath + "/")) {
-                    return false; // Ebenfalls blockieren!
+                    return false; // Block as well!
                 }
             }
         }
@@ -1296,14 +1296,14 @@ bool CustomTableModel::dropMimeData(const QMimeData *data, Qt::DropAction action
     if (action == Qt::IgnoreAction) return true;
     if (!data || !data->hasUrls()) return false;
 
-    // Standardziel: Das aktuell geöffnete Verzeichnis
+    // Default target: the currently opened directory
     QString targetDir;
 	if (!m_currentDirectoryPath.isEmpty()) {
 		targetDir = m_currentDirectoryPath;
 	}
 	
-    // Wenn auf ein gültiges Item gedroppt wurde und das ein Ordner ist,
-    // verschieben/kopieren wir die Dateien IN diesen Unterordner!
+    // If the drop happened on a valid item and it is a folder,
+    // we move/copy the files INTO this subfolder!
     if (parent.isValid()) {
         int parentRow = parent.row();
         if (parentRow >= 0 && parentRow < static_cast<int>(m_files.size()) && m_files[parentRow].isDir) {
@@ -1324,15 +1324,15 @@ bool CustomTableModel::dropMimeData(const QMimeData *data, Qt::DropAction action
                 if (data->hasFormat("text/x-moz-url-desc")) {
                     QByteArray rawDesc = data->data("text/x-moz-url-desc");
 
-                    // Firefox liefert das unter Windows als UTF-16 (2 Bytes pro Zeichen).
-                    // Wir wandeln die Rohdaten explizit von UTF-16 in einen QString um:
+                    // Firefox delivers this as UTF-16 (2 bytes per character).
+                    // We explicitly convert the raw data from UTF-16 into a QString:
                     webTitle = QString::fromUtf16(
                         reinterpret_cast<const char16_t*>(rawDesc.constData()),
                         rawDesc.size() / 2
                         );
 
-                    // Da Windows-Strings oft mit einem Null-Terminator '\0' enden,
-                    // schneiden wir diesen und eventuelle Leerzeichen ab.
+                    // Since such strings often end with a null terminator '\0',
+                    // we cut it off together with any whitespace.
                     int nullPos = webTitle.indexOf(QChar('\0'));
                     if (nullPos != -1) {
                         webTitle = webTitle.left(nullPos);
@@ -1340,9 +1340,9 @@ bool CustomTableModel::dropMimeData(const QMimeData *data, Qt::DropAction action
                     webTitle = webTitle.trimmed();
                 }
 
-                // Fallback, falls es kein Firefox/Mozilla-Browser war oder das Feld fehlt
+                // Fallback in case it was not a Firefox/Mozilla browser or the field is missing
                 if (webTitle.isEmpty() && data->hasText()) {
-                    // Wenn es eine URL ist, extrahieren wir den Hostnamen, sonst nehmen wir den Text
+                    // If it is a URL, we extract the host name, otherwise we take the text
                     QUrl url(data->text());
                     webTitle = url.isValid() && !url.isLocalFile() ? url.host() : data->text();
                 }
@@ -1380,13 +1380,13 @@ QPixmap CustomTableModel::generateDummyThumb(const QString &dummyName) const {
         painter.drawPixmap(x, y, icon48);
         painter.setPen(QColor(255, 255, 255, 27));
 
-        // WICHTIGE QT-BESONDERHEIT:
-        // In Qt zeichnet drawRect(x, y, w, h) bei einem 1px-Stift historisch bedingt
-        // ein Rechteck, das w+1 Pixel breit und h+1 Pixel hoch ist.
-        // Damit der Rand exakt auf den Pixeln 0 bis 95 liegt, müssen wir -1 rechnen.
+        // IMPORTANT QT QUIRK:
+        // For historical reasons, with a 1px pen drawRect(x, y, w, h) in Qt draws
+        // a rectangle that is w+1 pixels wide and h+1 pixels high.
+        // For the border to lie exactly on pixels 0 to 95, we have to subtract 1.
         painter.drawRect(0, 0, canvas.width() - 1, canvas.height() - 1);
 
-        // Der Painter wird am Ende des Scopes {} automatisch geschlossen und gespeichert
+        // The painter is closed and saved automatically at the end of the {} scope
     }
 
     return canvas;
@@ -1466,7 +1466,7 @@ void CustomTableModel::populateModel_mkBatchRename(const QString &dirPath, const
                 continue;
             }
 
-            // Filterung nach Dateien und Ordnern
+            // Filtering by files and folders
             if (fileInfo.isFile() && !m_rules.flt.showFiles) {
                 continue;
             }
@@ -1474,14 +1474,14 @@ void CustomTableModel::populateModel_mkBatchRename(const QString &dirPath, const
                 continue;
             }
 
-            // Filterung nach Dateinamen/Suchbegriff
+            // Filtering by file name/search term
             if (!bSearchStringFilenameEmpty) {
                 if (Helpers::getNameMatchQuality(fileInfo.fileName(), fileInfo.path(), searchStringFilename, searchStringFilenameSplit, caseSensitivityFilename) == 0) {
                     continue;
                 }
             }
 
-            // iAnchorPathLength ist 0, da kein gemeinsames Quellverzeichnis (dirPath) existiert
+            // iAnchorPathLength is 0, since there is no common source directory (dirPath)
             CustomFileInfo info = createCustomFileInfo(fileInfo, 0);
 
             newFiles.push_back(info);
@@ -1555,7 +1555,7 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
     int nameMatchQuality = -1;
     int contentMatchCount = -1;
 
-    // Timer zur Zeitmessung für periodische Updates (1000 ms)
+    // Timer for periodic updates (1000 ms)
     QElapsedTimer progressTimer;
     progressTimer.start();
 
@@ -1582,7 +1582,7 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
             }
 
             if (nameMatchQuality == 0) {
-                // Bei Verwerfen vor dem continue prüfen, ob 1000 ms vergangen sind
+                // When discarding, check before the continue whether 1000 ms have passed
                 if (progressTimer.elapsed() >= 1000) {
                     emit searchProgress(iItemsFound, iNameMatched, iContentMatched);
                     progressTimer.restart();
@@ -1599,7 +1599,7 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
             }
 
             if (contentMatchCount == 0) {
-                // Bei Verwerfen vor dem continue prüfen, ob 1000 ms vergangen sind
+                // When discarding, check before the continue whether 1000 ms have passed
                 if (progressTimer.elapsed() >= 1000) {
                     emit searchProgress(iItemsFound, iNameMatched, iContentMatched);
                     progressTimer.restart();
@@ -1618,7 +1618,7 @@ void CustomTableModel::populateModel_mkFileSearch(const QString &searchDir, cons
 
         newFiles.push_back(info);
 
-        // Prüfen, ob seit dem letzten Signal 1000 ms vergangen sind
+        // Check whether 1000 ms have passed since the last signal
         if (progressTimer.elapsed() >= 1000) {
             emit searchProgress(iItemsFound, iNameMatched, iContentMatched);
             progressTimer.restart();
@@ -1658,7 +1658,7 @@ void CustomTableModel::populateModel_mkLauncher(const QStringList &searchFolders
     static const QString localKeyShort = QString("Name[%1]=").arg(localeName2); // e.g. Name[de]
 
     for (const QString &dirPath : appDirs) {
-        QDirIterator iter(dirPath, {"*.desktop"}, QDir::NoDotAndDotDot | QDir::Files);   // Parameter: Pfad, Namensfilter, Filter-Flags
+        QDirIterator iter(dirPath, {"*.desktop"}, QDir::NoDotAndDotDot | QDir::Files);   // Parameters: path, name filter, filter flags
 
         while (iter.hasNext()) {
             iter.next();
@@ -1668,7 +1668,7 @@ void CustomTableModel::populateModel_mkLauncher(const QStringList &searchFolders
                 break;
             }
 
-            QString fileName = iter.fileName(); // Die ID (z.B. "firefox.desktop")
+            QString fileName = iter.fileName(); // The ID (e.g. "firefox.desktop")
 
             if (!seenIds.contains(fileName)) {
                 seenIds.insert(fileName);
@@ -1835,21 +1835,21 @@ void CustomTableModel::populateModel_mkFolderWidget(const QString &dirPath) {
 void CustomTableModel::removeFilePaths(const QSet<QString> &paths) {
     if (paths.isEmpty()) return;
 
-    // Wir laufen rückwärts durch unsere internen Daten
+    // We walk backwards through our internal data
     for (int i = m_files.size() - 1; i >= 0; --i) {
         const CustomFileInfo &file = m_files[i];
         QString currentPath = file.filePath;
 
         if (paths.contains(currentPath)) {
-            // Qt mitteilen, dass wir genau diese Zeile gleich löschen
+            // Tell Qt that we are about to delete exactly this row
             beginRemoveRows(QModelIndex(), i, i);
 
             m_files.erase(m_files.begin() + i);
 
-            // Optional: Auch aus dem CRC-Cache werfen, da die Datei weg ist
+            // Optional: also remove it from the CRC cache, since the file is gone
             m_CrcCache.remove(currentPath);
 
-            endRemoveRows(); // View aktualisiert sich jetzt automatisch sauber
+            endRemoveRows(); // The view now updates itself cleanly and automatically
         }
     }
 }

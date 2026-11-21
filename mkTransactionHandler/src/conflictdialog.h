@@ -27,7 +27,7 @@ public:
     explicit UnderlinedLabel(const QString &text, QWidget *parent = nullptr)
         : QLabel(text, parent) {}
 
-    // Farbe der Unterstreichung festlegen
+    // Set the color of the underline
     void setUnderlineColor(const QColor &color) {
         if (m_underlineColor != color) {
             m_underlineColor = color;
@@ -37,7 +37,7 @@ public:
 
     QColor underlineColor() const { return m_underlineColor; }
 
-    // Steuerung, ob die Linie gezeichnet wird oder nicht
+    // Controls whether the line is drawn or not
     void setUnderlineVisible(bool visible) {
         if (m_underlineVisible != visible) {
             m_underlineVisible = visible;
@@ -49,10 +49,10 @@ public:
 
 protected:
     void paintEvent(QPaintEvent *event) override {
-        // Standard-Textzeichnen durch QLabel (nutzt Theme-Farben)
+        // Default text drawing by QLabel (uses theme colors)
         QLabel::paintEvent(event);
 
-        // Linie nur zeichnen, wenn sichtbar geschaltet, Text vorhanden & Farbe gültig
+        // Only draw the line if it is switched on, text is present & the color is valid
         if (m_underlineVisible && !text().isEmpty() && m_underlineColor.isValid() && m_underlineColor.alpha() > 0) {
             QPainter painter(this);
             painter.setPen(QPen(m_underlineColor, 1));
@@ -73,7 +73,7 @@ protected:
 
 private:
     QColor m_underlineColor = QColor("#ff4040");
-    bool m_underlineVisible = true; // Standardmäßig aktiviert
+    bool m_underlineVisible = true; // Enabled by default
 };
 
 class ConflictDialog : public QDialog {

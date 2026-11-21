@@ -10,7 +10,7 @@
 #include <QMimeType>
 #include <QStack>
 
-#include <unistd.h> // Wird für getuid() benötigt
+#include <unistd.h> // Needed for getuid()
 
 FilePropertiesDialog::FilePropertiesDialog(const QStringList &filePaths, QWidget *parent)
     : QDialog(parent), m_filePaths(filePaths) {
@@ -90,7 +90,7 @@ void FilePropertiesDialog::setupUiMultiMode() {
     line1->setFrameShadow(QFrame::Sunken);
     mainLayout->addWidget(line1);
 
-    // --- Aggregierte Infos ---
+    // --- Aggregated info ---
     auto *formLayout = new QFormLayout();
     formLayout->setContentsMargins(30, 10, 30, 30);
     formLayout->setSpacing(10);
@@ -109,7 +109,7 @@ void FilePropertiesDialog::setupUiMultiMode() {
 
     mainLayout->addLayout(formLayout);
 
-    mainLayout->addStretch(); // Schiebt alles nach oben
+    mainLayout->addStretch(); // Pushes everything up
 
     QFrame *line2 = new QFrame();
     line2->setFrameShape(QFrame::HLine);
@@ -176,11 +176,11 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
     fileinfoGridLayout->setHorizontalSpacing(0);
     fileinfoGridLayout->setVerticalSpacing(10);
 
-    const int colLeftMargin  = 0; // Virtueller Rand links
-    const int colLabel       = 1; // Hier sitzen die Labels
+    const int colLeftMargin  = 0; // Virtual margin left
+    const int colLabel       = 1; // The labels go here
     const int colSpacingH    = 2; // Horizontal spacing
-    const int colField       = 3; // Hier sitzen die Werte/Felder
-    const int colRightMargin = 4; // Virtueller Rand rechts
+    const int colField       = 3; // The values/fields go here
+    const int colRightMargin = 4; // Virtual margin right
 
     // Width of spacer columns
     fileinfoGridLayout->setColumnMinimumWidth(colLeftMargin, 10);
@@ -246,12 +246,12 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
             row++;
         }
 
-        // ================= TRENNLINIE =================
+        // ================= SEPARATOR LINE =================
         QFrame *line5 = new QFrame();
         line5->setFrameShape(QFrame::HLine);
         line5->setFrameShadow(QFrame::Sunken);
-        // Die Linie startet bei Spalte 0 (ganz links) und spannt sich über alle 4 Spalten!
-        // Parameter: addWidget(widget, row, column, rowSpan, columnSpan)
+        // The line starts at column 0 (far left) and spans all 4 columns!
+        // Parameters: addWidget(widget, row, column, rowSpan, columnSpan)
         fileinfoGridLayout->addWidget(line5, row, colLeftMargin, 1, 5);
         row++;
 
@@ -282,12 +282,12 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
         row++;
     }
 
-    // ================= TRENNLINIE =================
+    // ================= SEPARATOR LINE =================
     QFrame *line6 = new QFrame();
     line6->setFrameShape(QFrame::HLine);
     line6->setFrameShadow(QFrame::Sunken);
-    // Die Linie startet bei Spalte 0 (ganz links) und spannt sich über alle 4 Spalten!
-    // Parameter: addWidget(widget, row, column, rowSpan, columnSpan)
+    // The line starts at column 0 (far left) and spans all 4 columns!
+    // Parameters: addWidget(widget, row, column, rowSpan, columnSpan)
     fileinfoGridLayout->addWidget(line6, row, colLeftMargin, 1, 5);
     row++;
 
@@ -318,7 +318,7 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
         fileinfoGridLayout->addWidget(m_lastReadLabel, row, colField);
         row++;
 
-        // ================= TRENNLINIE =================
+        // ================= SEPARATOR LINE =================
         QFrame *line3 = new QFrame();
         line3->setFrameShape(QFrame::HLine);
         line3->setFrameShadow(QFrame::Sunken);
@@ -330,7 +330,7 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
     m_ownerLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     m_groupLabel = new QLabel();
     m_groupLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
-    m_permLabel = new QLabel(); // Label für die Oktal-Anzeige (z.B. 755)
+    m_permLabel = new QLabel(); // Label for the octal display (e.g. 755)
     m_permLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
     fileinfoGridLayout->addWidget(new QLabel(tr("Owner:")), row, colLabel);
@@ -345,7 +345,7 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
     fileinfoGridLayout->addWidget(m_permLabel, row, colField);
     row++;
 
-    // Eine kleine Matrix für die Übersicht
+    // A small matrix for the overview
     auto *permGrid = new QGridLayout();
     permGrid->setContentsMargins(0,0,0,0);
     permGrid->setSpacing(5);
@@ -357,7 +357,7 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
     permGrid->addWidget(new QLabel(tr("Write")), 0, 2);
     permGrid->addWidget(new QLabel(tr("eXecute")), 0, 3);
 
-    // Zeilen-Helper
+    // Row helper
     QStringList rows = { tr("Owner"), tr("Group"), tr("Others") };
     for (int i = 0; i < 3; ++i) {
         permGrid->addWidget(new QLabel(rows[i]), i + 1, 0);
@@ -416,7 +416,7 @@ void FilePropertiesDialog::setupUi(const QFileInfo &fileInfo) {
     m_permCBs[2][1]->setEnabled(canModify);
     m_permCBs[2][2]->setEnabled(canModify);
 
-    // ================= TRENNLINIE =================
+    // ================= SEPARATOR LINE =================
     QFrame *line4 = new QFrame();
     line4->setFrameShape(QFrame::HLine);
     line4->setFrameShadow(QFrame::Sunken);
@@ -517,7 +517,7 @@ void FilePropertiesDialog::initiateStatsCalculation() {
         updateGuiLabelText(finalRes);
     });
 
-    // Variablen für den Thread als Wert kopieren (thread-safe)
+    // Copy variables for the thread by value (thread-safe)
     const QStringList filePathsCopy = m_filePaths;
 
     auto computeTask = [filePathsCopy, &res = m_progress, &abort = m_abort]() {
@@ -541,17 +541,17 @@ void FilePropertiesDialog::calculateStats(const QStringList &filePaths,
 
     QStack<StackItem> dirStack;
 
-    // Hilfs-Lambda zur einheitlichen Bewertung
+    // Helper lambda for a uniform evaluation
     auto processInfo = [&](const QFileInfo &info, bool isSymlinkBranch, bool isTopLevel) {
         // --- 2. SYMLINKS & JUNCTIONS ---
         if (info.isSymbolicLink() || info.isJunction()) {
-            // Der Link selbst
+            // The link itself
             if (!isSymlinkBranch) {
                 res.directFiles++;
                 res.directSize += info.size();
             }
 
-           // Das Ziel auflösen
+           // Resolve the target
             QString targetPath = info.isJunction() ? info.junctionTarget() : info.symLinkTarget();
 
             QFileInfo targetInfo(targetPath);
@@ -559,7 +559,7 @@ void FilePropertiesDialog::calculateStats(const QStringList &filePaths,
                 res.followedFiles++;
                 res.followedSize += targetInfo.size();
             } else {
-                // Toter Symlink
+                // Dead symlink
                 res.followedFiles++;
                 res.followedSize += info.size();
             }
@@ -567,13 +567,13 @@ void FilePropertiesDialog::calculateStats(const QStringList &filePaths,
         // --- 3. NORMALE ORDNER ---
         else if (info.isDir()) {
             if (isTopLevel) {
-                // Im Multi-Mode zählen wir markierte Top-Level Ordner mit
+                // In multi mode, we also count selected top-level folders
                 if (isMultiMode) {
                     res.directFolders++;
                     res.followedFolders++;
                 }
             } else {
-                // Normale Unterordner-Zählung
+                // Normal subfolder counting
                 res.followedFolders++;
                 if (!isSymlinkBranch) {
                     res.directFolders++;
@@ -593,14 +593,14 @@ void FilePropertiesDialog::calculateStats(const QStringList &filePaths,
         }
     };
 
-    // --- PHASE 1: Top-Level Elemente verarbeiten ---
+    // --- PHASE 1: Process top-level items ---
     for (const QString &path : filePaths) {
         if (abortFlag.load()) return;
-        // Aufruf: Kein Symlink-Zweig (false), aber Top-Level (true)
+        // Call: no symlink branch (false), but top level (true)
         processInfo(QFileInfo(path), false, true);
     }
 
-    // --- PHASE 2: Stack-basierte Traversierung ---
+    // --- PHASE 2: Stack-based traversal ---
     while (!dirStack.isEmpty()) {
         if (abortFlag.load()) return;
 
@@ -608,7 +608,7 @@ void FilePropertiesDialog::calculateStats(const QStringList &filePaths,
         QFileInfo dirInfo(current.path);
         QString canonical = dirInfo.canonicalFilePath();
 
-        // Defekter Pfad oder Schleifenschutz für zirkuläre Symlinks
+        // Broken path or loop protection for circular symlinks
         if (canonical.isEmpty() || visitedDirs.contains(canonical)) {
             continue;
         }
@@ -620,7 +620,7 @@ void FilePropertiesDialog::calculateStats(const QStringList &filePaths,
             if (abortFlag.load()) return;
 
             it.next();
-            // Aufruf: Vererbt den Symlink-Status vom Parent, aber nicht Top-Level (false)
+            // Call: inherits the symlink status from the parent, but not top level (false)
             processInfo(it.fileInfo(), current.isSymlinkBranch, false);
         }
     }
@@ -643,26 +643,26 @@ void FilePropertiesDialog::onOkPressed() {
 
         QFile::Permissions newPerms = QFile::Permissions();
 
-        // 1. Besitzer-Rechte (Row 0)
+        // 1. Owner permissions (row 0)
         if (m_permCBs[0][0]->isChecked()) newPerms |= QFile::ReadOwner;
         if (m_permCBs[0][1]->isChecked()) newPerms |= QFile::WriteOwner;
         if (m_permCBs[0][2]->isChecked()) newPerms |= QFile::ExeOwner;
 
-        // 2. Gruppen-Rechte (Row 1)
+        // 2. Group permissions (row 1)
         if (m_permCBs[1][0]->isChecked()) newPerms |= QFile::ReadGroup;
         if (m_permCBs[1][1]->isChecked()) newPerms |= QFile::WriteGroup;
         if (m_permCBs[1][2]->isChecked()) newPerms |= QFile::ExeGroup;
 
-        // 3. Andere-Rechte (Row 2)
+        // 3. Other permissions (row 2)
         if (m_permCBs[2][0]->isChecked()) newPerms |= QFile::ReadOther;
         if (m_permCBs[2][1]->isChecked()) newPerms |= QFile::WriteOther;
         if (m_permCBs[2][2]->isChecked()) newPerms |= QFile::ExeOther;
 
-        // Berechtigungen auf das Dateisystem anwenden
+        // Apply the permissions to the file system
         if (!QFile::setPermissions(filePath, newPerms)) {
             QMessageBox::warning(this, tr("Error"),
                                  tr("Failed to set permissions for:\n%1\n\nDo you have sufficient rights?").arg(filePath));
-            return; // Dialog nicht schließen, damit der Nutzer es korrigieren kann
+            return; // Don't close the dialog, so that the user can correct it
         }
     }
     accept();
@@ -671,8 +671,8 @@ void FilePropertiesDialog::onOkPressed() {
 bool FilePropertiesDialog::canModifyPermissions(const QFileInfo &fileInfo) {
     uid_t currentUid = getuid();
 
-    // 1. Wenn wir Root (ID 0) sind, dürfen wir alles.
-    // 2. Wenn uns die Datei gehört, dürfen wir die Rechte ändern.
+    // 1. If we are root (ID 0), we are allowed to do anything.
+    // 2. If we own the file, we may change the permissions.
     if (currentUid == 0 || fileInfo.ownerId() == currentUid) {
         return true;
     }

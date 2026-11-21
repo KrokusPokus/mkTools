@@ -20,8 +20,8 @@ class CleanLabel : public QLabel {
 public:
     using QLabel::QLabel;
 
-    // Eigener Name statt setText(): QLabel::setText() ist nicht virtuell und würde über
-    // einen QLabel-Zeiger oder eine SLOT()-Verbindung am Neuzeichnen vorbei aufgerufen.
+    // Own name instead of setText(): QLabel::setText() is not virtual and would bypass the repaint
+    // when called via a QLabel pointer or a SLOT() connection.
     void setCleanText(const QString &text) {
         triggerParentUpdate();
 
@@ -31,7 +31,7 @@ public:
     }
 
 private:
-    using QLabel::setText; // versehentliche Aufrufe der Basisversion verhindern
+    using QLabel::setText; // prevent accidental calls of the base version
 
     void triggerParentUpdate() {
         if (parentWidget()) {
@@ -48,8 +48,8 @@ public:
         setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
     }
 
-    // Behält den originalen, ungekürzten Text im Speicher. Eigener Name statt setText():
-    // QLabel::setText() ist nicht virtuell und würde m_fullText sonst umgehen.
+    // Keeps the original, unshortened text in memory. Own name instead of setText():
+    // QLabel::setText() is not virtual and would otherwise bypass m_fullText.
     void setFullText(const QString &text) {
         triggerParentUpdate();
 
@@ -69,7 +69,7 @@ protected:
     }
 
 private:
-    using QLabel::setText; // versehentliche Aufrufe der Basisversion verhindern
+    using QLabel::setText; // prevent accidental calls of the base version
 
     void updateElidedText() {
         QFontMetrics fm = fontMetrics();
@@ -126,9 +126,9 @@ private:
 
     QLocale m_locale;
     bool m_isFinished;
-    bool m_closeRequested = false; // Nutzer hat das Fenster während einer laufenden Operation geschlossen
+    bool m_closeRequested = false; // The user closed the window while an operation was running
 
-    // Daten
+    // Data
     OperationType m_operationType;
     QList<QUrl> m_urls;
     QString m_targetDir;
@@ -136,7 +136,7 @@ private:
     QThread *m_workerThread;
     FileOperation *m_fileOp;
 
-    // UI-Elemente
+    // UI elements
     CleanLabel *m_headerLabel = nullptr;
     ElidedLabel *m_nameLabel = nullptr;
     ElidedLabel *m_sourceLabel = nullptr;

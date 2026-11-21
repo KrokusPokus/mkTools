@@ -6,7 +6,7 @@
 #include <QStandardPaths>
 
 SettingsManager::SettingsManager() {
-	load(); // Lädt beim Erstellen automatisch
+	load(); // Loads automatically on creation
 }
 
 void SettingsManager::load() {
@@ -87,10 +87,10 @@ void SettingsManager::getDefaults() {
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
     searchPaths << QStandardPaths::writableLocation(QStandardPaths::DesktopLocation);
 
-    // Kopieren/Verschieben/Löschen komplett an KIO abgeben (KDE-Dialoge und Plasma-Fortschrittsanzeige)
+    // Hand copying/moving/deleting completely over to KIO (KDE dialogs and Plasma progress display)
     DEFAULT_USE_KDE_FILE_OPERATIONS = true;
 
-    // Die Liste mit dem Pipe-Symbol | zusammenfügen
+    // Join the list with the pipe symbol |
     DEFAULT_SEARCH_FOLDERS = searchPaths.join("|");
 }
 

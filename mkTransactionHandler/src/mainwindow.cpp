@@ -32,7 +32,7 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
 
     m_isFinished = false;
 
-    // 1. UI aufbauen
+    // 1. Build the UI
     setupUi();
 
     m_fileOp = new FileOperation(m_operationType, m_urls, m_targetDir);
@@ -51,10 +51,10 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
     if (isKioOperation) {
         m_pauseButton->setEnabled(false);
 
-        // KIO arbeitet asynchron out-of-process -> Direkt auf dem Main-Thread starten
+        // KIO works asynchronously out-of-process -> start directly on the main thread
         m_fileOp->startKioAsync();
     } else {
-        // Lokale Dateien -> Worker-Thread initialisieren
+        // Local files -> initialize the worker thread
         m_workerThread = new QThread(this);
         m_fileOp->moveToThread(m_workerThread);
 
@@ -73,8 +73,8 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
 
 MainWindow::~MainWindow() {
     if (m_workerThread && m_workerThread->isRunning()) {
-        // Falls die Operation noch läuft (z.B. Session-Ende), erst abbrechen. Sonst würde wait()
-        // auf einen Worker warten, der weiterkopiert oder in einem Konfliktdialog ohne GUI hängt.
+        // If the operation is still running (e.g. session end), abort it first. Otherwise wait()
+        // would wait for a worker that keeps copying or hangs in a conflict dialog without a GUI.
         if (m_fileOp && !m_isFinished) {
             m_fileOp->doCancel();
         }
@@ -91,8 +91,8 @@ void MainWindow::closeEvent(QCloseEvent *event) {
         return;
     }
 
-    // Operation läuft noch: Schließen bedeutet Abbrechen. Das Fenster bleibt offen, bis der Worker
-    // sauber gestoppt hat, und schließt sich dann selbst (siehe onOperationCanceled/-Finished).
+    // Operation still running: closing means aborting. The window stays open until the worker
+    // has stopped cleanly, and then closes itself (see onOperationCanceled/-Finished).
     event->ignore();
     m_closeRequested = true;
 
@@ -126,16 +126,16 @@ void MainWindow::setupUi() {
     auto *centralWidget = new QWidget(this);
     auto *mainLayout = new QVBoxLayout(centralWidget);
     mainLayout->setContentsMargins(13, 7, 13, 7);
-    mainLayout->setSpacing(0); // Präzise Kontrolle über Absätze via addSpacing
+    mainLayout->setSpacing(0); // Precise control over paragraphs via addSpacing
 
     // 1. ZEILE: "Copying X items. (Y Bytes)"
     m_headerLabel = new CleanLabel(this);
     m_headerLabel->setContentsMargins(1, 0, 1, 0);
     mainLayout->addWidget(m_headerLabel);
 
-    mainLayout->addSpacing(8); // Erster Absatz
+    mainLayout->addSpacing(8); // First paragraph
 
-    // 2. BLOCK: Datei-Details (Pfade)
+    // 2. BLOCK: file details (paths)
     auto *pathLayout = new QFormLayout();
     pathLayout->setLabelAlignment(Qt::AlignLeft);
     pathLayout->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -182,7 +182,7 @@ void MainWindow::setupUi() {
     mainLayout->addWidget(m_progressBar);
     mainLayout->addSpacing(8);
 
-    // 3. BLOCK: Metriken & Performance
+    // 3. BLOCK: metrics & performance
     auto *metricsLayout = new QFormLayout();
     metricsLayout->setLabelAlignment(Qt::AlignLeft);
     metricsLayout->setFormAlignment(Qt::AlignLeft | Qt::AlignTop);
@@ -223,7 +223,7 @@ void MainWindow::setupUi() {
     bottomLayout->addLayout(metricsLayout);
 
     auto *buttonLayout = new QVBoxLayout();
-    buttonLayout->addStretch(); // Schiebt den Button nach unten
+    buttonLayout->addStretch(); // Pushes the button down
 
     m_pauseButton = new QPushButton(tr("Pause"), this);
     m_pauseButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -289,14 +289,14 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
             break;
     }
 
-    // 2. Pfade setzen
+    // 2. Set paths
     m_nameLabel->setFullText(stats.currentName);
     m_sourceLabel->setFullText(stats.currentSourceDir);
     if (m_operationType != OperationType::Delete && m_operationType != OperationType::Recycle) {
         m_targetLabel->setFullText(stats.currentTargetDir);
     }
 
-    // 3. Remaining Items und Bytes
+    // 3. Remaining items and bytes
     int processedFiles = stats.filesWritten + stats.filesSkipped + stats.filesError;
     int filesLeft = qMax(0, stats.totalFiles - processedFiles);
     qint64 bytesLeft = qMax(0ll, stats.totalBytes - stats.bytesWritten);
@@ -306,14 +306,14 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
     double secondsElapsed = stats.elapsedMs / 1000.0;
 
     if (secondsElapsed > 0.1 && stats.bytesWritten > 0) {
-        // Geschwindigkeit in Bytes pro Sekunde
+        // Speed in bytes per second
         double bytesPerSecond = stats.bytesWritten / secondsElapsed;
         m_speedLabel->setCleanText(tr("%1/s").arg(Helpers::formatAdaptiveSize(bytesPerSecond)));
 
-        // Geschätzte Restzeit (Time Remaining)
+        // Estimated time remaining
         double secondsLeft = std::min(bytesLeft / bytesPerSecond, 86400.0 * 365);
 
-        // Schön formatieren (hh:mm:ss)
+        // Format nicely (hh:mm:ss)
         int h = int(secondsLeft) / 3600;
         int m = (int(secondsLeft) % 3600) / 60;
         int s = int(secondsLeft) % 60;
@@ -353,10 +353,10 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
     // ==========================================
 
     if (stats.totalBytes > 0) {
-        m_progressBar->setRange(0, 100);    // Zurück zum normalen Modus, falls vorher gescannt wurde
+        m_progressBar->setRange(0, 100);    // Back to normal mode in case we were scanning before
         m_progressBar->setValue(byteProgressPercent);
     } else {
-        m_progressBar->setRange(0, 0);      // Während des Einlesens/Scannens (Dauer-Animation wie bei Windows)
+        m_progressBar->setRange(0, 0);      // While reading/scanning (continuous animation like on Windows)
     }
 
     // ==========================================
@@ -392,8 +392,8 @@ void MainWindow::onProgressUpdated(const CopyStats &stats) {
 }
 
 void MainWindow::onConflictDetected(const Conflict &conflict) {
-    // Falls die 2 Sekunden noch nicht rum sind, das Fenster aber
-    // wegen eines Konflikts jetzt gebraucht wird: Sofort einblenden!
+    // If the 2 seconds are not over yet but the window is needed now
+    // because of a conflict: show it right away!
     if (!isVisible()) {
         show();
     }
@@ -433,7 +433,7 @@ void MainWindow::onOperationFinished(const CopyStats &stats, const QList<FailedI
     setTaskbarProgress(0.0, false);
 
     if (m_closeRequested) {
-        // Nutzer wollte schließen, die Operation war aber schon fertig, bevor der Abbruch griff
+        // The user wanted to close, but the operation was already finished before the abort took effect
         close();
         return;
     }
@@ -458,12 +458,12 @@ void MainWindow::onOperationFinished(const CopyStats &stats, const QList<FailedI
             return;
         }
 
-        // Fehler-Pfade und Gründe für das einzeilige LineEdit zusammenfassen
+        // Combine the error paths and reasons for the single-line LineEdit
         QStringList errorLines;
         for (const auto &item : failedItems) {
             errorLines << QString("%1: %2").arg(item.errorReason, item.sourcePath);
         }
-        // Bei mehreren Fehlern mit Trennzeichen zusammenfügen
+        // Join multiple errors with a separator
         m_errorTextEdit->setPlainText(errorLines.join("\n"));
         m_errorContainer->show();
     } else {
@@ -472,10 +472,10 @@ void MainWindow::onOperationFinished(const CopyStats &stats, const QList<FailedI
         }
 
         if (isVisible()) {
-            // Das Fenster war schon offen (Aktion dauerte länger als 2 Sek) -> normal schließen
+            // The window was already open (action took longer than 2 sec) -> close normally
             close();
         } else {
-            // Das Fenster war noch unsichtbar -> beende gesamte Qt-Applikation
+            // The window was still invisible -> quit the whole Qt application
             if (m_workerThread) {
                 connect(m_workerThread, &QThread::finished, qApp, &QCoreApplication::quit);
                 m_workerThread->quit();
@@ -491,7 +491,7 @@ void MainWindow::onOperationCanceled(int errorCount, const QList<FailedItem> &fa
     setTaskbarProgress(0.0, false);
 
     if (m_closeRequested) {
-        // Abbruch wurde durch Schließen des Fensters ausgelöst -> jetzt wirklich schließen
+        // The abort was triggered by closing the window -> now really close
         close();
         return;
     }
@@ -501,7 +501,7 @@ void MainWindow::onOperationCanceled(int errorCount, const QList<FailedItem> &fa
 
         m_headerLabel->setCleanText(tr("Canceled. %n error occurred before.", nullptr, errorCount));
 
-        // Pause-Button deaktivieren/ausblenden, da Abbruch final ist
+        // Disable/hide the pause button, since the abort is final
         m_pauseButton->setEnabled(false);
         m_pauseButton->setText(tr("Pause"));
 
@@ -515,20 +515,20 @@ void MainWindow::onOperationCanceled(int errorCount, const QList<FailedItem> &fa
             return;
         }
 
-        // Fehler-Pfade und Gründe für das einzeilige LineEdit zusammenfassen
+        // Combine the error paths and reasons for the single-line LineEdit
         QStringList errorLines;
         for (const auto &item : failedItems) {
             errorLines << QString("%1: %2").arg(item.errorReason, item.sourcePath);
         }
-        // Bei mehreren Fehlern mit Trennzeichen zusammenfügen
+        // Join multiple errors with a separator
         m_errorTextEdit->setPlainText(errorLines.join("\n"));
         m_errorContainer->show();
     } else {
         if (isVisible()) {
-            // Das Fenster war schon offen (Aktion dauerte länger als 2 Sek) -> normal schließen
+            // The window was already open (action took longer than 2 sec) -> close normally
             close();
         } else {
-            // Das Fenster war noch unsichtbar -> beende gesamte Qt-Applikation
+            // The window was still invisible -> quit the whole Qt application
             if (m_workerThread) {
                 connect(m_workerThread, &QThread::finished, qApp, &QCoreApplication::quit);
                 m_workerThread->quit();
@@ -556,7 +556,7 @@ void MainWindow::onPauseRequested() {
 }
 
 void MainWindow::onRetryRequested() {
-    m_isFinished = false; // Retry startet eine neue laufende Operation (wichtig für closeEvent)
+    m_isFinished = false; // Retry starts a new running operation (important for closeEvent)
     m_errorContainer->hide();
     m_pauseButton->setEnabled(false);
 
@@ -586,10 +586,10 @@ void MainWindow::setTaskbarProgress(double progressValue, bool visible) {
     properties["progress"] = progressValue;
     properties["progress-visible"] = visible;
 
-    // 1. Fenster-ID mitsenden, damit KDE Plasma den Fortschritt dem spezifischen Icon zuordnet
+    // 1. Send the window ID along so that KDE Plasma assigns the progress to the specific icon
     properties["window-id"] = static_cast<qulonglong>(this->winId());
 
-    // 2. Eindeutigen D-Bus-Objektpfad pro Fenster/Instanz erzeugen
+    // 2. Create a unique D-Bus object path per window/instance
     QString objectPath = QString("/com/canonical/unity/launcherentry/app_%1")
                              .arg(this->winId());
 

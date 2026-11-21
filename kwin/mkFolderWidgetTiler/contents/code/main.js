@@ -9,7 +9,7 @@ var STAGGER_STEPS = 8;  // reset after this many steps
 var STAGGER_OFFSET = 32; // offset per step
 var staggerIndex = 0;
 
-// Unser Dictionary: Key = Desktop-ID, Value = Array of windowsw
+// Our dictionary: Key = desktop ID, Value = array of windows
 var managedWindowsPerDesktop = {};
 
 function loadConfig() {
@@ -18,7 +18,7 @@ function loadConfig() {
 	COLUMN_WIDTH = readConfig("ColumnWidth", 250);
 	COLUMN_WIDTH_MIN = COLUMN_WIDTH;
 
-	// Hier Logik einfügen, um bestehende Fenster ggf. neu zu berechnen
+	// Add logic here to recalculate existing windows if necessary
 	console.log("mkFolderWidgetTiler: loadConfig() with MAX_WINDOWS=" + MAX_WINDOWS + " COLUMN_WIDTH=" + COLUMN_WIDTH + " WINDOW_CLASS=" + WINDOW_CLASS);
 }
 
@@ -74,7 +74,7 @@ workspace.windowAdded.connect(function(w) {
 		var arr = managedWindowsPerDesktop[dKey];
 		var targetIndex = -1;
 
-		// Rückwärts suchen, um bei mehreren gleichen Fenstern das NEUESTE/UNTERSTE zu finden
+		// Search backwards to find the NEWEST/LOWEST one if there are several identical windows
 		for (var i = arr.length - 1; i >= 0; i--) {
 			if (arr[i].caption === w.caption) {
 				targetIndex = i;
@@ -83,10 +83,10 @@ workspace.windowAdded.connect(function(w) {
 		}
 
 		if (targetIndex !== -1) {
-			// Fügt das neue Fenster direkt unter dem gefundenen Fenster ein
+			// Inserts the new window directly below the found window
 			arr.splice(targetIndex + 1, 0, w);
 		} else {
-			// Falls kein Fenster mit gleichem Pfad/Titel existiert: normal unten anfügen
+			// If no window with the same path/title exists: append at the bottom as usual
 			arr.push(w);
 		}
 
@@ -100,7 +100,7 @@ workspace.windowAdded.connect(function(w) {
 
 			var baseX = tilingLimitX - newW;
 
-			// Berechnung der Kaskade
+			// Compute the cascade
 			var step = staggerIndex % STAGGER_STEPS;
 			var cycle = Math.floor(staggerIndex / STAGGER_STEPS);
 
@@ -108,12 +108,12 @@ workspace.windowAdded.connect(function(w) {
 			var offsetY = (step * STAGGER_OFFSET) + (cycle * STAGGER_OFFSET);
 
 			var newX = baseX - offsetX;
-			var newY = area.y + offsetY; // Wir starten oben an der Workspace-Area
+			var newY = area.y + offsetY; // We start at the top of the workspace area
 
 
-			// Sicherheitscheck: Nicht links aus dem Bildschirm schieben
+			// Safety check: don't push off the left edge of the screen
 			if (newX < area.x) newX = area.x;
-			// Sicherheitscheck: Nicht unten aus dem Bildschirm schieben
+			// Safety check: don't push off the bottom edge of the screen
 			if (newY + newH > area.y + area.height) newH = area.height - newY;
 
 			w.frameGeometry = {
@@ -123,7 +123,7 @@ workspace.windowAdded.connect(function(w) {
 				height: newH
 			};
 
-			// Counter erhöhen und bei STAGGER_STEPS wieder auf 0 setzen
+			// Increase the counter and reset it to 0 at STAGGER_STEPS
 			staggerIndex = (staggerIndex + 1) % (STAGGER_STEPS * STAGGER_STEPS);
 		}
 
@@ -347,7 +347,7 @@ function getDesktopKey(w) {
 }
 
 
-// Dieses Signal wird gefeuert, wenn du in der UI auf "Anwenden" klickst
+// This signal is fired when you click "Apply" in the UI
 options.configChanged.connect(function() {
 	loadConfig();
 });

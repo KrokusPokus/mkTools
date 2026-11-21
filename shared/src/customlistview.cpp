@@ -15,22 +15,22 @@
 CustomListView::CustomListView(QWidget *parent)
     : QListView(parent)
 {
-    // Hier könntest du auch Standard-Einstellungen für deine View setzen,
-    // z.B. setAcceptDrops(true);
+    // You could also set default settings for your view here,
+    // e.g. setAcceptDrops(true);
 }
 
 void CustomListView::startDrag(Qt::DropActions supportedActions) {
-    // 1. Prüfen, ob die rechte Maustaste gedrückt ist, während der Drag startet
+    // 1. Check whether the right mouse button is pressed while the drag starts
     bool isRightClick = (QGuiApplication::mouseButtons() & Qt::RightButton);
 
     QModelIndexList indexes = selectedIndexes();
     if (indexes.isEmpty()) return;
 
-    // 2. Standard-MimeData vom Model für die ausgewählten Elemente generieren lassen
+    // 2. Let the model generate the default MimeData for the selected items
     QMimeData *mimeData = model()->mimeData(indexes);
     if (!mimeData) return;
 
-    // 3. Wenn es ein Rechtsklick-Drag ist, flaggen wir das Objekt temporär
+    // 3. If it is a right-click drag, we flag the object temporarily
     if (isRightClick) {
         mimeData->setData("application/x-rightclickdrag", QByteArray("1"));
     }
@@ -58,21 +58,21 @@ void CustomListView::startDrag(Qt::DropActions supportedActions) {
     }
 
     if (!pm.isNull()) {
-        // --- NEU: 50% Transparenz anwenden ---
-        // 1. Eine neue, leere Pixmap mit transparentem Hintergrund erstellen
+        // --- NEW: Apply 50% transparency ---
+        // 1. Create a new, empty pixmap with a transparent background
         QPixmap transparentPm(pm.size());
         transparentPm.fill(Qt::transparent);
 
-        // 2. QPainter auf der neuen Pixmap starten
+        // 2. Start a QPainter on the new pixmap
         QPainter painter(&transparentPm);
         painter.setRenderHint(QPainter::Antialiasing);
 
-        // 3. Deckkraft auf 50% (0.5) setzen und das Original hineinzeichnen
+        // 3. Set the opacity to 50% (0.5) and draw the original into it
         painter.setOpacity(0.5);
         painter.drawPixmap(0, 0, pm);
-        painter.end(); // Maler schließen, um die Pixmap freizugeben
+        painter.end(); // Close the painter to release the pixmap
 
-        // 4. Die transparente Pixmap an den Drag übergeben
+        // 4. Hand the transparent pixmap over to the drag
         drag->setPixmap(transparentPm);
         drag->setHotSpot(QPoint(transparentPm.width() / 2, transparentPm.height() / 2));
     }
@@ -112,16 +112,16 @@ void CustomListView::dropEvent(QDropEvent *event) {
     updateTargetCache(event->position().toPoint(), event->mimeData());
 
     if (event->mimeData()->hasFormat("application/x-rightclickdrag")) {
-        // 1. DATEN DIREKT SICHERN (bevor das Event zerstört wird)
+        // 1. SAVE THE DATA RIGHT AWAY (before the event is destroyed)
         QList<QUrl> urls = event->mimeData()->urls();
         QPoint pos = event->position().toPoint();
         QModelIndex targetIndex = indexAt(pos);
 
-        // 2. NATIVEN LOOP SOFORT BEENDEN (Löst den Linux-Mauszeiger/Grab auf)
+        // 2. END THE NATIVE LOOP IMMEDIATELY (releases the Linux mouse cursor/grab)
         event->setDropAction(Qt::CopyAction);
         event->accept();
 
-        // 3. MENÜ ASYNCHRON ÖFFNEN
+        // 3. OPEN THE MENU ASYNCHRONOUSLY
         QTimer::singleShot(0, this, [this, urls, pos, targetIndex]() {
 
             QAbstractItemModel *currentModel = model();
@@ -211,20 +211,20 @@ void CustomListView::mousePressEvent(QMouseEvent *event) {
         m_selectionAnchor = clicked;
     }
 
-    m_isMouseClickSelection = true;     // Flag aktivieren: Wir befinden uns in einem echten Mausklick
+    m_isMouseClickSelection = true;     // Enable flag: we are in a real mouse click
     QListView::mousePressEvent(event);
-    m_isMouseClickSelection = false;    // Direkt danach wieder zurücksetzen
+    m_isMouseClickSelection = false;    // Reset it right afterwards
 }
 
 // Part of mitigation for Shift+Up/Shift+Down range selection bug
 void CustomListView::keyPressEvent(QKeyEvent *event) {
     bool shiftPressed = event->modifiers() & Qt::ShiftModifier;
 
-    m_isKeyboardSelection = true;       // Flag aktivieren: Wir befinden uns in einem Tastatur-Event
-    QListView::keyPressEvent(event);    // Qt die normale Bewegung machen lassen (ändert den currentIndex)
-    m_isKeyboardSelection = false;      // Direkt danach wieder zurücksetzen
+    m_isKeyboardSelection = true;       // Enable flag: we are in a keyboard event
+    QListView::keyPressEvent(event);    // Let Qt do the normal movement (changes the currentIndex)
+    m_isKeyboardSelection = false;      // Reset it right afterwards
 
-    // Wenn KEIN Shift gedrückt war, wandert der Selektions-Anker stur mit
+    // If Shift was NOT pressed, the selection anchor simply moves along
     if (!shiftPressed) {
         m_selectionAnchor = currentIndex();
     }
@@ -235,13 +235,13 @@ void CustomListView::setSelection(const QRect &rect, QItemSelectionModel::Select
     bool isShift = QGuiApplication::keyboardModifiers() & Qt::ShiftModifier;
     QModelIndex current = currentIndex();
 
-    // Wir erlauben unsere lineare Selektion NUR, wenn das Event nachweislich
-    // von einem direkten Tastendruck oder einem stationären Mausklick stammt.
+    // We allow our linear selection ONLY if the event verifiably comes
+    // from a direct key press or a stationary mouse click.
     bool safeToLinearize = m_isKeyboardSelection || m_isMouseClickSelection;
 
     if (!isShift || !safeToLinearize || !current.isValid() || !m_selectionAnchor.isValid()) {
-        // Falls der User wirklich zieht (z.B. Gummiband-Auswahl im leeren Raum),
-        // greift das Standard-Verhalten von Qt.
+        // If the user really drags (e.g. rubber band selection in empty space),
+        // Qt's default behavior applies.
         QListView::setSelection(rect, command);
         return;
     }
@@ -257,7 +257,7 @@ void CustomListView::setSelection(const QRect &rect, QItemSelectionModel::Select
         }
     }
 
-    // Wir füttern das Selektionsmodell direkt mit unserer mathematisch exakten Range
+    // We feed the selection model directly with our mathematically exact range
     if (selectionModel()) {
         selectionModel()->select(linearSelection, command);
     }
@@ -265,105 +265,105 @@ void CustomListView::setSelection(const QRect &rect, QItemSelectionModel::Select
 
 // Part of mitigation for Shift+Up/Shift+Down range selection bug
 void CustomListView::currentChanged(const QModelIndex &current, const QModelIndex &previous) {
-    // Erst die Basisklasse ihre Arbeit machen lassen
+    // Let the base class do its work first
     QListView::currentChanged(current, previous);
 
-    // Wenn die Änderung von außen (programmatisch) kommt,
-    // ist weder das Tastatur- noch das Maus-Flag aktiv.
-    // Ausnahme: Während der Gummiband-Auswahl setzt QAbstractItemView::mouseMoveEvent() den
-    // currentIndex auf das Item unter der Maus. Das darf den Anker nicht verschieben.
+    // If the change comes from outside (programmatically),
+    // neither the keyboard flag nor the mouse flag is set.
+    // Exception: during rubber band selection, QAbstractItemView::mouseMoveEvent() sets the
+    // currentIndex to the item under the mouse. That must not move the anchor.
     if (!m_isKeyboardSelection && !m_isMouseClickSelection && state() != QAbstractItemView::DragSelectingState) {
-        // Den Anker sauber auf den neuen aktuellen Index setzen
+        // Set the anchor cleanly to the new current index
         m_selectionAnchor = current;
     }
 }
 
 // ---------------------------------------------------------------------------------------------
-// Workaround: Gummiband bleibt unter KDE Plasma Wayland stehen (KWin-Fehler, nicht unserer)
+// Workaround: Rubber band gets stuck on KDE Plasma Wayland (KWin bug, not ours)
 // ---------------------------------------------------------------------------------------------
-// Ablauf des Fehlers:
-//   1. Ein ANDERES Fenster ist aktiv. Der User drückt die linke Maustaste in der View (auf
-//      leerer Fläche) und zieht ein Gummiband auf. Der Klick aktiviert unser Fenster; mit der
-//      KWin-Standardeinstellung "Activate, pass click and raise on release" wird es aber erst
-//      beim LOSLASSEN nach vorne geholt. War unser Fenster schon aktiv, tritt der Fehler nicht auf.
-//   2. Er zieht mit gedrückter Taste bis über die Titelleiste des eigenen Fensters. Unter
-//      Plasma Wayland ist das eine serverseitige Dekoration, die KWin selbst zeichnet.
-//      Solange die Taste gehalten wird, greift der implizite Pointer-Grab korrekt: Wir
-//      bekommen weiter MouseMove-Events (mit negativen y-Koordinaten).
-//   3. Er lässt die Taste ÜBER DER TITELLEISTE los. Statt eines wl_pointer.button(released)
-//      schickt KWin dem Client nur ein wl_pointer.leave. Qt erhält also nie ein
-//      MouseButtonRelease, sondern nur ein QEvent::Leave, während es die Taste weiter für
-//      gedrückt hält (QGuiApplication::mouseButtons() bleibt Qt::LeftButton).
-//      (Warum, steht unten unter "Ursache in KWin".)
-//   4. Folge: Die View bleibt im Gummiband-Zustand, das Rechteck bleibt sichtbar stehen und
-//      verschwindet erst beim nächsten Klick ins Fenster.
-//   Per Diagnose-Log verifiziert (Qt 6.12.0, KWin 6.8.3). Dolphin zeigt denselben Fehler.
-//   Unter X11 tritt er nicht auf.
+// How the bug happens:
+//   1. ANOTHER window is active. The user presses the left mouse button in the view (on
+//      empty space) and drags a rubber band. The click activates our window; with the
+//      KWin default setting "Activate, pass click and raise on release", however, it is only
+//      raised on RELEASE. If our window was already active, the bug does not occur.
+//   2. The user drags with the button held down until over the title bar of our own window. On
+//      Plasma Wayland, that is a server-side decoration that KWin draws itself.
+//      As long as the button is held, the implicit pointer grab works correctly: we
+//      keep receiving MouseMove events (with negative y coordinates).
+//   3. The user releases the button OVER THE TITLE BAR. Instead of a wl_pointer.button(released),
+//      KWin only sends the client a wl_pointer.leave. So Qt never receives a
+//      MouseButtonRelease, only a QEvent::Leave, while it still considers the button
+//      pressed (QGuiApplication::mouseButtons() stays Qt::LeftButton).
+//      (For the reason, see "Cause in KWin" below.)
+//   4. Result: The view stays in rubber band state, the rectangle stays visible and
+//      only disappears with the next click into the window.
+//   Verified with a diagnostic log (Qt 6.12.0, KWin 6.8.3). Dolphin shows the same bug.
+//   It does not occur on X11.
 //
-// Ursache in KWin (im KWin-Quellcode nachvollzogen, Stand KWin 6.8):
-//   a) Linksklick in ein inaktives Fenster löst in KWin standardmäßig den Fenster-Befehl
-//      Options::MouseActivateRaiseOnReleaseAndPassClick aus (Options::defaultCommandWindow1(),
-//      src/options.h). Beim DRÜCKEN ruft Window::performMousePressCommand() nur
-//      workspace()->requestFocus() auf und merkt sich m_delayedRaise = true. Angehoben wird
-//      das Fenster erst beim Loslassen. (Sinn der Einstellung: Man kann aus einem verdeckten
-//      Fenster heraus Drag&Drop starten, ohne dass es dabei nach vorne springt.)
-//   b) Beim Loslassen arbeitet PointerInputRedirection::processButton() (src/pointer_input.cpp)
-//      in dieser Reihenfolge:
-//        1. updateButton()   -> die Taste gilt ab jetzt KWin-intern als losgelassen
-//        2. Filterkette      -> u. a. WindowActionInputFilter, ganz am Ende ForwardInputFilter
-//        3. update()         -> Pointer-Fokus neu berechnen (Ende des impliziten Grabs)
-//      Gedacht ist: Erst wird das Release an den Client geschickt (Schritt 2, ForwardInputFilter
-//      -> SeatInterface::notifyPointerButton()), dann wechselt der Fokus (Schritt 3).
-//   c) In Schritt 2 kommt aber der WindowActionInputFilter (src/input.cpp) VOR dem
-//      ForwardInputFilter dran. Er führt für das Release den verzögerten Befehl aus:
+// Cause in KWin (traced in the KWin source code, as of KWin 6.8):
+//   a) By default, a left click into an inactive window triggers the KWin window command
+//      Options::MouseActivateRaiseOnReleaseAndPassClick (Options::defaultCommandWindow1(),
+//      src/options.h). On PRESS, Window::performMousePressCommand() only calls
+//      workspace()->requestFocus() and remembers m_delayedRaise = true. The window is only
+//      raised on release. (Purpose of the setting: you can start a drag&drop out of a covered
+//      window without it jumping to the front.)
+//   b) On release, PointerInputRedirection::processButton() (src/pointer_input.cpp) works
+//      in this order:
+//        1. updateButton()   -> from now on, the button counts as released inside KWin
+//        2. filter chain     -> among others WindowActionInputFilter, ForwardInputFilter at the very end
+//        3. update()         -> recalculate the pointer focus (end of the implicit grab)
+//      The intention is: first the release is sent to the client (step 2, ForwardInputFilter
+//      -> SeatInterface::notifyPointerButton()), then the focus changes (step 3).
+//   c) In step 2, however, the WindowActionInputFilter (src/input.cpp) runs BEFORE the
+//      ForwardInputFilter. For the release, it executes the delayed command:
 //      Window::performMouseReleaseCommand() -> performDelayedRaise() -> Workspace::raiseWindow().
-//      Weil unser Fenster vorher nicht ganz oben lag, ändert sich die Stapelreihenfolge. Der
-//      StackingUpdatesBlocker in raiseWindow() sendet beim Verlassen SYNCHRON das Signal
-//      Workspace::stackingOrderChanged, und das ist mit InputDeviceHandler::update() verbunden
-//      (src/input.cpp, InputDeviceHandler::init()).
-//   d) Dieses vorzeitige update() wird nicht mehr blockiert: focusUpdatesBlocked() prüft nur
-//      areButtonsPressed(), und die Taste ist seit Schritt 1 schon als losgelassen markiert.
-//      Also berechnet KWin den Fokus neu. Der Zeiger steht über der Titelleiste, daher setzt
-//      updateDecoration() die Dekoration als Ziel und updateFocus() entzieht unserer
-//      Client-Fläche den Fokus: SeatInterface::notifyPointerLeave() -> wl_pointer.leave an uns.
-//   e) Danach erreicht das Release endlich den ForwardInputFilter. PointerInterface::sendButton()
-//      (src/wayland/pointer.cpp) schickt aber nur an die aktuell fokussierte Fläche, und die gibt
-//      es nicht mehr. Das Release wird ohne jede Meldung verworfen.
-//   Das erklärt alle Beobachtungen:
-//   - War unser Fenster schon aktiv/oben, gibt es kein verzögertes Anheben, also kein
-//     vorzeitiges update() und keinen Fehler.
-//   - Beim Loslassen über unserer eigenen Client-Fläche ergibt die Neuberechnung denselben
-//     Fokus, also kein Leave und keinen Fehler.
-//   - Der Fehler hängt nicht vom Toolkit ab, deshalb hat Dolphin ihn genauso.
-//   Passende Korrektur in KWin wäre: Fokus-Neuberechnungen blockieren, solange ein Release
-//   durch die Filterkette läuft. Das update() am Ende von processButton() holt sie danach in
-//   der richtigen Reihenfolge nach (erst Release an den Client, dann Fokuswechsel).
+//      Since our window was not on top before, the stacking order changes. The
+//      StackingUpdatesBlocker in raiseWindow() SYNCHRONOUSLY emits the signal
+//      Workspace::stackingOrderChanged when it goes out of scope, and that is connected to
+//      InputDeviceHandler::update() (src/input.cpp, InputDeviceHandler::init()).
+//   d) This premature update() is no longer blocked: focusUpdatesBlocked() only checks
+//      areButtonsPressed(), and the button has been marked as released since step 1.
+//      So KWin recalculates the focus. The pointer is over the title bar, so
+//      updateDecoration() sets the decoration as the target and updateFocus() takes the focus
+//      away from our client surface: SeatInterface::notifyPointerLeave() -> wl_pointer.leave to us.
+//   e) After that, the release finally reaches the ForwardInputFilter. PointerInterface::sendButton()
+//      (src/wayland/pointer.cpp), however, only sends to the currently focused surface, and that
+//      does not exist anymore. The release is discarded without any message.
+//   This explains all observations:
+//   - If our window was already active/on top, there is no delayed raise, hence no
+//     premature update() and no bug.
+//   - When releasing over our own client surface, the recalculation yields the same
+//     focus, hence no leave and no bug.
+//   - The bug does not depend on the toolkit, which is why Dolphin has it as well.
+//   A suitable fix in KWin would be: block focus recalculations while a release
+//   is passing through the filter chain. The update() at the end of processButton() then catches up on them
+//   in the right order (first the release to the client, then the focus change).
 //
-// Erkennung: Bei korrekt funktionierendem implizitem Grab kommt während eines gehaltenen
-// Gummibands KEIN Leave beim Viewport an, auch nicht, wenn der Zeiger das Fenster verlässt.
-// Ein Leave mitten in einem aktiven Gummiband-Zug bedeutet daher: Der Release wurde
-// verschluckt.
+// Detection: With a correctly working implicit grab, NO leave arrives at the viewport while a
+// rubber band is being held, not even when the pointer leaves the window.
+// A leave in the middle of an active rubber band drag therefore means: the release was
+// swallowed.
 //
-// Abhilfe: Wir holen den fehlenden Release selbst nach, indem wir mouseReleaseEvent() mit einem
-// künstlichen Event an der aktuellen Cursorposition aufrufen. Damit läuft der reguläre
-// Aufräum-Code (unser eigener und der von Qt): Gummiband ausblenden, Zustand auf NoState
-// zurücksetzen, Autoscroll stoppen. Die bis dahin aufgezogene Auswahl bleibt erhalten,
-// genau wie bei einem normalen Loslassen.
-// Bewusst auf Wayland beschränkt, damit wir das Verhalten auf anderen Plattformen nicht
-// verändern. Normale Klicks und Datei-Drag&Drop berührt der Workaround nicht.
+// Remedy: We deliver the missing release ourselves by calling mouseReleaseEvent() with a
+// synthetic event at the current cursor position. This runs the regular
+// cleanup code (ours and Qt's): hide the rubber band, reset the state to NoState,
+// stop autoscrolling. The selection made up to that point is kept,
+// just like with a normal release.
+// Deliberately limited to Wayland, so that we don't change the behavior on other
+// platforms. The workaround does not affect normal clicks and file drag&drop.
 //
-// Bekannter Rest: QGuiApplication::mouseButtons() meldet bis zum nächsten echten Klick
-// weiterhin Qt::LeftButton, weil der globale Zustand von Qt nur durch echte Plattform-Events
-// zurückgesetzt wird. Im Code wird mouseButtons() nur in startDrag() auf Qt::RightButton
-// geprüft, daher ist das unkritisch.
+// Known leftover: QGuiApplication::mouseButtons() keeps reporting Qt::LeftButton until the next
+// real click, because Qt's global state is only reset by real platform events.
+// In the code, mouseButtons() is only checked for Qt::RightButton in startDrag(),
+// so this is not critical.
 //
-// Kann entfernt werden, sobald KWin das Release beim verzögerten Anheben ("raise on release")
-// korrekt an den Client ausliefert.
+// Can be removed as soon as KWin correctly delivers the release to the client when raising
+// with a delay ("raise on release").
 // ---------------------------------------------------------------------------------------------
 bool CustomListView::viewportEvent(QEvent *event) {
     if (event->type() == QEvent::Leave
         && QGuiApplication::platformName().startsWith(QLatin1String("wayland"))
-        && state() == QAbstractItemView::DragSelectingState) {   // Qts eigenes Gummiband ist aktiv
+        && state() == QAbstractItemView::DragSelectingState) {   // Qt's own rubber band is active
         const QPoint localPos = viewport()->mapFromGlobal(QCursor::pos());
         QMouseEvent release(QEvent::MouseButtonRelease, QPointF(localPos), QPointF(QCursor::pos()),
                             Qt::LeftButton, Qt::NoButton, QGuiApplication::keyboardModifiers());
@@ -373,7 +373,7 @@ bool CustomListView::viewportEvent(QEvent *event) {
 }
 
 bool CustomListView::interceptInvalidFileTarget(QDragMoveEvent *event, bool isEnterEvent) {
-    // 1. Index unter der echten Mausposition ermitteln und entpacken
+    // 1. Determine the index under the real mouse position and unwrap it
     QModelIndex index = indexAt(event->position().toPoint());
     QAbstractItemModel *currentModel = model();
     while (auto proxy = qobject_cast<QAbstractProxyModel*>(currentModel)) {
@@ -382,12 +382,12 @@ bool CustomListView::interceptInvalidFileTarget(QDragMoveEvent *event, bool isEn
     }
     auto *customModel = qobject_cast<CustomTableModel*>(currentModel);
 
-    // 2. Prüfen, ob wir auf einer Datei (ungültiges Ziel) stehen
+    // 2. Check whether we are over a file (invalid target)
     if (customModel && index.isValid()) {
         QString itemPath = customModel->filePath(index);
         if (!itemPath.isEmpty() && !QFileInfo(itemPath).isDir()) {
 
-            // 3. Trick anwenden: Fake-Event mit (-1, -1) an die korrekte Basis-Funktion senden
+            // 3. Apply a trick: send a fake event with (-1, -1) to the correct base function
             if (isEnterEvent) {
                 QDragEnterEvent fakeEvent(QPointF(-1, -1), event->possibleActions(), event->mimeData(), event->buttons(), event->modifiers());
                 QAbstractItemView::dragEnterEvent(&fakeEvent);
@@ -396,17 +396,17 @@ bool CustomListView::interceptInvalidFileTarget(QDragMoveEvent *event, bool isEn
                 QAbstractItemView::dragMoveEvent(&fakeEvent);
             }
 
-            // Dem Betriebssystem signalisieren: Drop hier verboten!
+            // Signal to the operating system: drop not allowed here!
             event->ignore();
-            return true; // Event erfolgreich abgefangen
+            return true; // Event intercepted successfully
         }
     }
 
-    return false; // Kein Datei-Target, normaler Ablauf erforderlich
+    return false; // No file target, normal handling required
 }
 
 void CustomListView::updateTargetCache(const QPoint &pos, const QMimeData *mimeData) {
-    // 1. Visuellen Index holen und durch Proxy-Kette entpacken
+    // 1. Get the visual index and unwrap it through the proxy chain
     QModelIndex sourceIndex = indexAt(pos);
     QAbstractItemModel *currentModel = model();
     while (auto proxy = qobject_cast<QAbstractProxyModel*>(currentModel)) {
@@ -417,7 +417,7 @@ void CustomListView::updateTargetCache(const QPoint &pos, const QMimeData *mimeD
     auto *tableModel = qobject_cast<CustomTableModel*>(currentModel);
     if (!tableModel) return;
 
-    // 2. Zielverzeichnis ermitteln
+    // 2. Determine the target directory
     QString currentTargetDir = tableModel->currentDirectoryPath();
     if (sourceIndex.isValid() && dropIndicatorPosition() == QAbstractItemView::OnItem) {
         QString itemPath = tableModel->filePath(sourceIndex);
@@ -426,7 +426,7 @@ void CustomListView::updateTargetCache(const QPoint &pos, const QMimeData *mimeD
         }
     }
 
-    // 3. Wenn sich der Ordner geändert hat: Cache neu berechnen
+    // 3. If the folder has changed: recalculate the cache
     if (currentTargetDir != m_targetDirPrevious) {
         m_targetDirPrevious = currentTargetDir;
         m_isSameFolderCached = false;
