@@ -77,12 +77,9 @@ private:
 
     bool showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly);
     void startSearch();
-    void loadMimeCache();
     void fileOperation(OperationType opType, const QList<QUrl> &urls, const QString &targetDir, bool fromClipboard = false);
     void onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::KeyboardModifiers modifiers);
     void onShowContextMenu(QAbstractItemView *senderView, const QPoint &pos);
-    void parseMimeAppsList(const QString &path);
-    void parseMimeInfoCache(const QString &path);
     void removeCutMarkers();
     void scrollToCurrentItem();
     void selectAllItems();
@@ -146,7 +143,6 @@ private:
 
     std::atomic<bool> m_bSearchActive{false};
     std::atomic<int> m_currentSearchGeneration{0};
-    QHash<QString, QStringList> m_mimeCache;
     QByteArray m_currentClipboardToken;
     QString m_privateTokenName = "application/x-mkfolderwidget-token";
     SettingsManager m_settings;

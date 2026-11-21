@@ -45,7 +45,7 @@
 #include <QUrl>
 #include <QUuid>
 
-#include <algorithm> // For std::reverse
+#include <algorithm>
 #include <utility> // For std::as_const
 
 #include <KFileItem>
@@ -400,8 +400,6 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     // --------------------------------------------------------------------
-
-    loadMimeCache();
 
     if (QDBusConnection::sessionBus().registerService("org.mkLauncher")) {
         QDBusConnection::sessionBus().registerObject("/Main", this, QDBusConnection::ExportScriptableSlots | QDBusConnection::ExportScriptableSignals | QDBusConnection::ExportScriptableProperties);
@@ -1761,86 +1759,6 @@ void MainWindow::guiHideConditional() {
     QTimer::singleShot(50, this, [this]() {
     this->hide();
     });
-}
-
-void MainWindow::loadMimeCache() {
-    m_mimeCache.clear();
-    m_mimeCache.reserve(500);
-
-    QStringList appDirs = QStandardPaths::standardLocations(QStandardPaths::ApplicationsLocation);  // Order: User before System
-    std::reverse(appDirs.begin(), appDirs.end());   // Reverse to System before User, so we can overwrite System with User keys while parsing
-    for (const QString &dirPath : std::as_const(appDirs)) {
-        QString cachePath = QDir(dirPath).filePath("mimeinfo.cache");
-        parseMimeInfoCache(cachePath);
-    }
-
-    parseMimeAppsList(QDir(QDir::homePath()).filePath(".config/mimeapps.list"));
-}
-
-void MainWindow::parseMimeInfoCache(const QString &path) {
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
-
-    QTextStream in(&file);
-    while (!in.atEnd()) {
-        QString line = in.readLine().trimmed();
-
-        auto equalsPos = line.indexOf('=');
-        if (equalsPos < 1) continue;  // Skip -1 (no '=') and 0 (empty mime)
-
-        QString mime = line.first(equalsPos).trimmed();
-        QStringList newApps = line.sliced(equalsPos + 1).split(';', Qt::SkipEmptyParts);
-
-        QStringList &currentApps = m_mimeCache[mime];
-        for (const QString &app : std::as_const(newApps)) {
-            QString trimmed = app.trimmed();
-            if (!trimmed.isEmpty() && !currentApps.contains(trimmed)) {
-                currentApps.append(trimmed);
-            }
-        }
-    }
-}
-
-void MainWindow::parseMimeAppsList(const QString &path) {
-    QFile file(path);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) return;
-
-    QTextStream in(&file);
-    QString currentGroup;
-
-    while (!in.atEnd()) {
-        QString line = in.readLine().trimmed();
-        if (line.isEmpty() || line.startsWith('#')) continue;
-
-        if (line.startsWith('[') && line.endsWith(']')) {
-            currentGroup = line.mid(1, line.length() - 2);
-            continue;
-        }
-
-        auto equalsPos = line.indexOf('=');
-        if (equalsPos < 1) continue; // Skip -1 (no '=') and 0 (empty mime)
-
-        QString mime = line.first(equalsPos).trimmed();
-        QStringList apps = line.sliced(equalsPos + 1).trimmed().split(';', Qt::SkipEmptyParts);
-
-        if (currentGroup == "Added Associations" || currentGroup == "Default Applications") {
-            QStringList &currentApps = m_mimeCache[mime];
-
-            for (int i = apps.size() - 1; i >= 0; --i) {
-                QString app = apps.at(i).trimmed();
-                if (app.isEmpty()) continue;
-
-                currentApps.removeAll(app);
-                currentApps.prepend(app);
-            }
-        }
-        else if (currentGroup == "Removed Associations") {
-            QStringList &currentApps = m_mimeCache[mime];
-            for (const QString &app : std::as_const(apps)) {
-                currentApps.removeAll(app.trimmed());
-            }
-        }
-    }
 }
 
 void MainWindow::setMainViewMode(ViewMode index) {

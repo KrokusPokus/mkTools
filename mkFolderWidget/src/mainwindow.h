@@ -81,7 +81,6 @@ private:
     void duplicateInstance();
     void launchNewInstance(const QString &directoryPath, const QString &focusPath = QString());
     void elevateInstance();
-    void loadMimeCache();
     void navigateBack();
     void navigateForward();
     void navigateToClipboardPath();
@@ -91,8 +90,6 @@ private:
     void fileOperation(OperationType opType, const QList<QUrl> &urls, const QString &targetDir, bool fromClipboard = false);
     void onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::KeyboardModifiers modifiers);
     void onShowContextMenu(QAbstractItemView *senderView, const QPoint &pos);
-    void parseMimeAppsList(const QString &path);
-    void parseMimeInfoCache(const QString &path);
     void removeCutMarkers();
     void scrollToCurrentItem();
     void selectAllItems();
@@ -164,7 +161,6 @@ private:
     QString m_activeFilterTerms;
     QElapsedTimer m_BenchmarkTimer;
     QFileIconProvider m_iconProvider;
-    QHash<QString, QStringList> m_mimeCache;
     QByteArray m_currentClipboardToken;
     QString m_privateTokenName = "application/x-mkfolderwidget-token";
     SettingsManager m_settings;
