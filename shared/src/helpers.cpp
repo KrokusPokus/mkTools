@@ -1657,6 +1657,20 @@ namespace Helpers {
             job->start();
         }
     }
+
+    // Opens a file with the application at position 'rank' of the applications associated with its MIME type,
+    // sorted by user preference (0 = default application, 1 = 2nd preferred, ...).
+    // Returns false if fewer applications are associated.
+    bool openFileWithPreferredApp(const QString &path, int rank) {
+        QMimeDatabase mimeDb;
+        const KService::List services = KApplicationTrader::queryByMimeType(mimeDb.mimeTypeForFile(path).name());
+        if (rank < 0 || services.size() <= rank) return false;
+
+        auto *job = new KIO::ApplicationLauncherJob(services.at(rank));
+        job->setUrls({QUrl::fromLocalFile(QFileInfo(path).absoluteFilePath())});
+        job->start();
+        return true;
+    }
 #endif
 
 } // namespace Helpers

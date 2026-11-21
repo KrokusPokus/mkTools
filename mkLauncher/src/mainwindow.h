@@ -85,6 +85,7 @@ private:
     void navigateToClipboardPath();
     void navigateUp();
     void fileOperation(OperationType opType, const QList<QUrl> &urls, const QString &targetDir, bool fromClipboard = false);
+    void onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::KeyboardModifiers modifiers);
     void onShowContextMenu(QAbstractItemView *senderView, const QPoint &pos);
     void parseMimeAppsList(const QString &path);
     void parseMimeInfoCache(const QString &path);
@@ -158,6 +159,7 @@ private:
 
     qint64 m_lastActivationTime = 0;
     bool m_activationClickActive = false;
+    QPersistentModelIndex m_middlePressedIndex; // Item under the cursor at middle button press, acted upon at release
     QSet<QString> m_loadingThumbnails;
     QString m_styleLineEditNormal = "";
     QString m_styleLineEditError = "background-color: red; color: white;";

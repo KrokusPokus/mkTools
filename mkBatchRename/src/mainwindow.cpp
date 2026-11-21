@@ -1461,6 +1461,27 @@ void MainWindow::onListItemDoubleClicked(const QModelIndex &proxyIndex) {
     });
 }
 
+// Middle click (on release) on an item, modeled after Dolphin:
+// - Folder: open it in the configured file manager (mkFolderWidget by default)
+// - File: open it with the 2nd preferred application, Shift + middle click with the 3rd
+void MainWindow::onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::KeyboardModifiers modifiers) {
+    const QString path = m_abstractModel->filePath(m_proxyModel->mapToSource(proxyIndex));
+    if (path.isEmpty()) return;
+
+    QFileInfo fileInfo(path);
+    if (fileInfo.isDir()) {
+        Helpers::browseToFile(fileInfo.absoluteFilePath(), m_settings.fileManager);
+        return;
+    }
+    if (!fileInfo.exists()) return;
+
+#ifdef Q_OS_LINUX
+    Helpers::openFileWithPreferredApp(fileInfo.absoluteFilePath(), (modifiers & Qt::ShiftModifier) ? 2 : 1);
+#else
+    Q_UNUSED(modifiers)
+#endif
+}
+
 void MainWindow::action_ListViewOpenFiles() {
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) return;
@@ -2670,12 +2691,13 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 
                 return false;
             }
-            /*
             else if (mouseEvent->button() == Qt::MiddleButton) {
-                navigateUp();
+                // Only remember the item, the action follows on release (see MouseButtonRelease).
+                // Consuming the press keeps selection and current item untouched, like in Dolphin.
+                auto *targetView = qobject_cast<QAbstractItemView*>(obj->parent());
+                m_middlePressedIndex = targetView ? QPersistentModelIndex(targetView->indexAt(mouseEvent->pos())) : QPersistentModelIndex();
                 return true;
             }
-            */
         }
     }
     else if (event->type() == QEvent::MouseButtonRelease) {
@@ -2695,6 +2717,18 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
             else if (mouseEvent->button() == Qt::RightButton && m_settings.menuOnMouseUp) {
                 auto *targetView = qobject_cast<QAbstractItemView*>(obj->parent());
                 onShowContextMenu(targetView, mouseEvent->pos());
+                return true;
+            }
+            else if (mouseEvent->button() == Qt::MiddleButton) {
+                // Act only if the button is released over the same item it was pressed on
+                auto *targetView = qobject_cast<QAbstractItemView*>(obj->parent());
+                const QModelIndex releasedIndex = targetView ? targetView->indexAt(mouseEvent->pos()) : QModelIndex();
+                const QModelIndex pressedIndex = m_middlePressedIndex;
+                m_middlePressedIndex = QPersistentModelIndex();
+
+                if (releasedIndex.isValid() && pressedIndex.isValid() && releasedIndex.row() == pressedIndex.row()) {
+                    onListItemMiddleClicked(releasedIndex, mouseEvent->modifiers());
+                }
                 return true;
             }
         }

@@ -1344,16 +1344,7 @@ void MainWindow::onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::Keyb
     if (!fileInfo.exists()) return;
 
 #ifdef Q_OS_LINUX
-    // The service list is sorted by user preference, index 0 is the default application (used by double click)
-    const qsizetype serviceIndex = (modifiers & Qt::ShiftModifier) ? 2 : 1;
-
-    QMimeDatabase db;
-    const KService::List services = KApplicationTrader::queryByMimeType(db.mimeTypeForFile(fileInfo).name());
-    if (services.size() <= serviceIndex) return;
-
-    auto *job = new KIO::ApplicationLauncherJob(services.at(serviceIndex));
-    job->setUrls({QUrl::fromLocalFile(fileInfo.absoluteFilePath())});
-    job->start();
+    Helpers::openFileWithPreferredApp(fileInfo.absoluteFilePath(), (modifiers & Qt::ShiftModifier) ? 2 : 1);
 #else
     Q_UNUSED(modifiers)
 #endif

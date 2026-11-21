@@ -91,6 +91,7 @@ namespace Helpers {
 #elif defined(Q_OS_LINUX)
     void showKdePropertiesDialog(const QStringList &filePaths, QWidget *parent);
     void openUrlsWithKIO(const QList<QUrl> &urls);
+    bool openFileWithPreferredApp(const QString &path, int rank);
 #endif
 }
 
