@@ -18,9 +18,6 @@
 #include <QHeaderView>
 #include <QIcon>
 #include <QImageReader>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QKeyEvent>
 #include <QLocale>
 #include <QMenu>
@@ -33,7 +30,6 @@
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QSettings>
-#include <QSharedMemory>  // for handing over a file list in fileOperation()
 #include <QShortcut>
 #include <QSize>
 #include <QStringList>
@@ -42,7 +38,6 @@
 #include <QStyleOptionViewItem>
 #include <QThread>
 #include <QUrl>
-#include <QUuid>
 
 #include <algorithm>
 #include <utility> // For std::as_const
@@ -1486,9 +1481,9 @@ void MainWindow::action_ListViewDeleteFiles(bool bRecycleOnly) {
     }
 
     if (bRecycleOnly) {
-        fileOperation(OperationType::Recycle, urlFileList, "", false);
+        Helpers::startFileOperation(OperationType::Recycle, urlFileList, "", false, m_currentDirectory, this);
     } else {
-        fileOperation(OperationType::Delete, urlFileList, "", false);
+        Helpers::startFileOperation(OperationType::Delete, urlFileList, "", false, m_currentDirectory, this);
     }
 
 // We don't trigger an update of the view. The user should do it manually
@@ -1626,7 +1621,7 @@ void MainWindow::action_ListViewPasteFiles() {
         }
     }
 
-    fileOperation(operationType, urlFileList, m_currentDirectory, true);
+    Helpers::startFileOperation(operationType, urlFileList, m_currentDirectory, true, m_currentDirectory, this);
 }
 
 void MainWindow::onFilesDropped(const QList<QUrl> &urlList, const QString &targetDir, Qt::DropAction dropAction) {
@@ -1643,112 +1638,7 @@ void MainWindow::onFilesDropped(const QList<QUrl> &urlList, const QString &targe
         return;
     }
 
-    fileOperation(operationType, urlList, targetDir, false);
-}
-
-void MainWindow::fileOperation(OperationType operationType, const QList<QUrl> &urlList, const QString &targetDir, bool fromClipboard) {
-    if (urlList.isEmpty()) return;
-
-    QFileInfo firstFile(urlList.first().toLocalFile());
-    if (firstFile.absolutePath() == targetDir && operationType == OperationType::Move) {
-        return;
-    }
-
-    if (operationType == OperationType::Link) {
-        for (const QUrl &url : urlList) {
-            if (!url.isLocalFile()) continue;
-
-            QString targetPath = url.toLocalFile();
-            QFileInfo targetInfo(targetPath);
-
-            QString baseName = targetInfo.completeBaseName();
-            QString ext = targetInfo.suffix();
-            QString dotExt = ext.isEmpty() ? "" : "." + ext;
-
-            QString linkFileName = targetInfo.fileName();
-
-            QDir dir(targetDir);
-            QString fullLinkPath = dir.filePath(linkFileName);
-
-            if (QFile::exists(fullLinkPath)) {
-                int counter = 1;
-                while (QFile::exists(fullLinkPath)) {
-                    // Creates e.g. "file (1).txt" or "folder (1)" (symlink on Linux)
-                    QString numberedName = QString("%1 (%2)%3").arg(baseName).arg(counter).arg(dotExt);
-                    fullLinkPath = dir.filePath(numberedName);
-                    counter++;
-                }
-            }
-
-            if (QFile::link(targetPath, fullLinkPath)) {
-                qDebug() << "Symlink created:" << fullLinkPath << "->Target->" << targetPath;
-            } else {
-                qCritical() << "Symlink creation failed:" << targetPath;
-            }
-        }
-
-        return;
-    }
-
-
-    // Determine the path of the separate tool in the same folder
-    QString programName = "mkTransactionHandler";
-    QString appDir = QCoreApplication::applicationDirPath();
-    QString programPath = QDir(appDir).filePath(programName);
-
-    if (!QFile::exists(programPath)) {
-        return;
-    }
-
-    // 1. Pack the data into a JSON object
-    QJsonObject jsonObj;
-    jsonObj["targetDir"] = targetDir;
-    jsonObj["opType"] = static_cast<int>(operationType);
-    jsonObj["fromClipboard"] = fromClipboard;
-
-    QJsonArray urlArray;
-    for (const QUrl &url : urlList) {
-        urlArray.append(url.toString());
-    }
-    jsonObj["urls"] = urlArray;
-
-    QByteArray jsonData = QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
-
-    // 2. Create a unique key for the shared memory
-    QString memoryKey = "mkTransactionHandler_" + QUuid::createUuid().toString(QUuid::WithoutBraces);
-
-    // 3. Allocate the shared memory and write the JSON into it
-    auto *sharedMemory = new QSharedMemory(memoryKey, this);
-    if (sharedMemory->create(jsonData.size())) {
-        sharedMemory->lock();
-        char *to = static_cast<char*>(sharedMemory->data());
-        const char *from = jsonData.data();
-        memcpy(to, from, qMin(sharedMemory->size(), jsonData.size()));
-        sharedMemory->unlock();
-
-        // Note: We do NOT delete sharedMemory here right away, since the CopyTool
-        // needs a few milliseconds to attach.
-        // It is deleted automatically when the MainWindow is closed.
-    } else {
-        qCritical() << "Konnte Shared Memory nicht erstellen:" << sharedMemory->errorString();
-        return;
-    }
-
-    QStringList arguments;
-    arguments << memoryKey;
-    arguments << QString::number(jsonData.size());
-
-    qint64 pid;
-    bool success = QProcess::startDetached(programPath, arguments, QString(), &pid);
-
-    if (success) {
-        qDebug() << "mkTransactionHandler erfolgreich im Hintergrund gestartet. PID:" << pid;
-        if (fromClipboard && operationType == OperationType::Move) {
-            QApplication::clipboard()->clear();
-        }
-    } else {
-        qCritical() << "Fehler beim Starten von mkTransactionHandler!";
-    }
+    Helpers::startFileOperation(operationType, urlList, targetDir, false, m_currentDirectory, this);
 }
 
 void MainWindow::action_ViewModeList() {

@@ -18,9 +18,6 @@
 #include <QHeaderView>
 #include <QIcon>
 #include <QImageReader>
-#include <QJsonArray>
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QKeyEvent>
 #include <QLocale>
 #include <QMenu>
@@ -34,7 +31,6 @@
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QSettings>
-#include <QSharedMemory>
 #include <QShortcut>
 #include <QSize>
 #include <QStringList>
@@ -42,7 +38,6 @@
 #include <QStyleHints>
 #include <QThread>
 #include <QUrl>
-#include <QUuid>
 
 #include <algorithm>
 #include <utility> // For std::as_const
@@ -1280,9 +1275,9 @@ void MainWindow::action_ListViewDeleteFiles(bool bRecycleOnly) {
     }
 
     if (bRecycleOnly) {
-        fileOperation(OperationType::Recycle, urlFileList, "", false);
+        Helpers::startFileOperation(OperationType::Recycle, urlFileList, "", false, m_currentDirectory, this);
     } else {
-        fileOperation(OperationType::Delete, urlFileList, "", false);
+        Helpers::startFileOperation(OperationType::Delete, urlFileList, "", false, m_currentDirectory, this);
     }
 
 // FileSystemWatcher will trigger the update of the view
@@ -1428,7 +1423,7 @@ void MainWindow::action_ListViewPasteFiles() {
         }
     }
 
-    fileOperation(operationType, urlFileList, m_currentDirectory, true);
+    Helpers::startFileOperation(operationType, urlFileList, m_currentDirectory, true, m_currentDirectory, this);
 }
 
 void MainWindow::onFilesDropped(const QList<QUrl> &urlList, const QString &targetDir, Qt::DropAction dropAction) {
@@ -1445,124 +1440,7 @@ void MainWindow::onFilesDropped(const QList<QUrl> &urlList, const QString &targe
         return;
     }
 
-    fileOperation(operationType, urlList, targetDir, false);
-}
-
-void MainWindow::fileOperation(OperationType operationType, const QList<QUrl> &urlList, const QString &targetDir, bool fromClipboard) {
-    if (urlList.isEmpty()) return;
-
-    QFileInfo firstFile(urlList.first().toLocalFile());
-    if (firstFile.absolutePath() == targetDir && operationType == OperationType::Move) {
-        return;
-    }
-
-    if (operationType == OperationType::Link) {
-        for (const QUrl &url : urlList) {
-            if (!url.isLocalFile()) continue;
-
-            QString targetPath = url.toLocalFile();
-            QFileInfo targetInfo(targetPath);
-
-            QString baseName = targetInfo.completeBaseName();
-            QString ext = targetInfo.suffix();
-            QString dotExt = ext.isEmpty() ? "" : "." + ext;
-
-            QString linkFileName = targetInfo.fileName();
-
-            QDir dir(targetDir);
-            QString fullLinkPath = dir.filePath(linkFileName);
-
-            if (QFile::exists(fullLinkPath)) {
-                int counter = 1;
-                while (QFile::exists(fullLinkPath)) {
-                    // Creates e.g. "file (1).txt" or "folder (1)" (symlink on Linux)
-                    QString numberedName = QString("%1 (%2)%3").arg(baseName).arg(counter).arg(dotExt);
-                    fullLinkPath = dir.filePath(numberedName);
-                    counter++;
-                }
-            }
-
-            if (QFile::link(targetPath, fullLinkPath)) {
-                qDebug() << "Symlink created:" << fullLinkPath << "->Target->" << targetPath;
-            } else {
-                qCritical() << "Symlink creation failed:" << targetPath;
-            }
-        }
-
-        return;
-    }
-
-
-    // Determine the path of the separate tool in the same folder
-    QString programName = "mkTransactionHandler";
-    QString appDir = QCoreApplication::applicationDirPath();
-    QString programPath = QDir(appDir).filePath(programName);
-
-    if (!QFile::exists(programPath)) {
-        return;
-    }
-
-    // 1. Pack the data into a JSON object
-    QJsonObject jsonObj;
-    jsonObj["targetDir"] = targetDir;
-    jsonObj["opType"] = static_cast<int>(operationType);
-
-    QJsonArray urlArray;
-    for (const QUrl &url : std::as_const(urlList)) {
-        urlArray.append(url.toString());
-    }
-    jsonObj["urls"] = urlArray;
-
-    QByteArray jsonData = QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
-
-    // 2. Create a unique key
-    QString memoryKey = "mkTransactionHandler_" + QUuid::createUuid().toString(QUuid::WithoutBraces);
-
-    // 3. Allocate the shared memory
-    auto *sharedMemory = new QSharedMemory(memoryKey, this);
-    if (!sharedMemory->create(jsonData.size())) {
-        qCritical() << "Konnte Shared Memory nicht erstellen:" << sharedMemory->errorString();
-        delete sharedMemory; // Delete the object in case of an error
-        return;
-    }
-
-    // 4. Write the data safely into the shared memory
-    if (sharedMemory->lock()) {
-        char *to = static_cast<char*>(sharedMemory->data());
-        memcpy(to, jsonData.constData(), jsonData.size());
-        sharedMemory->unlock();
-    } else {
-        qCritical() << "Konnte Shared Memory nicht sperren:" << sharedMemory->errorString();
-        delete sharedMemory; // Delete the object in case of an error
-        return;
-    }
-
-    QStringList arguments;
-    arguments << memoryKey;
-    arguments << QString::number(jsonData.size());
-
-    qint64 pid = 0;
-    bool success = QProcess::startDetached(programPath, arguments, m_currentDirectory, &pid);
-
-    if (success) {
-        qDebug() << "mkTransactionHandler erfolgreich gestartet. PID:" << pid;
-
-        if (fromClipboard && operationType == OperationType::Move) {
-            QApplication::clipboard()->clear();
-        }
-
-        // After 10 seconds, release the shared memory and clean up the object
-        QTimer::singleShot(10000, sharedMemory, [sharedMemory]() {
-            if (sharedMemory->isAttached()) {
-                sharedMemory->detach();
-            }
-            sharedMemory->deleteLater();
-        });
-    } else {
-        qCritical() << "Fehler beim Starten von mkTransactionHandler!";
-        sharedMemory->detach();
-        delete sharedMemory;
-    }
+    Helpers::startFileOperation(operationType, urlList, targetDir, false, m_currentDirectory, this);
 }
 
 void MainWindow::action_ViewModeList() {

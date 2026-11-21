@@ -103,7 +103,6 @@ private:
     void navigateForward();
     void navigateToClipboardPath();
     void navigateUp();
-    void fileOperation(OperationType opType, const QList<QUrl> &urls, const QString &targetDir, bool fromClipboard = false);
     void onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::KeyboardModifiers modifiers);
     void onShowContextMenu(QAbstractItemView *senderView, const QPoint &pos);
     void removeCutMarkers();

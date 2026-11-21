@@ -1,11 +1,13 @@
 #include "helpers.h"
 #include "settingsmanager.h"
 
+#include <QClipboard>
 #include <QCollator>
 #include <QCoreApplication>
 #include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
+#include <QGuiApplication>
 #include <QImageReader>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -20,6 +22,7 @@
 #include <QStorageInfo>
 #include <QTimer>
 #include <QUrl>
+#include <QUuid>
 
 #include <zlib.h>
 
@@ -636,36 +639,24 @@ namespace Helpers {
         }
     }
 
-    void launchRenameTool(const QString &targetDir, const QStringList &pathList, const QString &renameTool, QObject *parent) {
-        QString programName = "mkBatchRename";
-        QString appDir = QCoreApplication::applicationDirPath();
-        QString programPath = QDir(appDir).filePath(programName);
+    // Starts the helper program 'programName' (next to the running executable) and hands 'jsonData' over to it via
+    // shared memory: the program gets the memory key and the data size as arguments. The shared memory is kept for
+    // 10 seconds so that the program can attach to it. Returns true if the program was started.
+    static bool startWithSharedMemory(const QString &programName, const QByteArray &jsonData, const QString &workingDir, QObject *parent) {
+        const QString programPath = QDir(QCoreApplication::applicationDirPath()).filePath(programName);
 
-        if (!QFile::exists(programPath)) {
-            if (!renameTool.isEmpty() && !targetDir.isEmpty()) {
-                Helpers::openFileListWithHandler(renameTool, { targetDir });
-            }
-            return;
-        }
+        // 1. Create a unique key
+        const QString memoryKey = programName + "_" + QUuid::createUuid().toString(QUuid::WithoutBraces);
 
-        // 1. Pack the data into a JSON object
-        QJsonObject jsonObj;
-        jsonObj["targetDir"] = targetDir;
-        jsonObj["pathList"] = QJsonArray::fromStringList(pathList);
-        QByteArray jsonData = QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
-
-        // 2. Create a unique key
-        QString memoryKey = "mkBatchRename_" + QUuid::createUuid().toString(QUuid::WithoutBraces);
-
-        // 3. Allocate the shared memory
+        // 2. Allocate the shared memory
         auto *sharedMemory = new QSharedMemory(memoryKey, parent);
         if (!sharedMemory->create(jsonData.size())) {
             qCritical() << "Konnte Shared Memory nicht erstellen:" << sharedMemory->errorString();
             delete sharedMemory; // Delete the object in case of an error
-            return;
+            return false;
         }
 
-        // 4. Write the data safely into the shared memory
+        // 3. Write the data safely into the shared memory
         if (sharedMemory->lock()) {
             char *to = static_cast<char*>(sharedMemory->data());
             memcpy(to, jsonData.constData(), jsonData.size());
@@ -673,7 +664,7 @@ namespace Helpers {
         } else {
             qCritical() << "Konnte Shared Memory nicht sperren:" << sharedMemory->errorString();
             delete sharedMemory; // Delete the object in case of an error
-            return;
+            return false;
         }
 
         QStringList arguments;
@@ -681,23 +672,114 @@ namespace Helpers {
         arguments << QString::number(jsonData.size());
 
         qint64 pid = 0;
-        bool success = QProcess::startDetached(programPath, arguments, appDir, &pid);
-
-        if (success) {
-            qDebug() << "mkBatchRename erfolgreich gestartet. PID:" << pid;
-
-            // After 10 seconds, release the shared memory and clean up the object
-            QTimer::singleShot(10000, sharedMemory, [sharedMemory]() {
-                if (sharedMemory->isAttached()) {
-                    sharedMemory->detach();
-                }
-                sharedMemory->deleteLater();
-            });
-        } else {
-            qCritical() << "Fehler beim Starten von mkBatchRename!";
+        if (!QProcess::startDetached(programPath, arguments, workingDir, &pid)) {
+            qCritical() << "Fehler beim Starten von" << programName;
             sharedMemory->detach();
             delete sharedMemory;
+            return false;
         }
+
+        qDebug() << programName << "erfolgreich gestartet. PID:" << pid;
+
+        // After 10 seconds, release the shared memory and clean up the object
+        QTimer::singleShot(10000, sharedMemory, [sharedMemory]() {
+            if (sharedMemory->isAttached()) {
+                sharedMemory->detach();
+            }
+            sharedMemory->deleteLater();
+        });
+        return true;
+    }
+
+    // Copies, moves, deletes or trashes the given items by handing them over to mkTransactionHandler.
+    // Links are created directly. After moving cut items from the clipboard, the clipboard is cleared.
+    void startFileOperation(OperationType operationType, const QList<QUrl> &urlList, const QString &targetDir, bool fromClipboard, const QString &workingDir, QObject *parent) {
+        if (urlList.isEmpty()) return;
+
+        QFileInfo firstFile(urlList.first().toLocalFile());
+        if (firstFile.absolutePath() == targetDir && operationType == OperationType::Move) {
+            return;
+        }
+
+        if (operationType == OperationType::Link) {
+            for (const QUrl &url : urlList) {
+                if (!url.isLocalFile()) continue;
+
+                QString targetPath = url.toLocalFile();
+                QFileInfo targetInfo(targetPath);
+
+                QString baseName = targetInfo.completeBaseName();
+                QString ext = targetInfo.suffix();
+                QString dotExt = ext.isEmpty() ? "" : "." + ext;
+
+                QString linkFileName = targetInfo.fileName();
+
+                QDir dir(targetDir);
+                QString fullLinkPath = dir.filePath(linkFileName);
+
+                if (QFile::exists(fullLinkPath)) {
+                    int counter = 1;
+                    while (QFile::exists(fullLinkPath)) {
+                        // Creates e.g. "file (1).txt" or "folder (1)" (symlink on Linux)
+                        QString numberedName = QString("%1 (%2)%3").arg(baseName).arg(counter).arg(dotExt);
+                        fullLinkPath = dir.filePath(numberedName);
+                        counter++;
+                    }
+                }
+
+                if (QFile::link(targetPath, fullLinkPath)) {
+                    qDebug() << "Symlink created:" << fullLinkPath << "->Target->" << targetPath;
+                } else {
+                    qCritical() << "Symlink creation failed:" << targetPath;
+                }
+            }
+
+            return;
+        }
+
+        const QString programName = "mkTransactionHandler";
+        if (!QFile::exists(QDir(QCoreApplication::applicationDirPath()).filePath(programName))) {
+            return;
+        }
+
+        // Pack the data into a JSON object
+        QJsonObject jsonObj;
+        jsonObj["targetDir"] = targetDir;
+        jsonObj["opType"] = static_cast<int>(operationType);
+
+        QJsonArray urlArray;
+        for (const QUrl &url : std::as_const(urlList)) {
+            urlArray.append(url.toString());
+        }
+        jsonObj["urls"] = urlArray;
+
+        const QByteArray jsonData = QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
+
+        if (startWithSharedMemory(programName, jsonData, workingDir, parent)) {
+            if (fromClipboard && operationType == OperationType::Move) {
+                QGuiApplication::clipboard()->clear();
+            }
+        }
+    }
+
+    void launchRenameTool(const QString &targetDir, const QStringList &pathList, const QString &renameTool, QObject *parent) {
+        const QString programName = "mkBatchRename";
+        const QString appDir = QCoreApplication::applicationDirPath();
+
+        if (!QFile::exists(QDir(appDir).filePath(programName))) {
+            if (!renameTool.isEmpty() && !targetDir.isEmpty()) {
+                Helpers::openFileListWithHandler(renameTool, { targetDir });
+            }
+            return;
+        }
+
+        // Pack the data into a JSON object
+        QJsonObject jsonObj;
+        jsonObj["targetDir"] = targetDir;
+        jsonObj["pathList"] = QJsonArray::fromStringList(pathList);
+        const QByteArray jsonData = QJsonDocument(jsonObj).toJson(QJsonDocument::Compact);
+
+        startWithSharedMemory(programName, jsonData, appDir, parent);
     }
 
     void browseToFile(const QString &path, const QString &fileManager) {

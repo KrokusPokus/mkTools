@@ -39,6 +39,7 @@ namespace Helpers {
     void openFileListWithHandler(const QString &handler, const QStringList &fileList);
     void launchDesktopFile(const DesktopEntry &info, const QStringList &fileList = {});
     QList<QStringList> expandDesktopExec(const DesktopEntry &entry, const QStringList &files);
+    void startFileOperation(OperationType operationType, const QList<QUrl> &urlList, const QString &targetDir, bool fromClipboard, const QString &workingDir, QObject *parent);
     void launchRenameTool(const QString &targetDir, const QStringList &pathList, const QString &renameTool, QObject *parent = nullptr);
     void browseToFile(const QString &path, const QString &fileManager);
 
