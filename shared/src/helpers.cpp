@@ -827,9 +827,7 @@ namespace Helpers {
             fileName = "Internet-Link";
         }
 
-        // --- NEU: Plattformabhängige Dateiendung festlegen ---
-        QString extension = ".url";
-        extension = ".desktop";
+        const QString extension = ".desktop";
 
         if (!fileName.endsWith(extension, Qt::CaseInsensitive)) {
             fileName += extension;

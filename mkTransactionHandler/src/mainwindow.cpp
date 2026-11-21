@@ -44,9 +44,7 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
     connect(m_fileOp,       &FileOperation::wasFinished,      this,     &MainWindow::onOperationFinished);
     connect(m_fileOp,       &FileOperation::wasCanceled,      this,     &MainWindow::onOperationCanceled);
 
-    bool isKioOperation = false;
-
-    isKioOperation = std::any_of(m_urls.begin(), m_urls.end(), [](const QUrl &u) {
+    const bool isKioOperation = std::any_of(m_urls.begin(), m_urls.end(), [](const QUrl &u) {
         return !u.isLocalFile();
     });
 

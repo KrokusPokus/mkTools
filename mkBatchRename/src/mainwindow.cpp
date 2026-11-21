@@ -1950,10 +1950,9 @@ void MainWindow::onTimedUpdateIcons() {
 
             // 5. Feststellen, ob ein individuelles Icon benötigt wird
 
-            bool needsTrueIcon = false;
-            needsTrueIcon = fileInfo.isDir() ||
-                            fileInfo.isExecutable() ||
-                            fullPath.endsWith(".desktop", Qt::CaseInsensitive);
+            const bool needsTrueIcon = fileInfo.isDir() ||
+                                       fileInfo.isExecutable() ||
+                                       fullPath.endsWith(".desktop", Qt::CaseInsensitive);
 
             if (needsTrueIcon) {
                 QIcon trueIcon = m_iconProvider.icon(fileInfo);
