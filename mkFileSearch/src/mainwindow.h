@@ -75,7 +75,6 @@ private:
     void action_SortAscending();
     void action_SortDescending();
 
-    bool showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly);
     void startSearch();
     void onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::KeyboardModifiers modifiers);
     void onShowContextMenu(QAbstractItemView *senderView, const QPoint &pos);

@@ -96,7 +96,6 @@ private:
     void action_SortAscending();
     void action_SortDescending();
 
-    bool showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly);
     void duplicateInstance();
     void elevateInstance();
     void navigateBack();

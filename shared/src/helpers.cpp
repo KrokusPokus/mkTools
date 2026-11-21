@@ -1,11 +1,13 @@
 #include "helpers.h"
 #include "settingsmanager.h"
 
+#include <QBuffer>
 #include <QClipboard>
 #include <QCollator>
 #include <QCoreApplication>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFileIconProvider>
 #include <QFileInfo>
 #include <QGuiApplication>
 #include <QImageReader>
@@ -13,9 +15,11 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMenu>
+#include <QMessageBox>
 #include <QMimeType>
 #include <QMimeDatabase>
 #include <QProcess>
+#include <QPushButton>
 #include <QRegularExpression>
 #include <QSharedMemory>
 #include <QStandardPaths>
@@ -1235,6 +1239,115 @@ namespace Helpers {
 
         msg.setArguments(args);
         QDBusConnection::sessionBus().send(msg);
+    }
+
+    // Asks for confirmation before deleting (or moving to the trash) the given files.
+    // For a single file, its icon or thumbnail, size and date are shown. Returns true if the user confirmed.
+    bool showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly, QWidget *parent) {
+        QString sTitle;
+        QString sText;
+        QString sWarning;
+        QMessageBox::Icon iIcon;
+
+        if (bRecycleOnly) {
+            iIcon = QMessageBox::Question;
+            sWarning = "";
+            if (pathList.size() == 1) {
+                sTitle = QCoreApplication::translate("DeleteConfirmationDialog", "Delete File");
+                sText = QCoreApplication::translate("DeleteConfirmationDialog", "Do you really want to move this file into the recycle bin?");
+            } else {
+                sTitle = QCoreApplication::translate("DeleteConfirmationDialog", "Delete multiple elements");
+                sText = QString(QCoreApplication::translate("DeleteConfirmationDialog", "Do you really want to move these %1 files into the recycle bin?")).arg(pathList.size());
+            }
+        } else {
+            iIcon = QMessageBox::Warning;
+            sWarning = "<p style='color: red;'><i>" + QCoreApplication::translate("DeleteConfirmationDialog", "This process cannot be undone.") + "</i></p>";
+            if (pathList.size() == 1) {
+                sTitle = QCoreApplication::translate("DeleteConfirmationDialog", "Delete File");
+                sText = QCoreApplication::translate("DeleteConfirmationDialog", "Are you sure you want to delete this file permanently?");
+            } else {
+                sTitle = QCoreApplication::translate("DeleteConfirmationDialog", "Delete multiple elements");
+                sText = QString(QCoreApplication::translate("DeleteConfirmationDialog", "Are you sure you want to delete these %1 files permanently?")).arg(pathList.size());
+            }
+        }
+
+        QMessageBox msgBox(parent);
+        msgBox.setWindowTitle(sTitle);
+        msgBox.setIcon(iIcon);
+
+        if (pathList.size() == 1) {
+            QFileInfo fileInfo(pathList.first());
+            QString fileName = fileInfo.fileName();
+            QString size = formatAdaptiveSize(fileInfo.size());
+            QString lastModified = fileInfo.lastModified().toString("yyyy-MM-dd  HH:mm:ss");
+
+            QIcon icon = QFileIconProvider().icon(fileInfo);
+            QPixmap pix = icon.pixmap(QSize(48, 48));
+            if (!hasIconExt(fileInfo)) {
+                QPixmap thumb = generateThumbnail(fileInfo);
+                if (!thumb.isNull()) {
+                    pix = thumb;
+                }
+            }
+
+            QByteArray ba;
+            QBuffer bu(&ba);
+            pix.save(&bu, "PNG");
+            QString imgBase64 = ba.toBase64();
+
+            msgBox.setText(QString("<h3>%1</h3>").arg(sText));
+
+            const QString htmlTemplate = QStringLiteral(R"(
+                <table width='100%' cellspacing='0' cellpadding='0'>
+                    <tr>
+                        <td rowspan='4' width='48' valign='top' style='padding-right: 10px;'>
+                            <img src='data:image/png;base64,%1'>
+                        </td>
+                        <td style='color: #555; padding: 2px 8px;' width='1%'>%2</td>
+                        <td style='color: #555; padding: 2px 8px;'>%3</td>
+                    </tr>
+                    <tr>
+                        <td style='color: #555; padding: 2px 8px;'>%4</td>
+                        <td style='color: #555; padding: 2px 8px;'>%5</td>
+                    </tr>
+                    <tr>
+                        <td style='color: #555; padding: 2px 8px;'>%6</td>
+                        <td style='color: #555; padding: 2px 8px;'>%7</td>
+                    </tr>
+                    <tr>
+                        <td colspan='2' style='padding: 8px 8px 2px 8px;'>%8</td>
+                    </tr>
+                </table>
+                )");
+
+
+            msgBox.setInformativeText(htmlTemplate.arg(
+                imgBase64,
+                QCoreApplication::translate("DeleteConfirmationDialog", "Name:"),
+                fileName,
+                QCoreApplication::translate("DeleteConfirmationDialog", "Size:"),
+                size,
+                QCoreApplication::translate("DeleteConfirmationDialog", "Date:"),
+                lastModified,
+                sWarning
+                ));
+        } else {
+            msgBox.setText(QString("<h3>%1</h3>").arg(sText));
+            msgBox.setInformativeText(sWarning);
+        }
+
+        QPushButton *deleteButton = msgBox.addButton(QCoreApplication::translate("DeleteConfirmationDialog", "Delete"), QMessageBox::AcceptRole);
+        msgBox.addButton(QCoreApplication::translate("DeleteConfirmationDialog", "Cancel"), QMessageBox::RejectRole);
+        msgBox.setDefaultButton(deleteButton);
+        deleteButton->setStyleSheet("QPushButton { font-weight: bold; min-width: 80px; }");
+
+        msgBox.exec();
+
+        if (msgBox.clickedButton() != deleteButton) {
+            return false;
+        }
+
+        return true;
     }
 
     void showKdePropertiesDialog(const QStringList &filePaths, QWidget *parent = nullptr) {

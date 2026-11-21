@@ -65,6 +65,7 @@ namespace Helpers {
 
     //bool isTextFile(const QString &filePath);
 
+    bool showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly, QWidget *parent);
     void showKdePropertiesDialog(const QStringList &filePaths, QWidget *parent);
     void openUrlsWithKIO(const QList<QUrl> &urls);
 

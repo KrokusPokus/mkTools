@@ -76,7 +76,6 @@ private:
     void action_SortDescending();
     void action_toggleShowHidden();
 
-    bool showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly);
     void browseFolder(QString directoryPath, const QString &focusPath = QString(), bool isHistoryNavigation = false);
     void duplicateInstance();
     void launchNewInstance(const QString &directoryPath, const QString &focusPath = QString());

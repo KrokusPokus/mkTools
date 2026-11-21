@@ -6,7 +6,6 @@
 
 #include <QActionGroup>
 #include <QApplication>
-#include <QBuffer>
 #include <QClipboard>
 #include <QtConcurrent>
 #include <QDateTime>
@@ -20,13 +19,11 @@
 #include <QKeyEvent>
 #include <QLocale>
 #include <QMenu>
-#include <QMessageBox>
 #include <QMimeData>
 #include <QMimeDatabase>
 #include <QMimeType>
 #include <QObject>
 #include <QProcess>
-#include <QPushButton>
 #include <QRegularExpression>
 #include <QScrollBar>
 #include <QSettings>
@@ -1382,7 +1379,7 @@ void MainWindow::action_ListViewDeleteFiles(bool bRecycleOnly) {
         return;
     }
 
-    if (!showDeleteConfirmationDialog(pathList, bRecycleOnly)) {
+    if (!Helpers::showDeleteConfirmationDialog(pathList, bRecycleOnly, this)) {
         return;
     }
 
@@ -1867,114 +1864,6 @@ void MainWindow::setMainViewMode(ViewMode index) {
     }
 
     m_timerUpdateIcons->start(20);
-}
-
-bool MainWindow::showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly) {
-
-    QString sTitle;
-    QString sText;
-    QString sWarning;
-    QMessageBox::Icon iIcon;
-
-    if (bRecycleOnly) {
-        iIcon = QMessageBox::Question;
-        sWarning = "";
-        if (pathList.size() == 1) {
-            sTitle = tr("Delete File");
-            sText = tr("Do you really want to move this file into the recycle bin?");
-        } else {
-            sTitle = tr("Delete multiple elements");
-            sText = QString(tr("Do you really want to move these %1 files into the recycle bin?")).arg(pathList.size());
-        }
-    } else {
-        iIcon = QMessageBox::Warning;
-        sWarning = "<p style='color: red;'><i>" + tr("This process cannot be undone.") + "</i></p>";
-        if (pathList.size() == 1) {
-            sTitle = tr("Delete File");
-            sText = tr("Are you sure you want to delete this file permanently?");
-        } else {
-            sTitle = tr("Delete multiple elements");
-            sText = QString(tr("Are you sure you want to delete these %1 files permanently?")).arg(pathList.size());
-        }
-    }
-
-    QMessageBox msgBox(this);
-    msgBox.setWindowTitle(sTitle);
-    msgBox.setIcon(iIcon);
-
-    if (pathList.size() == 1) {
-        QFileInfo fileInfo(pathList.first());
-        QString fileName = fileInfo.fileName();
-        QString size = Helpers::formatAdaptiveSize(fileInfo.size());
-        QString lastModified = fileInfo.lastModified().toString("yyyy-MM-dd  HH:mm:ss");
-
-        QIcon icon = m_iconProvider.icon(fileInfo);
-        QPixmap pix = icon.pixmap(QSize(48, 48));
-        if (!Helpers::hasIconExt(fileInfo)) {
-            QPixmap thumb = Helpers::generateThumbnail(fileInfo);
-            if (!thumb.isNull()) {
-                pix = thumb;
-            }
-        }
-
-        QByteArray ba;
-        QBuffer bu(&ba);
-        pix.save(&bu, "PNG");
-        QString imgBase64 = ba.toBase64();
-
-        msgBox.setText(QString("<h3>%1</h3>").arg(sText));
-
-        const QString htmlTemplate = QStringLiteral(R"(
-            <table width='100%' cellspacing='0' cellpadding='0'>
-                <tr>
-                    <td rowspan='4' width='48' valign='top' style='padding-right: 10px;'>
-                        <img src='data:image/png;base64,%1'>
-                    </td>
-                    <td style='color: #555; padding: 2px 8px;' width='1%'>%2</td>
-                    <td style='color: #555; padding: 2px 8px;'>%3</td>
-                </tr>
-                <tr>
-                    <td style='color: #555; padding: 2px 8px;'>%4</td>
-                    <td style='color: #555; padding: 2px 8px;'>%5</td>
-                </tr>
-                <tr>
-                    <td style='color: #555; padding: 2px 8px;'>%6</td>
-                    <td style='color: #555; padding: 2px 8px;'>%7</td>
-                </tr>
-                <tr>
-                    <td colspan='2' style='padding: 8px 8px 2px 8px;'>%8</td>
-                </tr>
-            </table>
-            )");
-
-
-        msgBox.setInformativeText(htmlTemplate.arg(
-            imgBase64,
-            tr("Name:"),
-            fileName,
-            tr("Size:"),
-            size,
-            tr("Date:"),
-            lastModified,
-            sWarning
-            ));
-    } else {
-        msgBox.setText(QString("<h3>%1</h3>").arg(sText));
-        msgBox.setInformativeText(sWarning);
-    }
-
-    QPushButton *deleteButton = msgBox.addButton(tr("Delete"), QMessageBox::AcceptRole);
-    msgBox.addButton(tr("Cancel"), QMessageBox::RejectRole);
-    msgBox.setDefaultButton(deleteButton);
-    deleteButton->setStyleSheet("QPushButton { font-weight: bold; min-width: 80px; }");
-
-    msgBox.exec();
-
-    if (msgBox.clickedButton() != deleteButton) {
-        return false;
-    }
-
-    return true;
 }
 
 void MainWindow::selectAllItems() {

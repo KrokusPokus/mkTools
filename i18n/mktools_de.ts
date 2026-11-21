@@ -243,6 +243,57 @@
     </message>
 </context>
 <context>
+    <name>DeleteConfirmationDialog</name>
+    <message>
+        <source>Delete File</source>
+        <translation>Datei löschen</translation>
+    </message>
+    <message>
+        <source>Do you really want to move this file into the recycle bin?</source>
+        <translation>Möchtest du diese Datei wirklich in den Papierkorb verschieben?</translation>
+    </message>
+    <message>
+        <source>Delete multiple elements</source>
+        <translation>Mehrere Dateien löschen</translation>
+    </message>
+    <message>
+        <source>Do you really want to move these %1 files into the recycle bin?</source>
+        <translation>Möchtest du diese %1 Dateien wirklich in den Papierkorb verschieben?</translation>
+    </message>
+    <message>
+        <source>This process cannot be undone.</source>
+        <translation>Dieser Vorgang kann nicht rückgängig gemacht werden.</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete this file permanently?</source>
+        <translation>Möchtest du diese Datei wirklich unwiderruflich löschen?</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to delete these %1 files permanently?</source>
+        <translation>Möchtest du diese %1 Dateien wirklich unwiderruflich löschen?</translation>
+    </message>
+    <message>
+        <source>Name:</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Size:</source>
+        <translation>Größe:</translation>
+    </message>
+    <message>
+        <source>Date:</source>
+        <translation>Datum:</translation>
+    </message>
+    <message>
+        <source>Delete</source>
+        <translation>Löschen</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Abbrechen</translation>
+    </message>
+</context>
+<context>
     <name>FileOperation</name>
     <message>
         <location filename="../mkTransactionHandler/src/fileoperation.cpp" line="149"/>
@@ -1329,70 +1380,6 @@ Do you have sufficient rights?</source>
         <translation>Öffnen mit...</translation>
     </message>
     <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2216"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2226"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2248"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2258"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2248"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2258"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="2069"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="2079"/>
-        <source>Delete File</source>
-        <translation>Datei löschen</translation>
-    </message>
-    <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2217"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2249"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2249"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="2070"/>
-        <source>Do you really want to move this file into the recycle bin?</source>
-        <translation>Möchtest du diese Datei wirklich in den Papierkorb verschieben?</translation>
-    </message>
-    <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2219"/>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2229"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2251"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2261"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2251"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2261"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="2072"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="2082"/>
-        <source>Delete multiple elements</source>
-        <translation>Mehrere Dateien löschen</translation>
-    </message>
-    <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2220"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2252"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2252"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="2073"/>
-        <source>Do you really want to move these %1 files into the recycle bin?</source>
-        <translation>Möchtest du diese %1 Dateien wirklich in den Papierkorb verschieben?</translation>
-    </message>
-    <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2224"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2256"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2256"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="2077"/>
-        <source>This process cannot be undone.</source>
-        <translation>Dieser Vorgang kann nicht rückgängig gemacht werden.</translation>
-    </message>
-    <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2227"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2259"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2259"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="2080"/>
-        <source>Are you sure you want to delete this file permanently?</source>
-        <translation>Möchtest du diese Datei wirklich unwiderruflich löschen?</translation>
-    </message>
-    <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2230"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2262"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2262"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="2083"/>
-        <source>Are you sure you want to delete these %1 files permanently?</source>
-        <translation>Möchtest du diese %1 Dateien wirklich unwiderruflich löschen?</translation>
-    </message>
-    <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2286"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2318"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2318"/>
@@ -1400,22 +1387,6 @@ Do you have sufficient rights?</source>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="171"/>
         <source>Name:</source>
         <translation></translation>
-    </message>
-    <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2288"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2320"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2320"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="2141"/>
-        <source>Size:</source>
-        <translation>Größe:</translation>
-    </message>
-    <message>
-        <location filename="../mkBatchRename/src/mainwindow.cpp" line="2290"/>
-        <location filename="../mkFileSearch/src/mainwindow.cpp" line="2322"/>
-        <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2322"/>
-        <location filename="../mkLauncher/src/mainwindow.cpp" line="2143"/>
-        <source>Date:</source>
-        <translation>Datum:</translation>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2300"/>
