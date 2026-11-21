@@ -1329,6 +1329,36 @@ void MainWindow::onListItemDoubleClicked(const QModelIndex &proxyIndex) {
     });
 }
 
+// Middle click (on release) on an item, modeled after Dolphin:
+// - Folder: open it in a new instance
+// - File: open it with the 2nd preferred application, Shift + middle click with the 3rd
+void MainWindow::onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::KeyboardModifiers modifiers) {
+    const QString path = m_abstractModel->filePath(m_proxyModel->mapToSource(proxyIndex));
+    if (path.isEmpty()) return;
+
+    QFileInfo fileInfo(path);
+    if (fileInfo.isDir()) {
+        launchNewInstance(fileInfo.absoluteFilePath());
+        return;
+    }
+    if (!fileInfo.exists()) return;
+
+#ifdef Q_OS_LINUX
+    // The service list is sorted by user preference, index 0 is the default application (used by double click)
+    const qsizetype serviceIndex = (modifiers & Qt::ShiftModifier) ? 2 : 1;
+
+    QMimeDatabase db;
+    const KService::List services = KApplicationTrader::queryByMimeType(db.mimeTypeForFile(fileInfo).name());
+    if (services.size() <= serviceIndex) return;
+
+    auto *job = new KIO::ApplicationLauncherJob(services.at(serviceIndex));
+    job->setUrls({QUrl::fromLocalFile(fileInfo.absoluteFilePath())});
+    job->start();
+#else
+    Q_UNUSED(modifiers)
+#endif
+}
+
 void MainWindow::action_ListViewOpenFiles() {
     //if (m_currentDirectory == "drives://") return;
 
@@ -1339,15 +1369,7 @@ void MainWindow::action_ListViewOpenFiles() {
         QFileInfo singleFileInfo(pathList.first());
         if (singleFileInfo.isDir()) {
             if (QGuiApplication::keyboardModifiers() & Qt::ControlModifier) {
-                // Launch in new instance
-                QString appPath = QCoreApplication::applicationFilePath();
-                QStringList arguments;
-                arguments << "-X" << QString::number(this->x() + 40)
-                          << "-Y" << QString::number(this->y() + 40)
-                          << "-W" << QString::number(this->width())
-                          << "-H" << QString::number(this->height())
-                          << singleFileInfo.absoluteFilePath();
-                QProcess::startDetached(appPath, arguments);
+                launchNewInstance(singleFileInfo.absoluteFilePath());
             } else {
                 browseFolder(singleFileInfo.absoluteFilePath());
             }
@@ -2866,6 +2888,13 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
 
                 return false;
             }
+            else if (mouseEvent->button() == Qt::MiddleButton) {
+                // Only remember the item, the action follows on release (see MouseButtonRelease).
+                // Consuming the press keeps selection and current item untouched, like in Dolphin.
+                auto *targetView = qobject_cast<QAbstractItemView*>(obj->parent());
+                m_middlePressedIndex = targetView ? QPersistentModelIndex(targetView->indexAt(mouseEvent->pos())) : QPersistentModelIndex();
+                return true;
+            }
             else if (mouseEvent->button() == Qt::BackButton) {
                 if (!m_topControlsContainerWidget->isHidden()) {
                     m_LineEdit1->clear();
@@ -2893,6 +2922,18 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
             else if (mouseEvent->button() == Qt::RightButton && m_settings.menuOnMouseUp) {
                 auto *targetView = qobject_cast<QAbstractItemView*>(obj->parent());
                 onShowContextMenu(targetView, mouseEvent->pos());
+                return true;
+            }
+            else if (mouseEvent->button() == Qt::MiddleButton) {
+                // Act only if the button is released over the same item it was pressed on
+                auto *targetView = qobject_cast<QAbstractItemView*>(obj->parent());
+                const QModelIndex releasedIndex = targetView ? targetView->indexAt(mouseEvent->pos()) : QModelIndex();
+                const QModelIndex pressedIndex = m_middlePressedIndex;
+                m_middlePressedIndex = QPersistentModelIndex();
+
+                if (releasedIndex.isValid() && pressedIndex.isValid() && releasedIndex.row() == pressedIndex.row()) {
+                    onListItemMiddleClicked(releasedIndex, mouseEvent->modifiers());
+                }
                 return true;
             }
         }
@@ -3311,17 +3352,21 @@ void MainWindow::navigateToClipboardPath() {
 }
 
 void MainWindow::duplicateInstance() {
+    launchNewInstance(m_currentDirectory, getActiveViewCurrentItemPath());
+}
+
+// Opens directoryPath in a new mkFolderWidget process, placed slightly offset from this window with the same size
+void MainWindow::launchNewInstance(const QString &directoryPath, const QString &focusPath) {
     QString appPath = QCoreApplication::applicationFilePath();
     QStringList arguments;
     arguments << "-X" << QString::number(this->x() + 40)
               << "-Y" << QString::number(this->y() + 40)
               << "-W" << QString::number(this->width())
               << "-H" << QString::number(this->height())
-              << m_currentDirectory;
+              << directoryPath;
 
-    QString focusedFile = getActiveViewCurrentItemPath();
-    if (!focusedFile.isEmpty()) {
-        arguments << "-f" << focusedFile;
+    if (!focusPath.isEmpty()) {
+        arguments << "-f" << focusPath;
     }
 
     QProcess::startDetached(appPath, arguments);
