@@ -670,9 +670,7 @@ QString CustomTableModel::computeNewName(const CustomFileInfo &item, int seqInde
     //---------------------------------------------------------------------
     workingCopy = applyReplaceRule(workingCopy, m_rules.rpl);
     workingCopy = applyRemoveRule(workingCopy, m_rules.rmv);
-    //workingCopy = applyMoveCopyRule(workingCopy, m_rules.mcp);
     workingCopy = applyAddRule(workingCopy, m_rules.add);
-    //workingCopy = applyAddDateRule(workingCopy, m_rules.dat);
     workingCopy = applyAddFolderNameRule(workingCopy, m_rules.afn, item.path);
     workingCopy = applyAddNumberingRule(workingCopy, m_rules.num, seqIndex);
     workingCopy = applyNumberManipulationRule(workingCopy, m_rules.man, seqIndex);
@@ -1294,50 +1292,6 @@ bool CustomTableModel::canDropMimeData(const QMimeData *data, Qt::DropAction act
 bool CustomTableModel::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) {
     Q_UNUSED(row);
     Q_UNUSED(column);
-/*
-    // --- DEBUG-BLOCK START ---
-    if (data) {
-        qDebug() << "\n========== QMimeData INSIGHT ==========";
-        qDebug() << "Verfügbare Formate:" << data->formats();
-
-        for (const QString &format : data->formats()) {
-            QByteArray rawData = data->data(format);
-            qDebug() << "---------------------------------------";
-            qDebug() << "MIME-Type:" << format;
-            qDebug() << "Größe:    " << rawData.size() << "Bytes";
-
-            // Spezialbehandlung für URLs (sehr nützlich bei Browser-Dnd)
-            if (format == "text/uri-list" && data->hasUrls()) {
-                qDebug() << "Inhalt (als URLs interpretiert):";
-                for (const QUrl &url : data->urls()) {
-                    qDebug() << "  -> URL:" << url.toString()
-                    << "[Lokale Datei?" << (url.isLocalFile() ? "JA" : "NEIN") << "]";
-                }
-            }
-            // Reine Text-Formate lesbar als String ausgeben
-            else if (format.startsWith("text/") || format.contains("string") || format.contains("text")) {
-                // Konvertiert die Rohdaten von UTF-8 in einen lesbaren QString
-                QString textContent = QString::fromUtf8(rawData);
-                // Zeilenumbrüche für die Ausgabe etwas einrücken
-                textContent.replace("\n", "\n  ");
-                qDebug() << "Inhalt (Text):\n  " << textContent;
-            }
-            // Binäre oder Qt-interne Formate als Hex-Vorschau anzeigen
-            else {
-                // Wir zeigen nur die ersten 64 Bytes an, damit das Terminal nicht geflutet wird
-                QByteArray preview = rawData.left(64);
-                qDebug() << "Inhalt (Hex-Vorschau):\n  " << preview.toHex(' ');
-                if (rawData.size() > 64) {
-                    qDebug() << "  ... (" << (rawData.size() - 64) << "weitere Bytes)";
-                }
-            }
-        }
-        qDebug() << "=======================================\n";
-    } else {
-        qDebug() << "dropMimeData aufgerufen, aber QMimeData ist NULL!";
-    }
-    // --- DEBUG-BLOCK ENDE ---
-*/
 
     if (action == Qt::IgnoreAction) return true;
     if (!data || !data->hasUrls()) return false;

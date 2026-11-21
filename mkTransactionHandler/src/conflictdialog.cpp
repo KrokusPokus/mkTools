@@ -14,7 +14,6 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
 {
 
     setWindowTitle(tr("Target already exists"));
-    //setMinimumWidth(500);
 
     QFileInfo srcInfo(conflict.sourcePath);
     QFileInfo dstInfo(conflict.targetPath);
@@ -46,7 +45,6 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
 
     // Line 2: Source Data
     auto *lblSrcTitle = new QLabel(QString("<b>%1</b>").arg(tr("Source")), this);
-    //lblSrcTitle->setStyleSheet("color: #2e7d32;");
     lblSrcTitle->setAlignment(Qt::AlignCenter);
 
     auto *lblSrcTime  = new QLabel(srcInfo.lastModified().toString("yyyy-MM-dd  HH:mm:ss"), this);
@@ -60,7 +58,6 @@ ConflictDialog::ConflictDialog(const Conflict &conflict, QWidget *parent)
 
     // Line 3: Destination Data
     auto *lblDstTitle = new QLabel(QString("<b>%1</b>").arg(tr("Target")), this);
-    //lblDstTitle->setStyleSheet("color: #d32f2f;");
     lblDstTitle->setAlignment(Qt::AlignCenter);
 
     UnderlinedLabel *lblDstTime = new UnderlinedLabel(this);

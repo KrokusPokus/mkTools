@@ -741,38 +741,6 @@ namespace Helpers {
         });
     }
 
-    /*
-    QString getDisplayName(const QFileInfo &fileInfo, bool showFileExtensions) {
-        if (showFileExtensions || fileInfo.isDir()) {
-            return fileInfo.fileName();
-        }
-
-        QString displayName = fileInfo.completeBaseName();
-        return displayName.isEmpty() ? fileInfo.fileName() : displayName;
-    }
-    */
-
-    /*
-    QString getDisplayName(const QString &filePath, bool isDir, bool showFileExtensions) {
-        int lastSeparator = filePath.lastIndexOf('/');
-        if (lastSeparator == -1) {
-            lastSeparator = filePath.lastIndexOf('\\');
-        }
-
-        QString fileName = (lastSeparator == -1) ? filePath : filePath.mid(lastSeparator + 1);
-
-        if (showFileExtensions || isDir) {
-            return fileName;
-        }
-
-        int lastDot = fileName.lastIndexOf('.');
-        if (lastDot <= 0) {
-            return fileName;
-        }
-        return fileName.sliced(0, lastDot);
-    }
-    */
-
     QPixmap generateThumbnail(const QFileInfo &fileInfo) {
         // Unterstützte Formate statisch cachen (wird nur einmalig beim allerersten Aufruf erstellt)
         static const QSet<QByteArray> supportedFormats = []() {
@@ -1070,54 +1038,6 @@ namespace Helpers {
 
         return iCount;
     }
-
-/*
-    QString readLnkTargetOnLinux(const QString &lnkFilePath) {
-        QFile file(lnkFilePath);
-        if (!file.open(QIODevice::ReadOnly)) {
-            return QString();
-        }
-
-        QByteArray data = file.readAll();
-        file.close();
-
-        // 1. Minimum Header-Größe prüfen (76 Bytes Header)
-        if (data.size() < 0x4C) return QString();
-
-        // 2. Prüfen, ob es eine valide LNK-Datei ist (Header GUID prüfen)
-        static const char lnkGuid[] = "\x01\x14\x02\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46";
-        if (data.mid(4, 16) != QByteArray(lnkGuid, 16)) {
-            return QString(); // Keine echte .lnk Datei
-        }
-
-        // 3. Flags an Offset 0x14 lesen
-        quint32 flags = *reinterpret_cast<const quint32*>(data.constData() + 0x14);
-        bool hasLinkInfo = (flags & 0x02) != 0;
-        bool hasTargetIDList = (flags & 0x01) != 0;
-
-        if (!hasLinkInfo) return QString(); // Enthält keine Pfad-Info
-
-        // 4. Offset der LinkInfo-Struktur ermitteln
-        int offset = 0x4C;
-        if (hasTargetIDList) {
-            if (data.size() < offset + 2) return QString();
-            quint16 idListSize = *reinterpret_cast<const quint16*>(data.constData() + offset);
-            offset += 2 + idListSize; // IDList überspringen
-        }
-
-        if (data.size() < offset + 0x10) return QString();
-
-        // 5. Lokalen Pfad-Offset aus der LinkInfo-Struktur lesen
-        quint32 localPathOffset = *reinterpret_cast<const quint32*>(data.constData() + offset + 0x10);
-        int finalPathOffset = offset + localPathOffset;
-
-        if (finalPathOffset >= data.size()) return QString();
-
-        // 6. Pfad als ASCII-Null-terminierten String auslesen
-        const char* pathPtr = data.constData() + finalPathOffset;
-        return QString::fromLocal8Bit(pathPtr);
-    }
-*/
 
     QString getSiblingPath(const QString &path, bool previous) {
         QFileInfo info(path);

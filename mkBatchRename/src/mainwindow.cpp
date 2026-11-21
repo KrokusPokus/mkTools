@@ -169,7 +169,6 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     m_thumbnailView->setResizeMode(QListView::Adjust);
     m_thumbnailView->setIconSize(QSize(96, 96));
     m_thumbnailView->setGridSize(QSize());
-    //m_thumbnailView->setUniformItemSizes(true);   // Enormer Performance-Schub für Qt!
     m_thumbnailView->setSpacing(2);
     m_thumbnailView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_thumbnailView->setContextMenuPolicy(Qt::NoContextMenu);
@@ -259,35 +258,6 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     groupBox5Layout->setColumnStretch(4, 1);  // Die allerletzte Spalte bekommt Stretch 1
     m_groupBox5->setLayout(groupBox5Layout);
 
-    /*
-    QLabel *titleLabel6 = new QLabel(tr("Move/Copy"));
-    titleLabel6->setStyleSheet("font-size: 12pt; margin-top: 10px;");
-    m_groupBox6 = new QGroupBox("", this);
-    m_groupBox6_ComboBox1 = new QComboBox();
-    m_groupBox6_ComboBox1->addItems({tr("No action"), tr("Copy first"), tr("Copy last"), tr("Move first"), tr("Move last")});
-    m_groupBox6_SpinBox1 = new ZeroOnEmptySpinBox();
-    m_groupBox6_SpinBox1->setRange(0, 255);
-    QLabel *groupBox6_Label1 = new QLabel(tr("to"));
-    m_groupBox6_ComboBox2 = new QComboBox();
-    m_groupBox6_ComboBox2->addItems({tr("Nowhere"), tr("Front"), tr("End"), tr("Position")});
-    m_groupBox6_SpinBox2 = new ZeroOnEmptySpinBox();
-    m_groupBox6_SpinBox2->setRange(0, 255);
-    QLabel *groupBox6_Label2 = new QLabel(tr("Separator:"));
-    m_groupBox6_LineEdit = new QLineEdit();
-    m_groupBox6_LineEdit->setFixedWidth(24);
-    m_groupBox6_LineEdit->setText("_");
-    QHBoxLayout *groupBox6Layout = new QHBoxLayout;
-    groupBox6Layout->addWidget(m_groupBox6_ComboBox1);
-    groupBox6Layout->addWidget(m_groupBox6_SpinBox1);
-    groupBox6Layout->addWidget(groupBox6_Label1);
-    groupBox6Layout->addWidget(m_groupBox6_ComboBox2);
-    groupBox6Layout->addWidget(m_groupBox6_SpinBox2);
-    groupBox6Layout->addWidget(groupBox6_Label2);
-    groupBox6Layout->addWidget(m_groupBox6_LineEdit);
-    groupBox6Layout->addStretch();
-    m_groupBox6->setLayout(groupBox6Layout);
-    */
-
     QLabel *titleLabel7 = new QLabel(tr("Add"));
     titleLabel7->setStyleSheet("font-size: 12pt; margin-top: 10px;");
     m_groupBox7 = new QGroupBox("", this);
@@ -310,14 +280,6 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     groupBox7Layout->addWidget(groupBox7_Label4, 2, 0);
     groupBox7Layout->addWidget(m_groupBox7_LineEdit3, 2, 1, 1, 3);
     m_groupBox7->setLayout(groupBox7Layout);
-
-    /*
-    QLabel *titleLabel8 = new QLabel(tr("Add Date"));
-    titleLabel8->setStyleSheet("font-size: 12pt; margin-top: 10px;");
-    m_groupBox8 = new QGroupBox("", this);
-    QVBoxLayout *groupBox8Layout = new QVBoxLayout;
-    m_groupBox8->setLayout(groupBox8Layout);
-    */
 
     QLabel *titleLabel9 = new QLabel(tr("Add Folder Name"));
     titleLabel9->setStyleSheet("font-size: 12pt; margin-top: 10px;");
@@ -462,12 +424,8 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     controlsLayout->addWidget(m_groupBox3);  // Replace
     controlsLayout->addWidget(titleLabel5);
     controlsLayout->addWidget(m_groupBox5);  // Remove
-    //controlsLayout->addWidget(titleLabel6);
-    //controlsLayout->addWidget(m_groupBox6);  // Move/Copy
     controlsLayout->addWidget(titleLabel7);
     controlsLayout->addWidget(m_groupBox7);  // Add
-    //controlsLayout->addWidget(titleLabel8);
-    //controlsLayout->addWidget(m_groupBox8);  // Add Date
     controlsLayout->addWidget(titleLabel9);
     controlsLayout->addWidget(m_groupBox9);  // Add Folder Name
     controlsLayout->addWidget(titleLabel2);
@@ -911,7 +869,6 @@ void MainWindow::showFolder(const QString &directoryPath, const QStringList &ext
             }
             // Prio 5: Erstes Element im Ordner
             else {
-                //proxyIndexToFocus = m_proxyModel->index(0, 0);
             }
         }
 
@@ -1170,23 +1127,6 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         subMenuSortBy->addSeparator();
         subMenuSortBy->addAction(m_actionSortAscending);
         subMenuSortBy->addAction(m_actionSortDescending);
-        /*
-        mainMenu.addSeparator(); //-----------------------------------------
-
-        mainMenu.addAction(m_actionListViewPasteFiles);
-        const QMimeData *mimeData = QApplication::clipboard()->mimeData();  // Note: This CAN be slow if acquiring the clipboard is delayed.
-        bool canPaste = (mimeData && mimeData->hasUrls());
-        m_actionListViewPasteFiles->setEnabled(canPaste);
-
-        mainMenu.addSeparator();
-
-        QMenu *subMenuNew = mainMenu.addMenu(tr("New"));
-        if (m_settings.showIconsInMenu) {
-            subMenuNew->setIcon(QIcon::fromTheme("list-add"));
-        }
-        subMenuNew->addAction(m_actionListViewNewFolder);
-        subMenuNew->addAction(m_actionListViewNewTextFile);
-        */
         mainMenu.addSeparator(); //-----------------------------------------
         mainMenu.addAction(m_actionListViewFileProperties);
     } else {
@@ -1201,38 +1141,6 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
             mainMenu.addAction(m_actionListViewEditFiles);
         }
 
-        /*
-        QMimeDatabase db;
-        QMimeType mime = db.mimeTypeForFile(filePath);
-        QString mimeName = mime.name();
-
-        QStringList appIds = m_mimeCache.value(mime.name());
-        qDebug() << "mimeName:" << mimeName << "appIds:" << appIds;
-        if (appIds.isEmpty()) {
-            for (const QString &parent : mime.allAncestors()) {
-                appIds = m_mimeCache.value(parent);
-                if (!appIds.isEmpty()) break;
-            }
-        }
-
-        if (!appIds.isEmpty()) {
-            mainMenu.addSeparator(); //-----------------------------------------
-
-            QMenu *openWithMenu = mainMenu.addMenu(tr("Open with"));
-            if (m_settings.showIconsInMenu) {
-                openWithMenu->setIcon(QIcon::fromTheme("system-run"));
-            }
-            for (const QString &id : std::as_const(appIds)) {
-                DesktopEntry info = Helpers::getDesktopEntryById(id);
-                if (info.isValid) {
-                    QAction *action = openWithMenu->addAction(QIcon::fromTheme(info.icon), info.name);
-                    connect(action, &QAction::triggered, [info, filePath, this]() {
-                        Helpers::openFileListWithHandler(info.id, getActiveViewPathList());
-                    });
-                }
-            }
-        }
-        */
         // Native KDE Open with menu
         mainMenu.addSeparator(); //-----------------------------------------
 
@@ -2391,13 +2299,10 @@ void MainWindow::updateWidgetStyles() {
         m_groupBox2->setStyleSheet(Styles::groupBox);
         m_groupBox3->setStyleSheet(Styles::groupBox);
         m_groupBox5->setStyleSheet(Styles::groupBox);
-        //m_groupBox6->setStyleSheet(Styles::groupBox); // Move/Copy
         m_groupBox7->setStyleSheet(Styles::groupBox);
-        //m_groupBox8->setStyleSheet(Styles::groupBox); // Add date
         m_groupBox9->setStyleSheet(Styles::groupBox);
         m_groupBox10->setStyleSheet(Styles::groupBox);
         m_groupBox11->setStyleSheet(Styles::groupBox);
-        //m_groupBox12->setStyleSheet(Styles::groupBox); // Filters (has no groupbox, only widgets)
         m_groupBox13->setStyleSheet(Styles::groupBox);
     } else {
         // WICHTIG: Stylesheet leeren, wenn das System auf Light Mode wechselt!
@@ -2407,13 +2312,10 @@ void MainWindow::updateWidgetStyles() {
         m_groupBox2->setStyleSheet(Styles::groupBox);
         m_groupBox3->setStyleSheet(Styles::groupBox);
         m_groupBox5->setStyleSheet(Styles::groupBox);
-        //m_groupBox6->setStyleSheet(Styles::groupBox); // Move/Copy
         m_groupBox7->setStyleSheet(Styles::groupBox);
-        //m_groupBox8->setStyleSheet(Styles::groupBox); // Add date
         m_groupBox9->setStyleSheet(Styles::groupBox);
         m_groupBox10->setStyleSheet(Styles::groupBox);
         m_groupBox11->setStyleSheet(Styles::groupBox);
-        //m_groupBox12->setStyleSheet(Styles::groupBox); // Filters (has no groupbox, only widgets)
         m_groupBox13->setStyleSheet(Styles::groupBox);
     }
 
@@ -2776,15 +2678,6 @@ void MainWindow::setupRenameRuleSignals() {
     connect(m_groupBox5_SpinBox3, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox5_SpinBox4, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
 
-    /*
-    // Move/Copy
-    connect(m_groupBox6_ComboBox1, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
-    connect(m_groupBox6_ComboBox2, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
-    connect(m_groupBox6_SpinBox1, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
-    connect(m_groupBox6_SpinBox2, &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
-    connect(m_groupBox6_LineEdit, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
-    */
-
     // Add
     connect(m_groupBox7_LineEdit1, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox7_LineEdit2, &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
@@ -2796,9 +2689,6 @@ void MainWindow::setupRenameRuleSignals() {
     connect(m_groupBox2_SpinBox1,  &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox2_SpinBox2,  &QSpinBox::valueChanged, this, &MainWindow::onRenameRulesChanged);
     connect(m_groupBox2_LineEdit,  &QLineEdit::textChanged, this, &MainWindow::onRenameRulesChanged);
-
-    // Auto Date
-    //connect(m_groupBox8, &QGroupBox::toggled, this, &MainWindow::onRenameRulesChanged);
 
     // Append Folder Name
     connect(m_groupBox9_ComboBox, &QComboBox::currentIndexChanged, this, &MainWindow::onRenameRulesChanged);
@@ -2841,15 +2731,6 @@ void MainWindow::onRenameRulesChanged() {
     rules.rmv.fromN = m_groupBox5_SpinBox3->value();
     rules.rmv.fromNcount = m_groupBox5_SpinBox4->value();
 
-    /*
-    // Move/Copy
-    rules.mcp.fromMode = m_groupBox6_ComboBox1->currentIndex();
-    rules.mcp.fromPos = m_groupBox6_SpinBox1->value();
-    rules.mcp.toMode = m_groupBox6_ComboBox2->currentIndex();
-    rules.mcp.toPos = m_groupBox6_SpinBox2->value();
-    rules.mcp.separator = m_groupBox6_LineEdit->text();
-    */
-
     // Add
     rules.add.prefix = m_groupBox7_LineEdit1->text();
     rules.add.insertText = m_groupBox7_LineEdit2->text();
@@ -2861,9 +2742,6 @@ void MainWindow::onRenameRulesChanged() {
     rules.num.start = m_groupBox2_SpinBox1->value();
     rules.num.step = m_groupBox2_SpinBox2->value();
     rules.num.separator = m_groupBox2_LineEdit->text();
-
-    // Add Date
-    //rules.dat.target = target;
 
     // Add Folder Name
     rules.afn.mode = m_groupBox9_ComboBox->currentIndex();

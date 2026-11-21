@@ -190,7 +190,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     m_thumbnailView->setResizeMode(QListView::Adjust);
     m_thumbnailView->setIconSize(QSize(96, 96));
     m_thumbnailView->setGridSize(QSize());
-    //m_thumbnailView->setUniformItemSizes(true);   // Enormer Performance-Schub für Qt!
     m_thumbnailView->setSpacing(2);
     m_thumbnailView->setSelectionMode(QAbstractItemView::ExtendedSelection);
     m_thumbnailView->setContextMenuPolicy(Qt::NoContextMenu);
@@ -357,11 +356,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
 
     //-----------------------------------------------------------
 
-
-    //-----------------------------------------------------------
-//QKeySequence(Qt::Key_Up)
-//QKeySequence("Ctrl+H")
-
     m_actionNavigateUp = new QAction(tr("Up"),this);
     m_actionNavigateUp->setShortcut(QKeySequence(Qt::Key_Backspace));
     connect(m_actionNavigateUp, &QAction::triggered, this, &MainWindow::navigateUp);
@@ -402,8 +396,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
         m_actionListViewRenameFiles->setIconVisibleInMenu(false);
         m_actionListViewFileProperties->setIconVisibleInMenu(false);
         m_actionListViewPasteFiles->setIconVisibleInMenu(false);
-        //m_actionListViewNewFolder->setIconVisibleInMenu(false);
-        //m_actionListViewNewTextFile->setIconVisibleInMenu(false);
         m_actionViewModeList->setIconVisibleInMenu(false);
         m_actionViewModeDetails->setIconVisibleInMenu(false);
         m_actionViewModeThumbs->setIconVisibleInMenu(false);
@@ -536,8 +528,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
         }
     });
 
-    //qDebug() << "QImageReader::supportedImageFormats() " << QImageReader::supportedImageFormats();
-
     setVisibilityBasedOnPath(targetDirectory);
     browseFolder(targetDirectory, focusPath);
 }
@@ -563,17 +553,14 @@ void MainWindow::onFilterBoxChange(const QString &text) {
 }
 
 void MainWindow::onVerticalBarScrollChange() {
-    //m_timerCalcCrc->start(20);
     m_timerUpdateIcons->start(20);
 }
 
 void MainWindow::onHorizontalBarScrollChange() {
-    //m_timerCalcCrc->start(20);
     m_timerUpdateIcons->start(20);
 }
 
 void MainWindow::onListViewHeaderClicked() {
-    //m_timerCalcCrc->start(20);
     m_timerUpdateIcons->start(20);
 }
 
@@ -621,7 +608,6 @@ void MainWindow::reloadDirectory() {
 }
 
 void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, bool isHistoryNavigation) {
-    //qDebug() << "browseFolder(" << directoryPath << "," << focusPath << "," << isHistoryNavigation << ")";
     m_BenchmarkTimer.start();
 
     // Handle non-existing paths
@@ -709,11 +695,6 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
             }
         }
     }
-/*
-    qDebug() << "browseFolder() focused:" << focusedPathToRestore
-             << " Selected:" << selectedPathsToRestore
-             << " Path below:" << pathBelowLastSelectedToRestore;
-*/
     if (!isSameDirectory && focusPath.isEmpty()) {
         if (m_selectionModel) m_selectionModel->clear();
     }
@@ -729,8 +710,6 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
     m_currentDirectory = directoryPath;
     m_ignoreNextWatcherSignal = false;
 
-    //qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed till loadDirectory() finished";
-
     // --- UPDATE FILE SYSTEM WATCHER ---
     QStringList watchedPaths = m_fileSystemWatcher->directories();
     if (!watchedPaths.isEmpty()) {
@@ -739,7 +718,6 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
     if (!directoryPath.isEmpty() && QFileInfo(directoryPath).isDir()) {
         m_fileSystemWatcher->addPath(directoryPath);
     }
-    //qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed till m_fileSystemWatcher updated";
 
     // --- DISABLE SIGNALS FOR SPEEDUP ---
     if (m_selectionModel) {
@@ -838,9 +816,7 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
 
     // --- Update columns of tableView ---
     if (m_viewStack->currentWidget() == m_tableView) {
-        //qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed till before updateColumns()";
         updateColumns();
-        //qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed till end of updateColumns()";
     }
 
     if (activeView) {
@@ -850,15 +826,11 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
         }
     }
 
-    //qDebug() << "browseFolder():" << m_BenchmarkTimer.elapsed() << " ms elapsed total";
-
     m_timerUpdateIcons->start(20);
 }
 
 void MainWindow::updateColumns() {
     if (m_bHeaderVisible) {
-        // m_tableView->horizontalHeader()->setVisible(true);
-        
         m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColSize, QHeaderView::ResizeToContents);
         m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColDate, QHeaderView::ResizeToContents);
         m_tableView->horizontalHeader()->setSectionResizeMode(CustomTableModel::eColType, QHeaderView::ResizeToContents);
@@ -868,8 +840,6 @@ void MainWindow::updateColumns() {
         int eColNameWidth = qMax(m_tableView->columnWidth(CustomTableModel::eColName), kMinNameWidth);
         m_tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Interactive);
         m_tableView->setColumnWidth(CustomTableModel::eColName, eColNameWidth);
-    } else {
-        //m_tableView->horizontalHeader()->setVisible(false);
     }
 }
 
@@ -979,38 +949,6 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
             mainMenu.addAction(m_actionListViewEditFiles);
         }
 
-        /*
-        QMimeDatabase db;
-        QMimeType mime = db.mimeTypeForFile(filePath);
-        QString mimeName = mime.name();
-
-        QStringList appIds = m_mimeCache.value(mime.name());
-        qDebug() << "mimeName:" << mimeName << "appIds:" << appIds;
-        if (appIds.isEmpty()) {
-            for (const QString &parent : mime.allAncestors()) {
-                appIds = m_mimeCache.value(parent);
-                if (!appIds.isEmpty()) break;
-            }
-        }
-
-        if (!appIds.isEmpty()) {
-            mainMenu.addSeparator(); //-----------------------------------------
-
-            QMenu *openWithMenu = mainMenu.addMenu(tr("Open with"));
-            if (m_settings.showIconsInMenu) {
-                openWithMenu->setIcon(QIcon::fromTheme("system-run"));
-            }
-            for (const QString &id : std::as_const(appIds)) {
-                DesktopEntry info = Helpers::getDesktopEntryById(id);
-                if (info.isValid) {
-                    QAction *action = openWithMenu->addAction(QIcon::fromTheme(info.icon), info.name);
-                    connect(action, &QAction::triggered, [info, filePath, this]() {
-                        Helpers::openFileListWithHandler(info.id, getActiveViewPathList());
-                    });
-                }
-            }
-        }
-        */
         // Native KDE Open with menu
         mainMenu.addSeparator(); //-----------------------------------------
 
@@ -1099,7 +1037,6 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
             }
         }
         mainMenu.addSeparator(); //-----------------------------------------
-        //mainMenu.addAction(m_actionListViewBrowseToFile);
         mainMenu.addAction(m_actionListViewCopyPaths);
         mainMenu.addAction(m_actionListViewCutFiles);
         mainMenu.addAction(m_actionListViewCopyFiles);
@@ -1319,33 +1256,6 @@ void MainWindow::action_ListViewDeleteFiles(bool bRecycleOnly) {
     if (!showDeleteConfirmationDialog(pathList, bRecycleOnly)) {
         return;
     }
-/*
-    // Special case: delete directly instead of handing over to mkTransactionHandler
-    if (Helpers::hasOnlyFiles(pathList)) {
-        QSet<QString> successfullyDeletedPaths;
-
-        for (const QString &path : std::as_const(pathList)) {
-            bool success = false;
-            if (bRecycleOnly) {
-                success = QFile::moveToTrash(path);
-            } else {
-                success = QFile::remove(path);
-            }
-
-            if (success) {
-                successfullyDeletedPaths.insert(path);
-            } else {
-                qDebug() << "Could not delete:" << path;
-            }
-        }
-
-        if (!successfullyDeletedPaths.isEmpty()) {
-            m_abstractModel->removeFilePaths(successfullyDeletedPaths);
-        }
-
-        return;
-    }
-*/
     QList<QUrl> urlFileList;
     for (const QString &path : std::as_const(pathList)) {
         if (!path.isEmpty()) {
@@ -2456,8 +2366,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
             return QObject::eventFilter(obj, event); // Not our window -> hand off
         }
 
-        //qDebug() << "[KeyPress pos 1] key:" << keyEvent->key() << "isAutoRepeat:" << keyEvent->isAutoRepeat() << "obj:" << obj << "targetWidget:" << targetWidget << "targetWidget->parent():" << targetWidget->parent();
-
         // Window-wide hotkeys
         if (keyEvent->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier)) {
             if (keyEvent->key() == Qt::Key_F) {
@@ -2537,25 +2445,14 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                     }
                 }
             }
-            //if (keyEvent->key() == Qt::Key_Enter || keyEvent->key() == Qt::Key_Return) qDebug() << "[KeyPress pos 2a] key:" << keyEvent->key() << "isAutoRepeat:" << keyEvent->isAutoRepeat() << "obj:" << obj << "targetWidget:" << targetWidget << "targetWidget->parent():" << targetWidget->parent();
 
             return QObject::eventFilter(obj, event);
         }
         else if (qobject_cast<QLineEdit*>(targetWidget->parent())) {
-            //qDebug() << "[KeyPress pos 2b] key:" << keyEvent->key() << "isAutoRepeat:" << keyEvent->isAutoRepeat() << "obj:" << obj << "targetWidget:" << targetWidget << "targetWidget->parent():" << targetWidget->parent();
             return QObject::eventFilter(obj, event);
         }
         else {
-            //if (keyEvent->key() == Qt::Key_Enter || keyEvent->key() == Qt::Key_Return) qDebug() << "[KeyPress pos 2c] key:" << keyEvent->key() << "isAutoRepeat:" << keyEvent->isAutoRepeat() << "obj:" << obj << "targetWidget:" << targetWidget << "targetWidget->parent():" << targetWidget->parent();
         }
-/*
-        if (keyEvent->key() == Qt::Key_Escape) {
-            if (m_bSearchActive.load()) {
-                m_abstractModel->abort();
-                return true;
-            }
-		}
-*/
         if ((targetWidget == m_tableView || targetWidget->parent() == m_tableView) ||
             (targetWidget == m_listView  || targetWidget->parent() == m_listView)  ||
             (targetWidget == m_thumbnailView || targetWidget->parent() == m_thumbnailView)) {

@@ -36,8 +36,6 @@ function isWindowMatch(w) {
 function layoutManagedWindows(desktopKey) {
 	var managedWindows = managedWindowsPerDesktop[desktopKey] || [];
 
-	//console.log("mkFolderWidgetTiler: Tiling " + managedWindows.length + " windows on desktop " + desktopKey + " an.");
-
 	if (managedWindows.length === 0) return;
 
 	var area = workspace.clientArea(KWin.MaximizeArea, managedWindows[0]);
@@ -66,7 +64,6 @@ workspace.windowAdded.connect(function(w) {
 	if (!isWindowMatch(w)) return;
 
 	var dKey = getDesktopKey(w);
-	//console.log("mkFolderWidgetTiler: New window '" + w.caption + "' created on desktop '" + dKey + "'");
 
 	// Cleanup
 	if (!managedWindowsPerDesktop[dKey]) {
@@ -128,8 +125,6 @@ workspace.windowAdded.connect(function(w) {
 
 			// Counter erhöhen und bei STAGGER_STEPS wieder auf 0 setzen
 			staggerIndex = (staggerIndex + 1) % (STAGGER_STEPS * STAGGER_STEPS);
-
-			//console.log("mkFolderWidgetTiler: Overflow stagger " + staggerIndex);
 		}
 
 	// ---------------------------------------
@@ -208,7 +203,6 @@ workspace.windowAdded.connect(function(w) {
 				break
 			}
 		}
-		//console.log("mkFolderWidgetTiler: Pos1 topWindow.caption=" + topWindow.caption + " w.caption=" + w.caption);
 		if (topWindow.internalId === w.internalId) {
 			var managedGroup = managedWindowsPerDesktop[getDesktopKey(w)];
 			if (managedGroup) {

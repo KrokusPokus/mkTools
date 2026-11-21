@@ -149,14 +149,6 @@ private:
     ZeroOnEmptySpinBox  *m_groupBox5_SpinBox2 = nullptr;
     ZeroOnEmptySpinBox  *m_groupBox5_SpinBox3 = nullptr;
     ZeroOnEmptySpinBox  *m_groupBox5_SpinBox4 = nullptr;
-    /*
-    QGroupBox *m_groupBox6 = nullptr;
-    QComboBox *m_groupBox6_ComboBox1 = nullptr;
-    ZeroOnEmptySpinBox  *m_groupBox6_SpinBox1 = nullptr;
-    QComboBox *m_groupBox6_ComboBox2 = nullptr;
-    ZeroOnEmptySpinBox  *m_groupBox6_SpinBox2 = nullptr;
-    QLineEdit *m_groupBox6_LineEdit = nullptr;
-    */
     QGroupBox *m_groupBox7 = nullptr;
     QLineEdit *m_groupBox7_LineEdit1 = nullptr;
     QLineEdit *m_groupBox7_LineEdit2 = nullptr;

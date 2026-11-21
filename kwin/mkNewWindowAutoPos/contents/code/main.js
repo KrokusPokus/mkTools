@@ -30,8 +30,6 @@ workspace.windowAdded.connect(function(window) {
 	var actW = active.width;
 	var actH = active.height;
 
-	//console.log("mknewwindowautopos: Active window '" + window.resourceClass + "' at " + actX + "/" + actY + " " + actW + "x" + actH);
-
 	var renX = actX;
 	var renY = actY;
 
@@ -44,31 +42,25 @@ workspace.windowAdded.connect(function(window) {
 		if (missingL <= 0 || missingR <= 0) {	// if fits left or right
 			if (missingL <= 0) {	// if fits left
 				renX = actX - winW;
-				//console.log("mknewwindowautopos: Fits left");
 			} else {				// else put right
 				renX = actX + actW;
-				//console.log("mknewwindowautopos: Fits right");
 			}
 
 			// Vertical positioning: Preferably like active window, but make sure we stay inside workArea
 			if (actY + winH > workArea.height) {
 				renY = workArea.height - winH;
-				//console.log("mknewwindowautopos: Moving higher to stay inside workArea");
 			}
 		}
 		else if (missingT <= 0 || missingB <= 0) {	// else if fits above or below
 			if (missingT <= 0) {	// if fits above
 				renY = actY - winH;
-				//console.log("mknewwindowautopos: Fits above");
 			} else {				// else put below
 				renY = actY + actH;
-				//console.log("mknewwindowautopos: Fits below");
 			}
 
 			// Horizontal positioning: Preferably like active window, but make sure we stay inside workArea
 			if (actX + winW > workArea.width) {
 				renX = workArea.width - winW;
-				//console.log("mknewwindowautopos: Moving left to stay inside workArea");
 			}
 		}
 	}
@@ -76,23 +68,18 @@ workspace.windowAdded.connect(function(window) {
 		// Can't fit without overlapping, so minimize overlapping
 		if (missingL <= missingR) {
 			renX = 0;
-			//console.log("mknewwindowautopos: Can't fit / prefer left");
 		} else {
 			renX = workArea.width - winW;
-			//console.log("mknewwindowautopos: Can't fit / prefer right");
 		}
 
 		if (missingT <= missingB) {
 			renY = 0;
-			//console.log("mknewwindowautopos: Can't fit / prefer top");
 		} else {
 			renY = workArea.height - winH;
-			//console.log("mknewwindowautopos: Can't fit / prefer bottom");
 		}
 	}
 
 	if (renX != actX || renY != actY) {
-		//console.log("mknewwindowautopos: move to " + renX + "/" + renY + " " + winW + "x" + winH);
 		window.frameGeometry = {
 			x: renX,
 			y: renY,

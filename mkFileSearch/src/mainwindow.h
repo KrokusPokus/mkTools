@@ -64,8 +64,6 @@ private:
     void action_ListViewOpenFiles();
     void action_ListViewPasteFiles();
     void action_ListViewRenameFiles();
-    void action_ListViewNewFolder();
-    void action_ListViewNewTextFile();
     void action_ViewModeList();
     void action_ViewModeDetails();
     void action_ViewModeThumbs();
@@ -78,13 +76,7 @@ private:
 
     bool showDeleteConfirmationDialog(const QStringList &pathList, bool bRecycleOnly);
     void startSearch();
-    void duplicateInstance();
-    void elevateInstance();
     void loadMimeCache();
-    void navigateBack();
-    void navigateForward();
-    void navigateToClipboardPath();
-    void navigateUp();
     void fileOperation(OperationType opType, const QList<QUrl> &urls, const QString &targetDir, bool fromClipboard = false);
     void onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::KeyboardModifiers modifiers);
     void onShowContextMenu(QAbstractItemView *senderView, const QPoint &pos);

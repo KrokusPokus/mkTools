@@ -59,9 +59,6 @@ namespace Helpers {
     void showPopup(const QString &appName, const QString &title, const QString &body);
 
     //bool isTextFile(const QString &filePath);
-    //QString getDisplayName(const QFileInfo &fileInfo, bool showFileExtensions);
-    //QString getDisplayName(const QString &filePath, bool isDir, bool showFileExtensions);
-    //QString readLnkTargetOnLinux(const QString &filePath);
 
     void showKdePropertiesDialog(const QStringList &filePaths, QWidget *parent);
     void openUrlsWithKIO(const QList<QUrl> &urls);

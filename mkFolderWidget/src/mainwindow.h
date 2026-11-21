@@ -116,7 +116,6 @@ private:
     QStackedWidget *m_viewStack = nullptr;
 
     QLineEdit *m_LineEdit1 = nullptr;
-    //QLineEdit *m_LineEdit2 = nullptr;
 
     QAction *m_actionListViewOpenFiles = nullptr;
     QAction *m_actionListViewEditFiles = nullptr;

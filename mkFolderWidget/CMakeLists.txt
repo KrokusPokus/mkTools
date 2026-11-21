@@ -31,13 +31,6 @@ install(TARGETS mkFolderWidget
 # .desktop file: makes it selectable as default file manager; the file name must match the Wayland app_id (= executable name)
 install(FILES res/mkFolderWidget.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
 
-#qt_generate_deploy_app_script(
-#    TARGET mkFolderWidget
-#    OUTPUT_SCRIPT deploy_script
-#    NO_UNSUPPORTED_PLATFORM_ERROR
-#)
-#install(SCRIPT ${deploy_script})
-
 set_target_properties(${PROJECT_NAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
     RUNTIME_OUTPUT_DIRECTORY_DEBUG "${CMAKE_BINARY_DIR}/bin"

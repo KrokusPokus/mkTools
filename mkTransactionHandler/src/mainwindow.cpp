@@ -41,7 +41,6 @@ MainWindow::MainWindow(OperationType opType, QList<QUrl> urls, QString targetDir
     connect(m_fileOp,       &FileOperation::conflictDetected, this,     &MainWindow::onConflictDetected, Qt::QueuedConnection);
     connect(m_fileOp,       &FileOperation::wasContinued,     this,     &MainWindow::onOperationContinued);
     connect(m_fileOp,       &FileOperation::wasPaused,        this,     &MainWindow::onOperationPaused);
-    //connect(m_fileOp,     &FileOperation::wasRetried,       this,     &MainWindow::onOperationRetried);
     connect(m_fileOp,       &FileOperation::wasFinished,      this,     &MainWindow::onOperationFinished);
     connect(m_fileOp,       &FileOperation::wasCanceled,      this,     &MainWindow::onOperationCanceled);
 

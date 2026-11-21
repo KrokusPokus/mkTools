@@ -129,7 +129,6 @@ int main(int argc, char *argv[]) {
     SettingsManager m_settings;
 
     QFont currentFont = QApplication::font();
-    //qDebug() << "original font:" << currentFont.family() << currentFont.pointSize() << "pt";
 
     int targetFontSize = currentFont.pointSize();
 

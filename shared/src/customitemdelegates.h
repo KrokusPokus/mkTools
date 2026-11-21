@@ -21,43 +21,8 @@ public:
         bool isHidden = index.data(CustomTableModel::IsHiddenRole).toBool();
 
         // Referenz statt Kopie, da opt nicht verändert wird (paint() läuft für jede Zelle).
-        // Für den auskommentierten Block unten wieder eine Kopie verwenden.
         const QStyleOptionViewItem &opt = option;
 
-        /*
-        // Eigenen Selektions- und Fokus-Hintergrund zeichnen
-        bool isSelected = (opt.state & QStyle::State_Selected);
-        bool hasFocus   = (opt.state & QStyle::State_HasFocus);
-        if (isSelected || hasFocus) {
-            QRectF rect = opt.rect;
-            rect.adjust(1, 1, -1, -1);
-
-            if (isSelected) {
-                //QColor bgColor = QColor(255, 0, 255, 0);
-                QColor bgColor = opt.palette.color(QPalette::Highlight);
-                bgColor.setAlpha(hasFocus ? 100 : 100);
-                painter->setBrush(bgColor);
-            } else {
-                painter->setBrush(Qt::NoBrush);
-            }
-
-            if (hasFocus) {
-                QColor borderColor = opt.palette.color(QPalette::Highlight);
-                painter->setPen(QPen(borderColor, 1, Qt::SolidLine));
-            } else {
-                painter->setPen(Qt::NoPen);
-            }
-
-            painter->drawRect(rect);
-        }
-
-        // 3. Das restliche Standard-Zeichnen modifizieren
-        opt.state &= ~QStyle::State_HasFocus; // Standard-Fokusrahmen ausschalten
-        opt.state &= ~QStyle::State_Selected; // Standard-Auswahlbalken ausschalten
-        if (isSelected) {
-            opt.palette.setColor(QPalette::Text, opt.palette.color(QPalette::WindowText));
-        }
-        */
         if (isCut || isHidden) {
             painter->save();
             if (isCut && isHidden) {
