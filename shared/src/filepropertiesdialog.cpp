@@ -74,7 +74,7 @@ void FilePropertiesDialog::setupUiMultiMode() {
     headerLayout->setSpacing(25);
     m_iconLabel = new QLabel();
 
-    m_iconLabel->setPixmap(QIcon(":/icons/res/multi.ico").pixmap(48, 48));
+    m_iconLabel->setPixmap(QIcon(":/icons/multi.ico").pixmap(48, 48));
 
     auto *summaryLabel = new QLabel(tr("<strong>%n element selected</strong>", nullptr, m_filePaths.size()));
     summaryLabel->setStyleSheet("font-size: 14px;");
