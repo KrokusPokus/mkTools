@@ -693,6 +693,7 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
     } else {
         QStringList selectedPaths = getActiveViewPathList(); // Used by KDE SERVICE-ACTIONS
 
+        const KService::Ptr openService = updateOpenActionText(selectedPaths);
         mainMenu.addAction(m_actionListViewOpenFiles);
         mainMenu.setDefaultAction(m_actionListViewOpenFiles);
 
@@ -745,38 +746,16 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
                 }
             }
 
-            // 3. Create the "Open with" submenu in the main menu
-            QMenu *openWithMenu = mainMenu.addMenu(tr("Open with"));
-            if (m_settings.showIconsInMenu) {
-                openWithMenu->setIcon(QIcon::fromTheme("system-run"));
-            }
-
-            // 4. Add the found applications (intersection) to the menu
-            for (const KService::Ptr &service : std::as_const(commonServices)) {
-                QAction *action = openWithMenu->addAction(QIcon::fromTheme(service->icon()), service->name());
-
-                connect(action, &QAction::triggered, this, [service, selectedPaths]() {
-                    QList<QUrl> urls;
-                    urls.reserve(selectedPaths.size());
-                    for (const QString &path : selectedPaths) {
-                        urls.append(QUrl::fromLocalFile(path));
-                    }
-
-                    auto *job = new KIO::ApplicationLauncherJob(service);
-                    job->setUrls(urls);
-                    job->start();
+            // 3. The application of the "Open" action is not repeated in the submenu (like in Dolphin)
+            const bool showOtherApp = (uniqueMimeTypes.size() == 1) || !commonServices.isEmpty();
+            if (openService) {
+                commonServices.removeIf([&openService](const KService::Ptr &service) {
+                    return service->storageId() == openService->storageId();
                 });
             }
 
-            // 5. Add "Other Application..." if all items have the same MIME type OR commonServices is not empty
-            bool showOtherApp = (uniqueMimeTypes.size() == 1) || !commonServices.isEmpty();
-
-            if (showOtherApp) {
-                if (!commonServices.isEmpty()) {
-                    openWithMenu->addSeparator();
-                }
-
-                QAction *otherAppAction = openWithMenu->addAction(QIcon::fromTheme("system-run"), tr("Other Application..."));
+            auto addOtherAppAction = [this, selectedPaths](QMenu *menu, const QString &text) {
+                QAction *otherAppAction = menu->addAction(QIcon::fromTheme("system-run"), text);
                 connect(otherAppAction, &QAction::triggered, this, [selectedPaths, this]() {
                     QList<QUrl> urls;
                     urls.reserve(selectedPaths.size());
@@ -787,6 +766,37 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
                     auto *dialog = new KOpenWithDialog(urls, this);
                     dialog->show();
                 });
+            };
+
+            if (!commonServices.isEmpty()) {
+                // 4. Create the "Open with" submenu and add the remaining applications (intersection)
+                QMenu *openWithMenu = mainMenu.addMenu(tr("Open with"));
+                if (m_settings.showIconsInMenu) {
+                    openWithMenu->setIcon(QIcon::fromTheme("system-run"));
+                }
+
+                for (const KService::Ptr &service : std::as_const(commonServices)) {
+                    QAction *action = openWithMenu->addAction(QIcon::fromTheme(service->icon()), service->name());
+
+                    connect(action, &QAction::triggered, this, [service, selectedPaths]() {
+                        QList<QUrl> urls;
+                        urls.reserve(selectedPaths.size());
+                        for (const QString &path : selectedPaths) {
+                            urls.append(QUrl::fromLocalFile(path));
+                        }
+
+                        auto *job = new KIO::ApplicationLauncherJob(service);
+                        job->setUrls(urls);
+                        job->start();
+                    });
+                }
+
+                // 5. Add "Other Application..."
+                openWithMenu->addSeparator();
+                addOtherAppAction(openWithMenu, tr("Other Application..."));
+            } else if (showOtherApp) {
+                // No further applications: offer the dialog directly instead of a submenu with a single entry
+                addOtherAppAction(&mainMenu, tr("Open with..."));
             }
         }
         mainMenu.addSeparator(); //-----------------------------------------
@@ -897,6 +907,20 @@ void MainWindow::onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::Keyb
     }
 }
 
+// Labels the "Open" action like Dolphin: "Open with <app>" if all selected files are opened with the same application.
+// Returns that application, or nullptr.
+KService::Ptr MainWindow::updateOpenActionText(const QStringList &pathList) {
+    const KService::Ptr service = Helpers::openActionService(pathList, m_settings);
+    if (service) {
+        m_actionListViewOpenFiles->setText(tr("Open with %1").arg(service->name().replace('&', QLatin1String("&&"))));
+        m_actionListViewOpenFiles->setIcon(QIcon::fromTheme(service->icon()));
+    } else {
+        m_actionListViewOpenFiles->setText(tr("Open"));
+        m_actionListViewOpenFiles->setIcon(QIcon());
+    }
+    return service;
+}
+
 void MainWindow::action_ListViewOpenFiles() {
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) return;
@@ -911,21 +935,16 @@ void MainWindow::action_ListViewOpenFiles() {
         QFileInfo fileInfo(path);
         if (!fileInfo.exists()) continue;
 
-        QString fileExt = fileInfo.suffix().toLower();
-
-        if (fileExt == "desktop") {
+        switch (Helpers::openMethod(fileInfo, m_settings)) {
+        case Helpers::OpenMethod::DesktopEntry:
             Helpers::launchDesktopFile(Helpers::getDesktopEntry(fileInfo));
-        }
-        else if (fileInfo.isExecutable()
-                 && !fileInfo.isDir()
-                 && !m_settings.audioExts.contains(fileExt)
-                 && !m_settings.imageExts.contains(fileExt)
-                 && !m_settings.videoExts.contains(fileExt)) {
-            // Workaround on linux where executable files are not neccessarily executed when opened via QDesktopServices::openUrl().
+            break;
+        case Helpers::OpenMethod::Execute:
             QProcess::startDetached(path, QStringList(), fileInfo.absolutePath());
-        }
-        else {
+            break;
+        case Helpers::OpenMethod::PreferredApp:
             urlsToOpen.append(QUrl::fromLocalFile(fileInfo.absoluteFilePath()));
+            break;
         }
     }
 

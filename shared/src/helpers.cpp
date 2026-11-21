@@ -1,4 +1,5 @@
 #include "helpers.h"
+#include "settingsmanager.h"
 
 #include <QCollator>
 #include <QCoreApplication>
@@ -1218,6 +1219,47 @@ namespace Helpers {
             job->setUrls(groupUrls);
             job->start();
         }
+    }
+
+    OpenMethod openMethod(const QFileInfo &fileInfo, const SettingsManager &settings) {
+        const QString fileExt = fileInfo.suffix().toLower();
+
+        if (fileExt == "desktop") {
+            return OpenMethod::DesktopEntry;
+        }
+        // Workaround on linux where executable files are not neccessarily executed when opened via QDesktopServices::openUrl().
+        if (fileInfo.isExecutable()
+            && !fileInfo.isDir()
+            && !settings.audioExts.contains(fileExt)
+            && !settings.imageExts.contains(fileExt)
+            && !settings.videoExts.contains(fileExt)) {
+            return OpenMethod::Execute;
+        }
+        return OpenMethod::PreferredApp;
+    }
+
+    // The application the "Open" action uses for the given files, if it is the same one for all of them (like Dolphin's
+    // "Open with <app>"). nullptr for folders, files that are not opened with their preferred application, or if the
+    // files need different (or no) applications.
+    KService::Ptr openActionService(const QStringList &paths, const SettingsManager &settings) {
+        QMimeDatabase mimeDb;
+        KService::Ptr commonService;
+
+        for (const QString &path : paths) {
+            const QFileInfo fileInfo(path);
+            if (fileInfo.isDir() || openMethod(fileInfo, settings) != OpenMethod::PreferredApp) {
+                return {};
+            }
+
+            // Same MIME detection as openUrlsWithKIO()
+            const QMimeType mime = mimeDb.mimeTypeForUrl(QUrl::fromLocalFile(fileInfo.absoluteFilePath()));
+            const KService::Ptr service = KApplicationTrader::preferredService(mime.name());
+            if (!service || (commonService && service->storageId() != commonService->storageId())) {
+                return {};
+            }
+            commonService = service;
+        }
+        return commonService;
     }
 
     // Opens a file with the application at position 'rank' of the applications associated with its MIME type,

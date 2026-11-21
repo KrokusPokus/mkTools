@@ -62,6 +62,7 @@ private:
     void action_ListViewEditFiles();
     void action_ListViewFileProperties();
     void action_ListViewOpenFiles();
+    KService::Ptr updateOpenActionText(const QStringList &pathList);
     void action_ListViewPasteFiles();
     void action_ListViewRenameFiles();
     void action_ViewModeList();

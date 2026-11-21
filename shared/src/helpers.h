@@ -1,9 +1,13 @@
 #ifndef HELPERS_H
 #define HELPERS_H
 
+#include <KService>
+
 #include <QFileInfo>
 #include <QPixmap>
 #include <QString>
+
+class SettingsManager;
 
 enum class OperationType { Copy, Move, Link, Delete, Recycle }; // needed for interop with mkTransactionHandler
 enum ViewMode {List = 0, Detail = 1, Thumbnail = 2};
@@ -62,6 +66,15 @@ namespace Helpers {
 
     void showKdePropertiesDialog(const QStringList &filePaths, QWidget *parent);
     void openUrlsWithKIO(const QList<QUrl> &urls);
+
+    // How the "Open" action of the apps handles a file
+    enum class OpenMethod {
+        DesktopEntry,   // .desktop file: the entry is launched
+        Execute,        // executable file (except media files): executed directly
+        PreferredApp    // opened with the preferred application of its MIME type
+    };
+    OpenMethod openMethod(const QFileInfo &fileInfo, const SettingsManager &settings);
+    KService::Ptr openActionService(const QStringList &paths, const SettingsManager &settings);
     bool openFileWithPreferredApp(const QString &path, int rank);
 }
 

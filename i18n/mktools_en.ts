@@ -1166,6 +1166,14 @@ Do you have sufficient rights?</source>
         <translation></translation>
     </message>
     <message>
+        <source>Open with %1</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>Open with...</source>
+        <translation></translation>
+    </message>
+    <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2216"/>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="2226"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="2248"/>
