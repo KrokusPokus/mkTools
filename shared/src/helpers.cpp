@@ -1507,14 +1507,25 @@ namespace Helpers {
         return terminalArgs;
     }
 
-    // Runs the executable file 'path' in a terminal window that stays open after it has ended.
+    // Runs the executable file 'path' in a terminal window, the same way as typing it into a manually opened terminal.
     // Shows an error message if no terminal emulator was found or it could not be started.
     bool executeInTerminal(const QString &path, QWidget *parent) {
         const QString terminal = findTerminalEmulator();
         if (!terminal.isEmpty()) {
             const QFileInfo fileInfo(path);
             const QString workDir = fileInfo.absolutePath();
-            const QStringList args = terminalArguments(terminal, fileInfo.absoluteFilePath(), {}, workDir, true);
+
+            // The file must NOT become the main process of the terminal session: when the main process ends, the kernel
+            // sends SIGHUP to the session, which kills everything the file started in the background (e.g. "program &"
+            // in a script). Instead, an interactive bash (i.e. with job control, like the shell in a manually opened
+            // terminal) runs the file as a job and is then replaced by the user's shell, which keeps the window open.
+            QStringList args;
+            const QString bash = QStandardPaths::findExecutable("bash");
+            if (!bash.isEmpty()) {
+                args = terminalArguments(terminal, bash, {"-i", "-c", "\"$0\"; exec \"${SHELL:-bash}\"", fileInfo.absoluteFilePath()}, workDir, false);
+            } else {
+                args = terminalArguments(terminal, fileInfo.absoluteFilePath(), {}, workDir, true);
+            }
             qDebug() << "executeInTerminal() terminal:" << terminal << "args:" << args;
             if (QProcess::startDetached(terminal, args, workDir)) {
                 return true;
