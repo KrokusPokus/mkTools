@@ -257,6 +257,10 @@ MainWindow::MainWindow(QWidget *parent)
     m_actionListViewOpenFiles = new QAction(tr("Open"), this);
     connect(m_actionListViewOpenFiles, &QAction::triggered, this, &MainWindow::action_ListViewOpenFiles);
 
+    m_actionListViewRun = new QAction(tr("Run"), this);
+    m_actionListViewRun->setIcon(QIcon::fromTheme("system-run"));
+    connect(m_actionListViewRun, &QAction::triggered, this, &MainWindow::action_ListViewRun);
+
     m_actionListViewRunInTerminal = new QAction(tr("Run in Terminal"), this);
     m_actionListViewRunInTerminal->setIcon(QIcon::fromTheme("utilities-terminal"));
     connect(m_actionListViewRunInTerminal, &QAction::triggered, this, &MainWindow::action_ListViewRunInTerminal);
@@ -364,6 +368,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     if (m_settings.showIconsInMenu == false) {
         m_actionListViewOpenFiles->setIconVisibleInMenu(false);
+        m_actionListViewRun->setIconVisibleInMenu(false);
         m_actionListViewRunInTerminal->setIconVisibleInMenu(false);
         m_actionListViewBrowseToFile->setIconVisibleInMenu(false);
         m_actionListViewCopyPaths->setIconVisibleInMenu(false);
@@ -685,12 +690,15 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         QStringList selectedPaths = getActiveViewPathList(); // Used by KDE SERVICE-ACTIONS
 
         const KService::Ptr openService = updateOpenActionText(selectedPaths);
-        mainMenu.addAction(m_actionListViewOpenFiles);
-        mainMenu.setDefaultAction(m_actionListViewOpenFiles);
-
-        // Single executable file (program, script): offer to run it in a terminal window to interact with it
-        if (selectedPaths.size() == 1 && Helpers::allExecutable(selectedPaths)) {
+        if (Helpers::isSingleExecutable(selectedPaths)) {
+            // Single executable file (program, script): run it, optionally in a terminal window to interact with it.
+            // Like in Dolphin, opening it with an application is offered in the "Open with" menu.
+            mainMenu.addAction(m_actionListViewRun);
             mainMenu.addAction(m_actionListViewRunInTerminal);
+            mainMenu.setDefaultAction(m_actionListViewRun);
+        } else {
+            mainMenu.addAction(m_actionListViewOpenFiles);
+            mainMenu.setDefaultAction(m_actionListViewOpenFiles);
         }
 
         // Native KDE Open with menu
@@ -849,10 +857,7 @@ void MainWindow::onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::Keyb
 // Returns that application, or nullptr.
 KService::Ptr MainWindow::updateOpenActionText(const QStringList &pathList) {
     const KService::Ptr service = Helpers::openActionService(pathList);
-    if (Helpers::allExecutable(pathList)) {
-        m_actionListViewOpenFiles->setText(tr("Run"));
-        m_actionListViewOpenFiles->setIcon(QIcon::fromTheme("system-run"));
-    } else if (service) {
+    if (service) {
         m_actionListViewOpenFiles->setText(tr("Open with %1").arg(service->name().replace('&', QLatin1String("&&"))));
         m_actionListViewOpenFiles->setIcon(QIcon::fromTheme(service->icon()));
     } else {
@@ -862,12 +867,23 @@ KService::Ptr MainWindow::updateOpenActionText(const QStringList &pathList) {
     return service;
 }
 
+void MainWindow::action_ListViewRun() {
+    const QStringList pathList = getActiveViewPathList();
+    if (!Helpers::isSingleExecutable(pathList)) return;
+
+    RecentOpenList_Add(pathList.first());
+    if (Helpers::executeFile(pathList.first(), this)) {
+        guiHideConditional();
+    }
+}
+
 void MainWindow::action_ListViewRunInTerminal() {
     const QStringList pathList = getActiveViewPathList();
-    if (pathList.size() != 1) return;
+    if (!Helpers::isSingleExecutable(pathList)) return;
 
-    if (!Helpers::executeInTerminal(pathList.first())) {
-        QMessageBox::warning(this, tr("Run in Terminal"), tr("No terminal emulator could be found or started."));
+    RecentOpenList_Add(pathList.first());
+    if (Helpers::executeInTerminal(pathList.first(), this)) {
+        guiHideConditional();
     }
 }
 
@@ -890,7 +906,12 @@ void MainWindow::action_ListViewOpenFiles() {
             Helpers::launchDesktopFile(Helpers::getDesktopEntry(fileInfo));
             break;
         case Helpers::OpenMethod::Execute:
-            QProcess::startDetached(path, QStringList(), fileInfo.absolutePath());
+            // Like in Dolphin, only a single file is executed, several ones are opened with their preferred application
+            if (pathList.size() == 1) {
+                Helpers::executeFile(path, this);
+            } else {
+                urlsToOpen.append(QUrl::fromLocalFile(fileInfo.absoluteFilePath()));
+            }
             break;
         case Helpers::OpenMethod::PreferredApp:
             urlsToOpen.append(QUrl::fromLocalFile(fileInfo.absoluteFilePath()));

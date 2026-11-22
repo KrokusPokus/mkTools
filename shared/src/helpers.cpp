@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFile>
 #include <QFileIconProvider>
 #include <QFileInfo>
 #include <QGuiApplication>
@@ -1401,27 +1402,58 @@ namespace Helpers {
         // Workaround on linux where executable files are not neccessarily executed when opened via QDesktopServices::openUrl().
         // The executable bit alone is not enough: on NTFS/FAT/SMB mounts, often all files have it. So like KIO, only files
         // whose MIME type is executable are executed (programs, scripts; PIE binaries are detected as x-sharedlib).
+        // The MIME type alone is not enough either: e.g. JSON, JavaScript and Windows programs inherit
+        // application/x-executable as well. So in addition, the file has to be something the kernel can start:
+        // a script with a shebang ("#!") or a native ELF binary.
         if (fileInfo.isExecutable() && !fileInfo.isDir()) {
             static const QMimeDatabase mimeDb;
             const QMimeType mime = mimeDb.mimeTypeForFile(fileInfo);
             if (mime.inherits(QStringLiteral("application/x-executable"))
                 || mime.inherits(QStringLiteral("application/x-sharedlib"))) {
-                return OpenMethod::Execute;
+                QFile file(fileInfo.absoluteFilePath());
+                if (file.open(QIODevice::ReadOnly)) {
+                    const QByteArray header = file.read(4);
+                    if (header.startsWith("#!") || header == QByteArrayLiteral("\x7f" "ELF")) {
+                        return OpenMethod::Execute;
+                    }
+                }
             }
         }
         return OpenMethod::PreferredApp;
     }
 
-    // True if the "Open" action executes all of the given files (and there is at least one)
-    bool allExecutable(const QStringList &paths) {
-        if (paths.isEmpty()) return false;
-        for (const QString &path : paths) {
-            const QFileInfo fileInfo(path);
-            if (fileInfo.isDir() || openMethod(fileInfo) != OpenMethod::Execute) {
-                return false;
+    // True if exactly one file is given and the "Open" action executes it. Like in Dolphin, only single files are
+    // executed: with several selected files, executables are opened with their preferred application instead.
+    bool isSingleExecutable(const QStringList &paths) {
+        return paths.size() == 1 && openMethod(QFileInfo(paths.first())) == OpenMethod::Execute;
+    }
+
+    // Executes the file 'path' (see openMethod()) in its folder. Shows an error message if it could not be started,
+    // e.g. because of a missing interpreter, a shebang with Windows line endings or a noexec mount.
+    bool executeFile(const QString &path, QWidget *parent) {
+        const QFileInfo fileInfo(path);
+        QProcess process;
+        process.setProgram(fileInfo.absoluteFilePath());
+        process.setWorkingDirectory(fileInfo.absolutePath());
+        if (process.startDetached()) {
+            return true;
+        }
+        QString message = QCoreApplication::translate("Helpers", "The file could not be executed:<br><br>%1<br><br>%2")
+                              .arg(fileInfo.absoluteFilePath().toHtmlEscaped(), process.errorString().toHtmlEscaped());
+
+        // A script with Windows line endings fails with a misleading "No such file or directory": the kernel looks for
+        // an interpreter whose name ends with '\r' (e.g. "/bin/sh\r"). Point that out explicitly.
+        QFile file(fileInfo.absoluteFilePath());
+        if (file.open(QIODevice::ReadOnly)) {
+            const QByteArray firstLine = file.readLine(4096);
+            if (firstLine.startsWith("#!") && firstLine.endsWith("\r\n")) {
+                message += "<br><br>" + QCoreApplication::translate("Helpers", "The script has Windows line endings (CRLF). "
+                                                                               "Convert it to Unix line endings (LF) to run it.");
             }
         }
-        return true;
+
+        QMessageBox::warning(parent, QCoreApplication::translate("Helpers", "Run"), message);
+        return false;
     }
 
     // Path of the first installed terminal emulator (Konsole first because of KDE), or an empty string
@@ -1476,31 +1508,38 @@ namespace Helpers {
     }
 
     // Runs the executable file 'path' in a terminal window that stays open after it has ended.
-    // Returns false if no terminal emulator was found or it could not be started.
-    bool executeInTerminal(const QString &path) {
+    // Shows an error message if no terminal emulator was found or it could not be started.
+    bool executeInTerminal(const QString &path, QWidget *parent) {
         const QString terminal = findTerminalEmulator();
-        if (terminal.isEmpty()) {
-            qWarning() << "executeInTerminal(): Konnte keinen Terminal-Emulator finden.";
-            return false;
+        if (!terminal.isEmpty()) {
+            const QFileInfo fileInfo(path);
+            const QString workDir = fileInfo.absolutePath();
+            const QStringList args = terminalArguments(terminal, fileInfo.absoluteFilePath(), {}, workDir, true);
+            qDebug() << "executeInTerminal() terminal:" << terminal << "args:" << args;
+            if (QProcess::startDetached(terminal, args, workDir)) {
+                return true;
+            }
         }
-
-        const QFileInfo fileInfo(path);
-        const QString workDir = fileInfo.absolutePath();
-        const QStringList args = terminalArguments(terminal, fileInfo.absoluteFilePath(), {}, workDir, true);
-        qDebug() << "executeInTerminal() terminal:" << terminal << "args:" << args;
-        return QProcess::startDetached(terminal, args, workDir);
+        QMessageBox::warning(parent, QCoreApplication::translate("Helpers", "Run in Terminal"),
+                             QCoreApplication::translate("Helpers", "No terminal emulator could be found or started."));
+        return false;
     }
 
     // The application the "Open" action uses for the given files, if it is the same one for all of them (like Dolphin's
     // "Open with <app>"). nullptr for folders, files that are not opened with their preferred application, or if the
-    // files need different (or no) applications.
+    // files need different (or no) applications. Executables count as opened with their preferred application when
+    // several files are given (see isSingleExecutable()).
     KService::Ptr openActionService(const QStringList &paths) {
         QMimeDatabase mimeDb;
         KService::Ptr commonService;
 
         for (const QString &path : paths) {
             const QFileInfo fileInfo(path);
-            if (fileInfo.isDir() || openMethod(fileInfo) != OpenMethod::PreferredApp) {
+            if (fileInfo.isDir()) {
+                return {};
+            }
+            const OpenMethod method = openMethod(fileInfo);
+            if (method == OpenMethod::DesktopEntry || (method == OpenMethod::Execute && paths.size() == 1)) {
                 return {};
             }
 

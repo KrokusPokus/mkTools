@@ -57,6 +57,7 @@ private:
     void action_ListViewEditFiles();
     void action_ListViewFileProperties();
     void action_ListViewOpenFiles();
+    void action_ListViewRun();
     void action_ListViewRunInTerminal();
     KService::Ptr updateOpenActionText(const QStringList &pathList);
     void action_ListViewPasteFiles();
@@ -112,6 +113,7 @@ private:
     QLineEdit *m_LineEdit1 = nullptr;
 
     QAction *m_actionListViewOpenFiles = nullptr;
+    QAction *m_actionListViewRun = nullptr;
     QAction *m_actionListViewRunInTerminal = nullptr;
     QAction *m_actionListViewCopyPaths = nullptr;
     QAction *m_actionListViewCutFiles = nullptr;
