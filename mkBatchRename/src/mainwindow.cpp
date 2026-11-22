@@ -121,6 +121,7 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
     m_listView->setThumbnailMode(false); // custom function!
     m_listView->setItemDelegate(listItemDelegate);
     CustomProxyStyle *listViewStyle = new CustomProxyStyle();
+    listViewStyle->setSquareItemViewPanels(true); // no rounded hover/selection/focus rects in the list view
     listViewStyle->setParent(m_listView);
     m_listView->setStyle(listViewStyle);
 

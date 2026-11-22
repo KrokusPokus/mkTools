@@ -98,6 +98,12 @@ protected:
             static const QColor pureRed(255, 0, 0);
             option->palette.setColor(QPalette::Highlight, pureRed);
             option->palette.setColor(QPalette::HighlightedText, Qt::white);
+        } else {
+            // Selected items only get a translucent highlight core (CustomProxyStyle::setSquareItemViewPanels),
+            // so their text keeps the normal text color (HighlightedText would be unreadable on light themes)
+            for (const auto group : {QPalette::Active, QPalette::Inactive, QPalette::Disabled}) {
+                option->palette.setColor(group, QPalette::HighlightedText, option->palette.color(group, QPalette::Text));
+            }
         }
     }
 };
