@@ -6,8 +6,7 @@ GenericName[de]=Dateiverwaltung
 Exec=mkFolderWidget %u
 Icon=org.kde.dolphin
 MimeType=inode/directory;
-# Hidden from the start menu, but selectable as default file manager (System Settings > Default Applications)
-NoDisplay=true
+NoDisplay=false
 StartupNotify=false
 Terminal=false
 X-KDE-Protocols=file
