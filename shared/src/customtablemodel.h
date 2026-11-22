@@ -55,17 +55,8 @@ struct CrcCacheEntry {
     QDateTime lastModified;
 };
 
-// RegEx
-struct RegExRule {
-    bool enabled = false;
-    int target = 0;
-    QString match;
-    QString replace;
-};
-
 // Replace
 struct ReplaceRule {
-    bool enabled = false;
     int target = 0;
     QString match;
     QString replace;
@@ -75,7 +66,6 @@ struct ReplaceRule {
 
 // Remove
 struct RemoveRule {
-    bool enabled = false;
     int target = 0;
     int firstN = 0;
     int lastN = 0;
@@ -83,9 +73,9 @@ struct RemoveRule {
     int fromNcount = 0;
 };
 
+/*
 // Move/Copy
 struct MoveCopyRule {
-    bool enabled = false;
     int target = 0;
     int fromMode = 0; // 0: None, 1: Copy first n, 2: Copy last n, 3: Move first n, 4: Move last n
     int fromPos = 0;
@@ -94,9 +84,13 @@ struct MoveCopyRule {
     QString separator;
 };
 
+// Add Date
+struct AddDateRule {
+    int target = 0;
+};
+*/
 // Add
 struct AddRule {
-    bool enabled = false;
     int target = 0;
     QString prefix;
     QString insertText;
@@ -106,7 +100,6 @@ struct AddRule {
 
 // Add Numbering
 struct AddNumberingRule {
-    bool enabled = false;
     int target = 0;
     int mode = 0; // 0: None, 1: Prefix, 2: Suffix
     int start = 1;
@@ -114,15 +107,8 @@ struct AddNumberingRule {
     QString separator;
 };
 
-// Add Date
-struct AddDateRule {
-    bool enabled = false;
-    int target = 0;
-};
-
 // Add Folder Name
 struct AddFolderNameRule {
-    bool enabled = false;
     int target = 0;
     int mode = 0; // 0: None, 1: Prefix, 2: Suffix
     QString separator;
@@ -131,7 +117,6 @@ struct AddFolderNameRule {
 
 // Number Manipulation
 struct NumberManipulationRule {
-    bool enabled = false;
     int targetGroup = 0;
     bool addLeadEnabled = false;
     int addLeadCount = 0;
@@ -142,7 +127,6 @@ struct NumberManipulationRule {
 
 // Case
 struct CaseRule {
-    bool enabled = false;
     int target = 0;
     int mode = 0; // 0: Same, 1: Lower-Case, 2: Upper-Case, 3: Title-Case, 4: Sentence
 };
@@ -164,14 +148,14 @@ struct RenameRules {
     int target = 0;
     ReplaceRule rpl;        // Replace
     RemoveRule rmv;         // Remove
-    MoveCopyRule mcp;       // Move/Copy
     AddRule add;            // Add
     AddNumberingRule num;
-    AddDateRule dat;        // Add Date
     AddFolderNameRule afn;  // Add Folder Name
     NumberManipulationRule man; // Number Manipulation
     CaseRule cas;           // Extension (11)
     FilterRule flt;         // Selections (12)
+    //MoveCopyRule mcp;     // Move/Copy
+    //AddDateRule dat;      // Add Date
 };
 
 
@@ -195,7 +179,7 @@ public:
         eColQuality = 6,
         eColCount = 7,
         eColCRC = 8,
-        ColumnCount // A commonly used trick: always comes last and automatically gives the total number of columns (8 here)
+        ColumnCount // Placed last, it will automatically give the total number of columns
     };
 
     enum ModelRoles {
@@ -229,7 +213,6 @@ public:
     bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const override;  // Handles the mouse cursor feedback while dragging
 
     // Function to hand over your loaded data later
-    void setFiles(const std::vector<CustomFileInfo> &files);
     void clear();
     void abort();
 
@@ -300,10 +283,10 @@ private:
 
     QString applyReplaceRule(const QString &input, const ReplaceRule &rule) const;
     QString applyRemoveRule(const QString &input, const RemoveRule &rule) const;
-    QString applyMoveCopyRule(const QString &input, const MoveCopyRule &rule) const;
+    //QString applyMoveCopyRule(const QString &input, const MoveCopyRule &rule) const;
     QString applyAddRule(const QString &input, const AddRule &rule) const;
     QString applyAddNumberingRule(const QString &input, const AddNumberingRule &rule, int seqIndex) const;
-    QString applyAddDateRule(const QString &input, const AddDateRule &rule) const;
+    //QString applyAddDateRule(const QString &input, const AddDateRule &rule) const;
     QString applyAddFolderNameRule(const QString &input, const AddFolderNameRule &rule, const QString &path) const;
     QString applyNumberManipulationRule(const QString &input, const NumberManipulationRule &rule, int seqIndex) const;
     QString applyCaseRule(const QString &input, const CaseRule &rule) const;

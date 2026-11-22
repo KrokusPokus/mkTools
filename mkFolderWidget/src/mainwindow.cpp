@@ -549,11 +549,6 @@ void MainWindow::onListViewHeaderClicked() {
     m_timerUpdateIcons->start(20);
 }
 
-void MainWindow::onToggleListViewHeader() {
-    m_bHeaderVisible = !m_bHeaderVisible;
-    updateColumns();
-}
-
 void MainWindow::onDirectoryChangedOnDisk(const QString &path) {
     Q_UNUSED(path);
 
@@ -1051,23 +1046,6 @@ QStringList MainWindow::getActiveViewPathList() {
     return pathList;
 }
 
-QSet<int> MainWindow::getActiveViewRowSet() {
-    QSet<int> rowSet;
-
-    // 1. Get all selected cells/indexes
-    QModelIndexList selectedIndexes = m_selectionModel->selectedIndexes();  // we use selectedIndexes() instead of selectedRows() because the latter only list rows in which all columns are selected!
-    if (selectedIndexes.isEmpty()) return rowSet;
-
-    for (const QModelIndex &proxyIndex : std::as_const(selectedIndexes)) {
-        if (proxyIndex.column() == CustomTableModel::eColName) {
-            QModelIndex sourceIndex = m_proxyModel->mapToSource(proxyIndex);
-            rowSet.insert(sourceIndex.row());
-        }
-    }
-
-    return rowSet;
-}
-
 void MainWindow::onListItemDoubleClicked(const QModelIndex &proxyIndex) {
     // We put this in a timer, so we can finish processing this double click event before the folder change fires.
     // This is to prevent the glitch that the focused file in the new folder is set in name edit mode if our mouse happens to hover over it.
@@ -1265,13 +1243,6 @@ void MainWindow::onClipboardChanged() {
 
 void MainWindow::removeCutMarkers() {
     m_abstractModel->clearCutMarkers();
-}
-
-void MainWindow::action_ListViewBrowseToFile() {
-    QString path = getActiveViewCurrentItemPath();
-    if (path.isEmpty()) return;
-
-    Helpers::browseToFile(path, m_settings.fileManager);
 }
 
 void MainWindow::action_ListViewRenameFiles() {
@@ -1801,6 +1772,7 @@ void MainWindow::updateWidgetStyles() {
 
 }
 
+// Only called on launch or when receiving a path via DBus
 void MainWindow::setVisibilityBasedOnPath(const QString &path) {
     if (path.isEmpty()) return;
 
@@ -1819,7 +1791,10 @@ void MainWindow::setVisibilityBasedOnPath(const QString &path) {
 
     m_bShowHiddenFiles = isHiddenPath;
     m_proxyModel->setShowHiddenFiles(m_bShowHiddenFiles);
-    m_abstractModel->setShowFileExtensions(m_bShowHiddenFiles);
+
+    // If we start out (or are sent to) a hidden path (which are hidden by default),
+    // also always show file extensions.
+    m_abstractModel->setShowFileExtensions(m_bShowHiddenFiles || m_settings.showFileExtensions);
 }
 
 //######################################################################################

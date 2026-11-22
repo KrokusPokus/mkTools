@@ -614,7 +614,7 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
 
     connect(m_tableView->horizontalHeader(), &QHeaderView::sectionClicked, this, &MainWindow::onListViewHeaderClicked);
     connect(QApplication::clipboard(), &QClipboard::dataChanged, this, &MainWindow::onClipboardChanged);
-    
+
     connect(m_groupBox3_LineEdit1, &QLineEdit::textChanged, this, &MainWindow::validateInputBoxRegex);
     connect(m_buttonDoRename, &QPushButton::clicked, this, [this]() {
         QString errorMessage;
@@ -668,12 +668,6 @@ void MainWindow::onTableCurrentChanged(const QModelIndex &current, const QModelI
     }
 }
 
-void MainWindow::onCheckboxClickedRegExName(Qt::CheckState state) {
-}
-
-void MainWindow::onCheckboxClickedRegExContent(Qt::CheckState state) {
-}
-
 void MainWindow::onVerticalBarScrollChange() {
     m_timerUpdateIcons->start(20);
 }
@@ -684,11 +678,6 @@ void MainWindow::onHorizontalBarScrollChange() {
 
 void MainWindow::onListViewHeaderClicked() {
     m_timerUpdateIcons->start(20);
-}
-
-void MainWindow::onToggleListViewHeader() {
-    m_bHeaderVisible = !m_bHeaderVisible;
-    updateColumns();
 }
 
 void MainWindow::scrollToCurrentItem() {
@@ -1242,23 +1231,6 @@ QStringList MainWindow::getActiveViewPathList() {
     return pathList;
 }
 
-QSet<int> MainWindow::getActiveViewRowSet() {
-    QSet<int> rowSet;
-
-    // 1. Get all selected cells/indexes
-    QModelIndexList selectedIndexes = m_selectionModel->selectedIndexes();  // we use selectedIndexes() instead of selectedRows() because the latter only list rows in which all columns are selected!
-    if (selectedIndexes.isEmpty()) return rowSet;
-
-    for (const QModelIndex &proxyIndex : std::as_const(selectedIndexes)) {
-        if (proxyIndex.column() == CustomTableModel::eColName) {
-            QModelIndex sourceIndex = m_proxyModel->mapToSource(proxyIndex);
-            rowSet.insert(sourceIndex.row());
-        }
-    }
-
-    return rowSet;
-}
-
 void MainWindow::onListItemDoubleClicked(const QModelIndex &proxyIndex) {
     // We put this in a timer, so we can finish processing this double click event before the folder change fires.
     // This is to prevent the glitch that the focused file in the new folder is set in name edit mode if our mouse happens to hover over it.
@@ -1514,48 +1486,6 @@ void MainWindow::action_ListViewFileProperties() {
     dialog->show();
     dialog->raise();
     dialog->activateWindow();
-}
-
-void MainWindow::action_ListViewPasteFiles() {
-    const QMimeData *mimeData = QApplication::clipboard()->mimeData();
-    if (!mimeData || !mimeData->hasUrls()) return;
-
-    QList<QUrl> urlFileList = mimeData->urls();
-
-    OperationType operationType = OperationType::Copy;
-
-    // Check for the KDE cut flag
-    if (mimeData->hasFormat("application/x-kde-cutselection")) {
-        if (mimeData->data("application/x-kde-cutselection") == "1") {
-            operationType = OperationType::Move;
-        }
-    }
-    // Check for the GNOME cut flag (in case it was cut by Nautilus or similar)
-    else if (mimeData->hasFormat("x-special/gnome-copied-files")) {
-        QString gnomeData = QString::fromUtf8(mimeData->data("x-special/gnome-copied-files"));
-        if (gnomeData.startsWith("cut")) {
-            operationType = OperationType::Move;
-        }
-    }
-
-    Helpers::startFileOperation(operationType, urlFileList, m_currentDirectory, true, m_currentDirectory, this);
-}
-
-void MainWindow::onFilesDropped(const QList<QUrl> &urlList, const QString &targetDir, Qt::DropAction dropAction) {
-
-    OperationType operationType = OperationType::Copy;
-
-    if (dropAction == Qt::CopyAction) {
-        operationType = OperationType::Copy;
-    } else if (dropAction == Qt::MoveAction) {
-        operationType = OperationType::Move;
-    } else if (dropAction == Qt::LinkAction) {
-        operationType = OperationType::Link;
-    } else {
-        return;
-    }
-
-    Helpers::startFileOperation(operationType, urlList, targetDir, false, m_currentDirectory, this);
 }
 
 void MainWindow::action_ViewModeList() {
@@ -2133,13 +2063,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
         else if (qobject_cast<QLineEdit*>(targetWidget->parent())) {
             return QObject::eventFilter(obj, event);
         }
-
-        if (keyEvent->key() == Qt::Key_Escape) {
-            if (m_bSearchActive.load()) {
-                m_abstractModel->abort();
-                return true;
-            }
-		}
 
         if ((targetWidget == m_tableView || targetWidget->parent() == m_tableView) ||
             (targetWidget == m_listView  || targetWidget->parent() == m_listView)  ||

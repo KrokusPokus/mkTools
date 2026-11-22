@@ -41,7 +41,6 @@ private slots:
     void onListViewHeaderClicked();
     void onTableCurrentChanged(const QModelIndex &current, const QModelIndex &previous);
     void onTimedUpdateIcons();
-    void onToggleListViewHeader();
     void onVerticalBarScrollChange();
     void reloadDirectory();
     void setMainViewMode(ViewMode index);
@@ -49,10 +48,8 @@ private slots:
 private:
     QString getActiveViewCurrentItemPath();
     QStringList getActiveViewPathList();
-    QSet<int> getActiveViewRowSet();
 
     void action_EditSettingsFile();
-    void action_ListViewBrowseToFile();
     void action_ListViewCopyFiles();
     void action_ListViewCopyPaths();
     void action_ListViewCutFiles();
@@ -114,7 +111,6 @@ private:
     QLineEdit *m_LineEdit1 = nullptr;
 
     QAction *m_actionListViewOpenFiles = nullptr;
-    QAction *m_actionListViewBrowseToFile = nullptr;
     QAction *m_actionListViewCopyPaths = nullptr;
     QAction *m_actionListViewCutFiles = nullptr;
     QAction *m_actionListViewCopyFiles = nullptr;

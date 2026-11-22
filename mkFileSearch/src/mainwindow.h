@@ -31,7 +31,6 @@ public:
 
 private slots:
     void onClipboardChanged();
-    void onFilesDropped(const QList<QUrl> &urlList, const QString &targetDir, Qt::DropAction dropAction);
     void onHorizontalBarScrollChange();
     void onListItemDoubleClicked(const QModelIndex &index);
     void onListViewHeaderClicked();
@@ -39,7 +38,6 @@ private slots:
     void onSearchFinished(uint iItemsFound, uint iNameMatched, uint iContentMatched, bool bSearchInterrupted);
     void onTableCurrentChanged(const QModelIndex &current, const QModelIndex &previous);
     void onTimedUpdateIcons();
-    void onToggleListViewHeader();
     void onVerticalBarScrollChange();
     void setMainViewMode(ViewMode index);
 
@@ -51,7 +49,6 @@ private slots:
 private:
     QString getActiveViewCurrentItemPath();
     QStringList getActiveViewPathList();
-    QSet<int> getActiveViewRowSet();
 
     void action_EditSettingsFile();
     void action_ListViewBrowseToFile();
@@ -63,7 +60,6 @@ private:
     void action_ListViewFileProperties();
     void action_ListViewOpenFiles();
     KService::Ptr updateOpenActionText(const QStringList &pathList);
-    void action_ListViewPasteFiles();
     void action_ListViewRenameFiles();
     void action_ViewModeList();
     void action_ViewModeDetails();
@@ -112,9 +108,6 @@ private:
     QAction *m_actionListViewDeleteFiles = nullptr;
     QAction *m_actionListViewRenameFiles = nullptr;
     QAction *m_actionListViewFileProperties = nullptr;
-    QAction *m_actionListViewPasteFiles = nullptr;
-    QAction *m_actionListViewNewFolder = nullptr;
-    QAction *m_actionListViewNewTextFile = nullptr;
     QAction *m_actionViewModeList = nullptr;
     QAction *m_actionViewModeDetails = nullptr;
     QAction *m_actionViewModeThumbs = nullptr;
@@ -129,7 +122,6 @@ private:
     QTimer *m_scrollToDebounceTimer = nullptr;
     QTimer *m_themeUpdateDebounceTimer = nullptr;
 
-    bool m_bShowHiddenFiles = true;
     bool m_bHeaderVisible = true;
     int m_nameColWidthNeeded = 0;   // Cached content width of eColName (incl. icon/padding), set by measureFlexibleColumns()
     int m_pathColWidthNeeded = 0;   // Cached content width of eColPath (incl. padding), set by measureFlexibleColumns()

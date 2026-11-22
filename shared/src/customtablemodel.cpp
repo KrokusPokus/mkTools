@@ -373,13 +373,6 @@ void CustomTableModel::sort(int column, Qt::SortOrder order) {
     Q_UNUSED(order);
 }
 
-// Set the data again and signal the view that it has to repaint
-void CustomTableModel::setFiles(const std::vector<CustomFileInfo> &files) {
-    beginResetModel();
-    m_files = files;
-    endResetModel();
-}
-
 void CustomTableModel::clear() {
     beginResetModel();
     m_files.clear();
@@ -889,7 +882,7 @@ QString CustomTableModel::applyRemoveRule(const QString &input, const RemoveRule
 
     return workingCopy;
 }
-
+/*
 QString CustomTableModel::applyMoveCopyRule(const QString &input, const MoveCopyRule &rule) const {
     if (rule.fromMode == 0 || rule.toMode == 0 || rule.fromPos <= 0 || input.isEmpty()) {
         return input;
@@ -980,6 +973,18 @@ QString CustomTableModel::applyMoveCopyRule(const QString &input, const MoveCopy
     return workingCopy;
 }
 
+QString CustomTableModel::applyAddDateRule(const QString &input, const AddDateRule &rule) const {
+    QString workingCopy;
+    workingCopy = input;
+
+    //---------------------------------------------------------------------
+
+    //---------------------------------------------------------------------
+
+    return workingCopy;
+}
+*/
+
 QString CustomTableModel::applyAddRule(const QString &input, const AddRule &rule) const {
     QString workingCopy;
     workingCopy = input;
@@ -1031,17 +1036,6 @@ QString CustomTableModel::applyAddNumberingRule(const QString &input, const AddN
     } else if (rule.mode == 2) {
         workingCopy.append(rule.separator + numberStr);
     }
-
-    //---------------------------------------------------------------------
-
-    return workingCopy;
-}
-
-QString CustomTableModel::applyAddDateRule(const QString &input, const AddDateRule &rule) const {
-    QString workingCopy;
-    workingCopy = input;
-
-    //---------------------------------------------------------------------
 
     //---------------------------------------------------------------------
 

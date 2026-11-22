@@ -33,7 +33,6 @@ public slots:
 
 private slots:
     void onClipboardChanged();
-    void onFilesDropped(const QList<QUrl> &urlList, const QString &targetDir, Qt::DropAction dropAction);
     void onHorizontalBarScrollChange();
     void onListItemDoubleClicked(const QModelIndex &index);
     void onListViewHeaderClicked();
@@ -50,7 +49,6 @@ private slots:
 private:
     QString getActiveViewCurrentItemPath();
     QStringList getActiveViewPathList();
-    QSet<int> getActiveViewRowSet();
 
     void action_EditSettingsFile();
     void action_ListViewBrowseToFile();
@@ -62,7 +60,6 @@ private:
     void action_ListViewFileProperties();
     void action_ListViewOpenFiles();
     KService::Ptr updateOpenActionText(const QStringList &pathList);
-    void action_ListViewPasteFiles();
     void action_ListViewRenameFiles();
     void action_ViewModeList();
     void action_ViewModeDetails();
@@ -111,9 +108,6 @@ private:
     QAction *m_actionListViewDeleteFiles = nullptr;
     QAction *m_actionListViewRenameFiles = nullptr;
     QAction *m_actionListViewFileProperties = nullptr;
-    QAction *m_actionListViewPasteFiles = nullptr;
-    QAction *m_actionListViewNewFolder = nullptr;
-    QAction *m_actionListViewNewTextFile = nullptr;
     QAction *m_actionViewModeList = nullptr;
     QAction *m_actionViewModeDetails = nullptr;
     QAction *m_actionViewModeThumbs = nullptr;
@@ -129,14 +123,12 @@ private:
     QTimer *m_scrollToDebounceTimer = nullptr;
     QTimer *m_themeUpdateDebounceTimer = nullptr;
 
-    bool m_bShowHiddenFiles = false;
     bool m_bHeaderVisible = true;
     QString m_currentDirectory;
     QElapsedTimer m_BenchmarkTimer;
     QFileIconProvider m_iconProvider;
 
     std::atomic<bool> m_bSearchActive{false};
-    std::atomic<int> m_currentSearchGeneration{0};
     QByteArray m_currentClipboardToken;
     QString m_privateTokenName = "application/x-mkfolderwidget-token";
     SettingsManager m_settings;
@@ -147,12 +139,9 @@ private:
     bool m_activationClickActive = false;
     QPersistentModelIndex m_middlePressedIndex; // Item under the cursor at middle button press, acted upon at release
     QSet<QString> m_loadingThumbnails;
-    QString m_styleLineEditNormal = "";
-    QString m_styleLineEditError = "background-color: red; color: white;";
 
     QString RecentInputList_GetPrevious(const QString &currentText);
     QString RecentInputList_GetNext(const QString &currentText);
-    void addFileToTable(const QFileInfo &fileInfo, int iRow, int nameMatchQuality, const QString &displayName);
     void finalizeUI();
     void guiHideConditional();
     void launchAction();
@@ -163,8 +152,6 @@ private:
     void RecentOpenList_Add(const QString &filePath);
     QHBoxLayout *m_topControlsHBoxLayout = nullptr;
     int m_tableLineHeight;
-    std::atomic<bool> m_bAbortRequested{false};
-    std::atomic<bool> m_bRestartPendingSearch{false};
 
     bool m_processIsElevated{false};
     QPalette m_StyleLastPalette;

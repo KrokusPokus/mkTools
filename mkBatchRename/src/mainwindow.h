@@ -51,7 +51,6 @@ public:
 
 private slots:
     void onClipboardChanged();
-    void onFilesDropped(const QList<QUrl> &urlList, const QString &targetDir, Qt::DropAction dropAction);
     void onHorizontalBarScrollChange();
     void onListItemDoubleClicked(const QModelIndex &index);
     void onListViewHeaderClicked();
@@ -60,17 +59,12 @@ private slots:
     void updateRenameButtonState();
     void onTableCurrentChanged(const QModelIndex &current, const QModelIndex &previous);
     void onTimedUpdateIcons();
-    void onToggleListViewHeader();
     void onVerticalBarScrollChange();
     void setMainViewMode(ViewMode index);
-
-    void onCheckboxClickedRegExContent(Qt::CheckState state);
-    void onCheckboxClickedRegExName(Qt::CheckState state);
 
 private:
     QString getActiveViewCurrentItemPath();
     QStringList getActiveViewPathList();
-    QSet<int> getActiveViewRowSet();
 
     void action_EditSettingsFile();
     void action_ListViewBrowseToFile();
@@ -82,10 +76,7 @@ private:
     void action_ListViewFileProperties();
     void action_ListViewOpenFiles();
     KService::Ptr updateOpenActionText(const QStringList &pathList);
-    void action_ListViewPasteFiles();
     void action_ListViewRenameFiles();
-    void action_ListViewNewFolder();
-    void action_ListViewNewTextFile();
     void action_ViewModeList();
     void action_ViewModeDetails();
     void action_ViewModeThumbs();
@@ -96,12 +87,6 @@ private:
     void action_SortAscending();
     void action_SortDescending();
 
-    void duplicateInstance();
-    void elevateInstance();
-    void navigateBack();
-    void navigateForward();
-    void navigateToClipboardPath();
-    void navigateUp();
     void onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::KeyboardModifiers modifiers);
     void onShowContextMenu(QAbstractItemView *senderView, const QPoint &pos);
     void removeCutMarkers();
@@ -150,14 +135,12 @@ private:
     QLineEdit *m_groupBox7_LineEdit2 = nullptr;
     QLineEdit *m_groupBox7_LineEdit3 = nullptr;
     ZeroOnEmptySpinBox  *m_groupBox7_SpinBox = nullptr;
-    QGroupBox *m_groupBox8 = nullptr;
     QGroupBox *m_groupBox9 = nullptr;
     QComboBox *m_groupBox9_ComboBox = nullptr;
     QLineEdit *m_groupBox9_LineEdit = nullptr;
     QSpinBox  *m_groupBox9_SpinBox = nullptr;
     QGroupBox *m_groupBox10 = nullptr;
     QCheckBox *m_groupBox10_CheckBox1 = nullptr;
-    QLineEdit *m_groupBox10_LineEdit = nullptr;
     QCheckBox *m_groupBox10_CheckBox2 = nullptr;
     QSpinBox  *m_groupBox10_SpinBox0 = nullptr;
     QSpinBox  *m_groupBox10_SpinBox1 = nullptr;
@@ -165,7 +148,6 @@ private:
     QSpinBox  *m_groupBox10_SpinBox3 = nullptr;
     QGroupBox *m_groupBox11 = nullptr;
     QComboBox *m_groupBox11_ComboBox = nullptr;
-    QLineEdit *m_groupBox11_LineEdit = nullptr;
     QGroupBox *m_groupBox13 = nullptr;
     QRadioButton *m_groupBox13_RadioButton1 = nullptr;
     QRadioButton *m_groupBox13_RadioButton2 = nullptr;
@@ -187,9 +169,6 @@ private:
     QAction *m_actionListViewDeleteFiles = nullptr;
     QAction *m_actionListViewRenameFiles = nullptr;
     QAction *m_actionListViewFileProperties = nullptr;
-    QAction *m_actionListViewPasteFiles = nullptr;
-    QAction *m_actionListViewNewFolder = nullptr;
-    QAction *m_actionListViewNewTextFile = nullptr;
     QAction *m_actionViewModeList = nullptr;
     QAction *m_actionViewModeDetails = nullptr;
     QAction *m_actionViewModeThumbs = nullptr;
@@ -204,19 +183,14 @@ private:
     QTimer *m_scrollToDebounceTimer = nullptr;
     QTimer *m_themeUpdateDebounceTimer = nullptr;
 
-    bool m_bShowHiddenFiles = true;
     bool m_bHeaderVisible = true;
     bool m_measureFlexibleColumnsPending = false;
     int m_nameColWidthNeeded = 0;      // Cached content width of eColName (incl. icon/padding), set by measureFlexibleColumns()
     int m_newNameColWidthNeeded = 0;   // Cached content width of eColNewName (incl. padding), set by measureFlexibleColumns()
     int m_pathColWidthNeeded = 0;      // Cached content width of eColPath (incl. padding), set by measureFlexibleColumns()
     QString m_currentDirectory;
-    QElapsedTimer m_BenchmarkTimer;
     QFileIconProvider m_iconProvider;
-    QPointer<QWidget> m_lastWidget;
 
-    std::atomic<bool> m_bSearchActive{false};
-    std::atomic<int> m_currentSearchGeneration{0};
     QByteArray m_currentClipboardToken;
     QString m_privateTokenName = "application/x-mkbatchrename-token";
     SettingsManager m_settings;
