@@ -628,6 +628,16 @@ void MainWindow::browseFolder(QString directoryPath, const QString &focusPath, b
 
     auto *activeView = qobject_cast<QAbstractItemView*>(m_viewStack->currentWidget());
 
+    // Any real folder change resets the filter, regardless of how the navigation was triggered
+    if (!isSameDirectory && !m_topControlsContainerWidget->isHidden()) {
+        const bool filterHadFocus = m_LineEdit1->hasFocus();
+        m_LineEdit1->clear();
+        m_topControlsContainerWidget->hide();
+        if (filterHadFocus && activeView) {
+            activeView->setFocus();
+        }
+    }
+
     // --- STORE FOCUS AND SELECTION ---
     QStringList selectedPathsToRestore;
     QString focusedPathToRestore = focusPath;
@@ -1913,10 +1923,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                 return true;
             }
             else if (mouseEvent->button() == Qt::BackButton) {
-                if (!m_topControlsContainerWidget->isHidden()) {
-                    m_LineEdit1->clear();
-                    m_topControlsContainerWidget->hide();
-                }
                 navigateUp();
                 return true;
             }
@@ -2073,12 +2079,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                     action_ListViewEditFiles();
                     return true;
                 }
-                else if (keyEvent->key() == Qt::Key_F) {
-                    m_topControlsContainerWidget->show();
-                    m_LineEdit1->setFocus();
-                    m_LineEdit1->selectAll();
-                    return true;
-                }
                 else if (keyEvent->key() == Qt::Key_I) {
                     action_ListViewFileProperties();
                     return true;
@@ -2136,11 +2136,7 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                     }
                 }
                 else if (keyEvent->key() == Qt::Key_Backspace) {
-                    if (!m_topControlsContainerWidget->isHidden()) {
-                         m_LineEdit1->setFocus();
-                    } else {
-                        navigateUp();
-                    }
+                    navigateUp();
                     return true;
                 }
                 else if (keyEvent->key() == Qt::Key_Delete) {
