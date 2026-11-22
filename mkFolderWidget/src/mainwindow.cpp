@@ -222,6 +222,10 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     m_actionListViewOpenFiles = new QAction(tr("Open"), this);
     connect(m_actionListViewOpenFiles, &QAction::triggered, this, &MainWindow::action_ListViewOpenFiles);
 
+    m_actionListViewRunInTerminal = new QAction(tr("Run in Terminal"), this);
+    m_actionListViewRunInTerminal->setIcon(QIcon::fromTheme("utilities-terminal"));
+    connect(m_actionListViewRunInTerminal, &QAction::triggered, this, &MainWindow::action_ListViewRunInTerminal);
+
     m_actionListViewCopyPaths = new QAction(tr("Copy Path"), this);
     m_actionListViewCopyPaths->setShortcut(QKeySequence("Ctrl+Shift+C"));
     m_actionListViewCopyPaths->setIcon(QIcon::fromTheme("edit-copy-path"));
@@ -377,6 +381,7 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
 
     if (m_settings.showIconsInMenu == false) {
         m_actionListViewOpenFiles->setIconVisibleInMenu(false);
+        m_actionListViewRunInTerminal->setIconVisibleInMenu(false);
         m_actionListViewCopyPaths->setIconVisibleInMenu(false);
         m_actionListViewCutFiles->setIconVisibleInMenu(false);
         m_actionListViewCopyFiles->setIconVisibleInMenu(false);
@@ -934,6 +939,11 @@ void MainWindow::onShowContextMenu(QAbstractItemView *senderView, const QPoint &
         mainMenu.addAction(m_actionListViewOpenFiles);
         mainMenu.setDefaultAction(m_actionListViewOpenFiles);
 
+        // Single executable file (program, script): offer to run it in a terminal window to interact with it
+        if (selectedPaths.size() == 1 && Helpers::allExecutable(selectedPaths)) {
+            mainMenu.addAction(m_actionListViewRunInTerminal);
+        }
+
         // Native KDE Open with menu
         mainMenu.addSeparator(); //-----------------------------------------
 
@@ -1085,7 +1095,10 @@ void MainWindow::onListItemMiddleClicked(const QModelIndex &proxyIndex, Qt::Keyb
 // Returns that application, or nullptr.
 KService::Ptr MainWindow::updateOpenActionText(const QStringList &pathList) {
     const KService::Ptr service = Helpers::openActionService(pathList);
-    if (service) {
+    if (Helpers::allExecutable(pathList)) {
+        m_actionListViewOpenFiles->setText(tr("Run"));
+        m_actionListViewOpenFiles->setIcon(QIcon::fromTheme("system-run"));
+    } else if (service) {
         m_actionListViewOpenFiles->setText(tr("Open with %1").arg(service->name().replace('&', QLatin1String("&&"))));
         m_actionListViewOpenFiles->setIcon(QIcon::fromTheme(service->icon()));
     } else {
@@ -1132,6 +1145,15 @@ void MainWindow::action_ListViewOpenFiles() {
 
     if (!urlsToOpen.isEmpty()) {
         Helpers::openUrlsWithKIO(urlsToOpen);
+    }
+}
+
+void MainWindow::action_ListViewRunInTerminal() {
+    const QStringList pathList = getActiveViewPathList();
+    if (pathList.size() != 1) return;
+
+    if (!Helpers::executeInTerminal(pathList.first())) {
+        QMessageBox::warning(this, tr("Run in Terminal"), tr("No terminal emulator could be found or started."));
     }
 }
 

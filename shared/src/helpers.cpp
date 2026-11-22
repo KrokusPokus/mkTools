@@ -597,47 +597,25 @@ namespace Helpers {
             // ==========================================
             // Terminal-Handling
             // ==========================================
+            QString workDir = Helpers::expandPath(info.workDir.trimmed());
+            if (workDir.startsWith('"') && workDir.endsWith('"'))
+                workDir = workDir.mid(1, workDir.length() - 2);
+            if (workDir.isEmpty() || !QDir(workDir).exists())
+                workDir = QFileInfo(program).absolutePath();
+
             if (info.useTerminal) {
-                QString terminal;
-                // Prioritized list of known Linux terminals (Konsole first because of KDE)
-                const QStringList terminalCandidates = {
-                    "konsole", "gnome-terminal", "xfce4-terminal", "alacritty", "kitty", "xterm"
-                };
-
-                for (const QString &candidate : terminalCandidates) {
-                    terminal = QStandardPaths::findExecutable(candidate);
-                    if (!terminal.isEmpty()) {
-                        break;
-                    }
-                }
-
+                const QString terminal = findTerminalEmulator();
                 if (!terminal.isEmpty()) {
-                    QStringList terminalArgs;
-
-                    // Older/lightweight terminals like xterm/alacritty usually need '-e'
-                    // Modern desktop terminals (konsole, gnome-terminal) prefer '--'
-                    if (terminal.endsWith("gnome-terminal")) {
-                        terminalArgs << "--" << program << args;
-                    } else {
-                        terminalArgs << "-e" << program << args;
-                    }
-
                     // The terminal becomes the main program, the app moves into the arguments
+                    args = terminalArguments(terminal, program, args, workDir, false);
                     program = terminal;
-                    args = terminalArgs;
                 } else {
                     // Fallback: if no terminal at all was found,
                     // we log a warning and start it normally in the background.
                     qWarning("Konnte keinen Terminal-Emulator finden. Starte App normal.");
                 }
             }
-            // ==========================================
 
-            QString workDir = Helpers::expandPath(info.workDir.trimmed());
-            if (workDir.startsWith('"') && workDir.endsWith('"'))
-                workDir = workDir.mid(1, workDir.length() - 2);
-            if (workDir.isEmpty() || !QDir(workDir).exists())
-                workDir = QFileInfo(program).absolutePath();
             qDebug() << "launchDesktopFile() program:" << program << "args:" << args;
             QProcess::startDetached(program, args, workDir);
         }
@@ -1432,6 +1410,85 @@ namespace Helpers {
             }
         }
         return OpenMethod::PreferredApp;
+    }
+
+    // True if the "Open" action executes all of the given files (and there is at least one)
+    bool allExecutable(const QStringList &paths) {
+        if (paths.isEmpty()) return false;
+        for (const QString &path : paths) {
+            const QFileInfo fileInfo(path);
+            if (fileInfo.isDir() || openMethod(fileInfo) != OpenMethod::Execute) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Path of the first installed terminal emulator (Konsole first because of KDE), or an empty string
+    QString findTerminalEmulator() {
+        static const QStringList terminalCandidates = {
+            "konsole", "gnome-terminal", "xfce4-terminal", "alacritty", "kitty", "xterm"
+        };
+        for (const QString &candidate : terminalCandidates) {
+            const QString terminal = QStandardPaths::findExecutable(candidate);
+            if (!terminal.isEmpty()) {
+                return terminal;
+            }
+        }
+        return {};
+    }
+
+    // Arguments for 'terminal' (from findTerminalEmulator()) to run 'program' with 'args' in 'workDir'.
+    // 'hold' keeps the window open after the program has ended, so its output can still be read
+    // (not supported by gnome-terminal).
+    QStringList terminalArguments(const QString &terminal, const QString &program, const QStringList &args, const QString &workDir, bool hold) {
+        const QString name = QFileInfo(terminal).fileName();
+        QStringList terminalArgs;
+
+        if (name == "konsole") {
+            if (!workDir.isEmpty()) terminalArgs << "--workdir" << workDir;
+            if (hold) terminalArgs << "--hold";
+            terminalArgs << "-e";
+        } else if (name == "gnome-terminal") {
+            if (!workDir.isEmpty()) terminalArgs << "--working-directory=" + workDir;
+            terminalArgs << "--";
+        } else if (name == "xfce4-terminal") {
+            // '-e' of xfce4-terminal takes the whole command as ONE string, '-x' takes the rest of the arguments
+            if (!workDir.isEmpty()) terminalArgs << "--working-directory" << workDir;
+            if (hold) terminalArgs << "--hold";
+            terminalArgs << "-x";
+        } else if (name == "alacritty") {
+            if (!workDir.isEmpty()) terminalArgs << "--working-directory" << workDir;
+            if (hold) terminalArgs << "--hold";
+            terminalArgs << "-e";
+        } else if (name == "kitty") {
+            // kitty takes the program to run as plain positional arguments
+            if (!workDir.isEmpty()) terminalArgs << "--directory" << workDir;
+            if (hold) terminalArgs << "--hold";
+        } else {
+            // xterm and unknown terminals; the working directory is set via the process
+            if (hold) terminalArgs << "-hold";
+            terminalArgs << "-e";
+        }
+
+        terminalArgs << program << args;
+        return terminalArgs;
+    }
+
+    // Runs the executable file 'path' in a terminal window that stays open after it has ended.
+    // Returns false if no terminal emulator was found or it could not be started.
+    bool executeInTerminal(const QString &path) {
+        const QString terminal = findTerminalEmulator();
+        if (terminal.isEmpty()) {
+            qWarning() << "executeInTerminal(): Konnte keinen Terminal-Emulator finden.";
+            return false;
+        }
+
+        const QFileInfo fileInfo(path);
+        const QString workDir = fileInfo.absolutePath();
+        const QStringList args = terminalArguments(terminal, fileInfo.absoluteFilePath(), {}, workDir, true);
+        qDebug() << "executeInTerminal() terminal:" << terminal << "args:" << args;
+        return QProcess::startDetached(terminal, args, workDir);
     }
 
     // The application the "Open" action uses for the given files, if it is the same one for all of them (like Dolphin's

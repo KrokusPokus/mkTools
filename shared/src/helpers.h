@@ -75,7 +75,12 @@ namespace Helpers {
         PreferredApp    // opened with the preferred application of its MIME type
     };
     OpenMethod openMethod(const QFileInfo &fileInfo);
+    bool allExecutable(const QStringList &paths);
     KService::Ptr openActionService(const QStringList &paths);
+
+    QString findTerminalEmulator();
+    QStringList terminalArguments(const QString &terminal, const QString &program, const QStringList &args, const QString &workDir, bool hold);
+    bool executeInTerminal(const QString &path);
     bool openFileWithPreferredApp(const QString &path, int rank);
     KService::List commonServicesForPaths(const QStringList &paths, int *mimeTypeCount = nullptr);
 }
