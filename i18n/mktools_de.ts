@@ -1334,7 +1334,7 @@ Do you have sufficient rights?</source>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="229"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="264"/>
         <source>Run in Terminal</source>
-        <translation>In Terminal ausführen</translation>
+        <translation>Ausführen in Terminal</translation>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="632"/>
