@@ -737,12 +737,12 @@ Do you have sufficient rights?</source>
         <translation>Das Skript hat Windows-Zeilenenden (CRLF). Um es auszuführen, muss es in Unix-Zeilenenden (LF) umgewandelt werden.</translation>
     </message>
     <message>
-        <location filename="../shared/src/helpers.cpp" line="1523"/>
+        <location filename="../shared/src/helpers.cpp" line="1534"/>
         <source>Run in Terminal</source>
-        <translation>In Terminal ausführen</translation>
+        <translation>Ausführen in Terminal</translation>
     </message>
     <message>
-        <location filename="../shared/src/helpers.cpp" line="1524"/>
+        <location filename="../shared/src/helpers.cpp" line="1535"/>
         <source>No terminal emulator could be found or started.</source>
         <translation>Es konnte kein Terminal-Emulator gefunden oder gestartet werden.</translation>
     </message>

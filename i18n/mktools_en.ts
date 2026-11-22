@@ -653,12 +653,12 @@ Do you have sufficient rights?</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/helpers.cpp" line="1523"/>
+        <location filename="../shared/src/helpers.cpp" line="1534"/>
         <source>Run in Terminal</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../shared/src/helpers.cpp" line="1524"/>
+        <location filename="../shared/src/helpers.cpp" line="1535"/>
         <source>No terminal emulator could be found or started.</source>
         <translation></translation>
     </message>
