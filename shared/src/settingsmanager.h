@@ -49,8 +49,8 @@ private:
     QString exportSearchFolders(const QStringList &folders);
 
     // Defaults
-    const QString DEFAULT_HIDE_EXTS = "3gp,aac,ahk,asf,ass,au3,avi,avif,bat,bmp,c,cbz,cfg,conf,cpp,cs,css,cue,cxx,desktop,dic,doc,dsf,dsk,duf,epub,flac,gif,h,heic,heif,hpp,htm,html,inf,ini,ion,jpeg,jpg,js,json,jxl,log,lst,lua,m4a,md,mid,mkv,mov,mp3,mp4,mpg,nfo,ods,odt,ogg,ogm,pdf,png,ppt,py,qoi,rc,reg,scp,sfv,sh,slang,slangp,sql,srt,ssa,tga,tif,tiff,ts,txt,url,vbs,vcxproj,wav,webm,webp,wm,wmv,xcf,xhtml,xml,xul,yml,zip";
-    const QString DEFAULT_CONTENT_SEARCH_EXTS = "ahk,ass,au3,bat,c,cfg,conf,cpp,cs,css,cue,cxx,desktop,dic,dsf,dsk,duf,h,hpp,htm,html,inf,ini,ion,js,json,log,lst,lua,md,nfo,py,rc,reg,scp,sfv,sh,slang,slangp,sql,srt,ssa,ts,txt,url,vbs,vcxproj,xhtml,xml,xul,yml";
+    const QString DEFAULT_CONTENT_SEARCH_EXTS = "adr,ahk,ass,au3,bat,c,cfg,conf,cpp,cs,css,cue,cxx,desktop,dic,dsf,dsk,duf,h,hpp,htm,html,inf,ini,ion,js,json,log,lst,lua,md,nfo,py,rc,reg,scp,sfv,sh,slang,slangp,sql,srt,ssa,ts,txt,url,vbs,vcxproj,xhtml,xml,xul,yml";
+    const QString DEFAULT_HIDE_EXTS = "3gp,7z,aac,asf,ass,avi,avif,bmp,c,cbz,chm,cpp,css,cue,cxx,doc,epub,flac,gif,h,heic,heif,htm,html,ini,iso,jpeg,jpg,jxl,log,lua,m4a,md,mid,mkv,mp3,mp4,mpg,nfo,odp,ods,odt,ogg,ogm,pdf,png,ppt,py,qoi,rar,reg,srt,ssa,sxw,tga,tif,tiff,txt,url,wav,webm,webp,wmv,xcf,xml,xul,yml,zip";
 
     // Former per-type extension lists (until 2026-11), only read once to migrate them to HideExts/ContentSearchExts
     const QStringList LEGACY_EXT_KEYS = { "Extensions/FileExtAudio", "Extensions/FileExtImage", "Extensions/FileExtMisc",
