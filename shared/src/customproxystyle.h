@@ -133,8 +133,8 @@ private:
     static constexpr int firstItemMarginTop = 2;
     static constexpr qreal hoverAlpha = 0.3;  // Metrics::Blend_Value
     static constexpr int focusLighten = 110;  // Metrics::Focus_LightenColorValue
-    static constexpr qreal selectedCoreAlpha = 0.6;       // fill of selected items (= hover fill)
-    static constexpr qreal selectedFocusFrameAlpha = 1.0; // frame of the selected+focused item (= hover frame)
+    static constexpr qreal selectedCoreAlpha = 0.6;       // fill of selected items
+    static constexpr qreal selectedFocusFrameAlpha = 1.0; // frame of the selected+focused item
 
     // Same margins Breeze uses around an item's highlight (Helper::itemViewItemMargins for non-row selection)
     static QRect itemHighlightRect(const QRect &rect, const QModelIndex &index, const QWidget *widget) {
@@ -207,8 +207,8 @@ private:
             return true;
         }
 
-        // Selected items: translucent core like the hover rectangle of an unselected item.
-        // Focused (current item, view has focus): with the more opaque hover frame; otherwise without
+        // Selected items: translucent core (selectedCoreAlpha), similar to the hover rectangle of an unselected item.
+        // Focused (current item, view has focus): with a more opaque frame (selectedFocusFrameAlpha); otherwise without
         // an own frame (the edge keeps the core color). The text is drawn in QPalette::Text (see ListItemDelegate).
         // Exception: items with UseRedBackgroundRole keep the opaque red selection with white text.
         if (selected && !viewItemOption->index.data(CustomTableModel::UseRedBackgroundRole).toBool()) {
