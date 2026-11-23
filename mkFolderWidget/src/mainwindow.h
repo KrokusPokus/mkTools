@@ -78,7 +78,6 @@ private:
     void browseFolder(QString directoryPath, const QString &focusPath = QString(), bool isHistoryNavigation = false);
     void duplicateInstance();
     void launchNewInstance(const QString &directoryPath, const QString &focusPath = QString());
-    void elevateInstance();
     void navigateBack();
     void navigateForward();
     void navigateToClipboardPath();
@@ -171,13 +170,11 @@ private:
     QPersistentModelIndex m_middlePressedIndex; // Item under the cursor at middle button press, acted upon at release
     QSet<QString> m_loadingThumbnails;
 
-    bool m_processIsElevated{false};
     QPalette m_StyleLastPalette;
     enum class StyleState {
         Uninitialized,
         Light,
-        Dark,
-        Elevated
+        Dark
     };
 
     StyleState m_currentStyleState{StyleState::Uninitialized};

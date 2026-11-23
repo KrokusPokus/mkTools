@@ -57,8 +57,6 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
     setWindowIcon(QIcon::fromTheme(QStringLiteral("org.kde.dolphin"), QIcon(QStringLiteral(":/icons/org.kde.dolphin.svg"))));
     resize(728, 545);
 
-    m_processIsElevated = Helpers::isCurrentProcessElevated();
-
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
 
@@ -1793,12 +1791,7 @@ void MainWindow::updateWidgetStyles() {
 
     bool isDark = (QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark);
 
-    StyleState targetState;
-    if (m_processIsElevated) {
-        targetState = StyleState::Elevated;
-    } else {
-        targetState = isDark ? StyleState::Dark : StyleState::Light;
-    }
+    const StyleState targetState = isDark ? StyleState::Dark : StyleState::Light;
 
     QPalette currentPalette = QGuiApplication::palette();
 
@@ -1816,13 +1809,7 @@ void MainWindow::updateWidgetStyles() {
         m_LineEdit1->setStyleSheet(lineEditStyleLight);
     }
 
-    if (targetState == StyleState::Elevated) {
-        m_tableView->setStyleSheet(Styles::tableViewColorsElevated % Styles::tableViewHoverElevated);
-        m_listView->setStyleSheet(Styles::listViewItemHeight % Styles::listViewColorsElevated);
-        m_thumbnailView->setStyleSheet(Styles::listViewColorsElevated);
-    } else {
-        m_listView->setStyleSheet(Styles::listViewItemHeight);
-    }
+    m_listView->setStyleSheet(Styles::listViewItemHeight);
 
 }
 
@@ -2051,10 +2038,6 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
             }
             else if (keyEvent->key() == Qt::Key_H) {
                 action_toggleShowHidden();
-                return true;
-            }
-            else if (keyEvent->key() == Qt::Key_W) {
-                elevateInstance();
                 return true;
             }
         }
@@ -2411,40 +2394,6 @@ void MainWindow::launchNewInstance(const QString &directoryPath, const QString &
     }
 
     QProcess::startDetached(appPath, arguments);
-}
-
-void MainWindow::elevateInstance() {
-    if (m_processIsElevated) return;
-
-    QString appPath = QCoreApplication::applicationFilePath();
-    QStringList arguments;
-    arguments << "-X" << QString::number(this->x() + 40)
-              << "-Y" << QString::number(this->y() + 40)
-              << "-W" << QString::number(this->width())
-              << "-H" << QString::number(this->height())
-              << m_currentDirectory;
-
-    QString focusedFile = getActiveViewCurrentItemPath();
-    if (!focusedFile.isEmpty()) {
-        arguments << "-f" << focusedFile;
-    }
-
-    bool bSuccess = false;
-    QStringList pkexecArgs;
-    pkexecArgs << "env"
-               // We take the display info of the current user and pass it on to root
-               << QString("DISPLAY=%1").arg(QString::fromLocal8Bit(qgetenv("DISPLAY")))
-               << QString("XAUTHORITY=%1").arg(QString::fromLocal8Bit(qgetenv("XAUTHORITY")))
-               // IMPORTANT: Forces Qt to X11/XWayland, since Wayland blocks root GUIs
-               << "QT_QPA_PLATFORM=xcb"
-               // Only NOW follow your app and your arguments
-               << appPath
-               << arguments;
-    qint64 pid;
-    bSuccess = QProcess::startDetached("pkexec", pkexecArgs, QString(), &pid);
-    if (bSuccess) {
-        QMetaObject::invokeMethod(qApp, "closeAllWindows", Qt::QueuedConnection);
-    }
 }
 
 void MainWindow::navigateUp() {

@@ -30,39 +30,7 @@ namespace Styles {
         )"_s;
 
     // =========================================================================
-    // 2. COLORS (background, alternating rows, text)
-    // =========================================================================
-
-    inline const auto tableViewColorsElevated = uR"(
-            QTableView {
-                background-color: #aa0000;
-                alternate-background-color: #880000;
-                color: #ffffff;
-            }
-        )"_s;
-
-    inline const auto listViewColorsElevated = uR"(
-            QListView {
-                background-color: #aa0000;
-                color: #ffffff;
-            }
-        )"_s;
-
-    // =========================================================================
-    // 3. HOVER (suppress hover highlighting: the background stays unchanged)
-    // =========================================================================
-
-    inline const auto tableViewHoverElevated = uR"(
-            QTableView::item:hover {
-                background-color: #aa0000;
-            }
-            QTableView::item:alternate:hover {
-                background-color: #880000;
-            }
-        )"_s;
-
-    // =========================================================================
-    // 4. SONSTIGES
+    // 2. SONSTIGES
     // =========================================================================
 
     inline const auto groupBox = uR"(

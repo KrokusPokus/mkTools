@@ -941,10 +941,6 @@ namespace Helpers {
         }
     }
 
-    bool isCurrentProcessElevated() {
-        return (geteuid() == 0);
-    }
-
     uint getNameMatchQuality(const QString &itemName, const QString &path, const QString &searchString, const QStringList &searchStringSplit, Qt::CaseSensitivity caseSensitivity) {
         if (QString::compare(itemName , searchString, caseSensitivity) == 0) {
             return 1;

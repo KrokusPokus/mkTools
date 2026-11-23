@@ -208,13 +208,11 @@ private:
 
     void validateInputBoxRegex();
 
-    bool m_processIsElevated{false};
     QPalette m_StyleLastPalette;
     enum class StyleState {
         Uninitialized,
         Light,
-        Dark,
-        Elevated
+        Dark
     };
 
     StyleState m_currentStyleState{StyleState::Uninitialized};

@@ -60,8 +60,6 @@ MainWindow::MainWindow(QWidget *parent)
     setWindowTitle("mkLauncher");
     setWindowIcon(QIcon(":/icons/app.ico"));
 
-    m_processIsElevated = Helpers::isCurrentProcessElevated();
-
     loadHistory();
 
     m_centralWidget = new QWidget(this);
@@ -1791,12 +1789,7 @@ void MainWindow::updateWidgetStyles() {
 
     bool isDark = (QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark);
 
-    StyleState targetState;
-    if (m_processIsElevated) {
-        targetState = StyleState::Elevated;
-    } else {
-        targetState = isDark ? StyleState::Dark : StyleState::Light;
-    }
+    const StyleState targetState = isDark ? StyleState::Dark : StyleState::Light;
 
     QPalette currentPalette = QGuiApplication::palette();
 
@@ -1824,13 +1817,7 @@ void MainWindow::updateWidgetStyles() {
         m_LineEdit2->setStyleSheet(lineEdit2StyleLight);
     }
 
-    if (targetState == StyleState::Elevated) {
-        m_tableView->setStyleSheet(Styles::tableViewColorsElevated % Styles::tableViewHoverElevated);
-        m_listView->setStyleSheet(Styles::listViewItemHeight % Styles::listViewColorsElevated);
-        m_thumbnailView->setStyleSheet(Styles::listViewColorsElevated);
-    } else {
-        m_listView->setStyleSheet(Styles::listViewItemHeight);
-    }
+    m_listView->setStyleSheet(Styles::listViewItemHeight);
 }
 
 //######################################################################################

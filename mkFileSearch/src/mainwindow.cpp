@@ -56,8 +56,6 @@ MainWindow::MainWindow(const QString &targetDirectory, QWidget *parent)
     setWindowIcon(QIcon::fromTheme(QStringLiteral("kfind"), QIcon(QStringLiteral(":/icons/kfind.svg"))));
     resize(728, 545);
 
-    m_processIsElevated = Helpers::isCurrentProcessElevated();
-
     m_centralWidget = new QWidget(this);
     setCentralWidget(m_centralWidget);
 
@@ -1834,12 +1832,7 @@ void MainWindow::updateWidgetStyles() {
 
     bool isDark = (QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark);
 
-    StyleState targetState;
-    if (m_processIsElevated) {
-        targetState = StyleState::Elevated;
-    } else {
-        targetState = isDark ? StyleState::Dark : StyleState::Light;
-    }
+    const StyleState targetState = isDark ? StyleState::Dark : StyleState::Light;
 
     QPalette currentPalette = QGuiApplication::palette();
 
@@ -1861,13 +1854,7 @@ void MainWindow::updateWidgetStyles() {
         this->setStyleSheet("");
     }
 
-    if (targetState == StyleState::Elevated) {
-        m_tableView->setStyleSheet(Styles::tableViewColorsElevated % Styles::tableViewHoverElevated);
-        m_listView->setStyleSheet(Styles::listViewItemHeight % Styles::listViewColorsElevated);
-        m_thumbnailView->setStyleSheet(Styles::listViewColorsElevated);
-    } else {
-        m_listView->setStyleSheet(Styles::listViewItemHeight);
-    }
+    m_listView->setStyleSheet(Styles::listViewItemHeight);
 }
 
 //######################################################################################

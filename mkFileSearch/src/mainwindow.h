@@ -157,13 +157,11 @@ private:
     QCheckBox *m_CheckboxCRC = nullptr;
     QTimer *m_timerCalcCrc = nullptr;
 
-    bool m_processIsElevated{false};
     QPalette m_StyleLastPalette;
     enum class StyleState {
         Uninitialized,
         Light,
-        Dark,
-        Elevated
+        Dark
     };
 
     StyleState m_currentStyleState{StyleState::Uninitialized};
