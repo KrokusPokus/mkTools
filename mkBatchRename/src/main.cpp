@@ -1,5 +1,4 @@
 #include "mainwindow.h"
-#include "settingsmanager.h"
 
 #include <iostream>
 #include <QApplication>
@@ -85,27 +84,6 @@ int main(int argc, char *argv[])
     } else {
         qDebug() << "[mkBatchRename] Unsupported number of command line arguments!";
         return -1;
-    }
-
-    //-----------------------------------------------------------------------------------------
-    // If neccessary, override default application font
-
-    SettingsManager m_settings;
-
-    QFont currentFont = QApplication::font();
-
-    int targetFontSize = currentFont.pointSize();
-
-    if ((m_settings.fontSizeOverride > 0) && (m_settings.fontSizeOverride < 100) && (targetFontSize != m_settings.fontSizeOverride)) {
-        targetFontSize = m_settings.fontSizeOverride;
-    }
-
-    if (!m_settings.fontNameOverride.isEmpty() && (QString::compare(currentFont.family(), m_settings.fontNameOverride, Qt::CaseInsensitive) != 0)) {
-        QFont globalFont(m_settings.fontNameOverride, targetFontSize);
-        QApplication::setFont(globalFont);
-    } else if (targetFontSize != currentFont.pointSize()) {
-        currentFont.setPointSize(targetFontSize);
-        QApplication::setFont(currentFont);
     }
 
     //-----------------------------------------------------------------------------------------

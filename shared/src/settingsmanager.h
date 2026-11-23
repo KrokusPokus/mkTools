@@ -8,11 +8,9 @@
 #include <QStringList>
 
 class QCheckBox;
-class QFontComboBox;
 class QLineEdit;
 class QListWidget;
 class QPlainTextEdit;
-class QSpinBox;
 class QStackedWidget;
 
 class SettingsManager {
@@ -48,8 +46,6 @@ public:
     bool showShortcutsInMenu;
     bool allowLauncherShrink;
     bool showFileExtensions;
-    int fontSizeOverride;
-    QString fontNameOverride;
 
     QStringList searchFolders;
 
@@ -91,8 +87,6 @@ private:
     bool DEFAULT_SHOW_SHORTCUTS_IN_MENU;
     bool DEFAULT_ALLOW_LAUNCHER_SHRINK;
     bool DEFAULT_SHOW_FILE_EXTENSIONS;
-    int DEFAULT_FONT_SIZE_OVERRIDE;
-    QString DEFAULT_FONT_NAME_OVERRIDE;
     QString DEFAULT_SEARCH_FOLDERS;
     bool DEFAULT_USE_KDE_FILE_OPERATIONS;
 };
@@ -126,8 +120,6 @@ private:
     QCheckBox *m_checkExecutableFilesRed = nullptr;
     QCheckBox *m_checkShowFileExtensions = nullptr;
     QCheckBox *m_checkShowPlaceholderText = nullptr;
-    QFontComboBox *m_comboFontName = nullptr;
-    QSpinBox *m_spinFontSize = nullptr;
 
     // Menus & Mouse
     QCheckBox *m_checkMenuOnMouseUp = nullptr;

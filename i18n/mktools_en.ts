@@ -1543,298 +1543,267 @@ Do you have sufficient rights?</source>
 <context>
     <name>SettingsDialog</name>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="349"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="343"/>
         <source>mkTools Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="368"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="362"/>
         <source>Display</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="369"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="363"/>
         <source>Menus &amp; Mouse</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="370"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="364"/>
         <source>File Types</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="371"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="365"/>
         <source>Programs</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="372"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="366"/>
         <source>mkLauncher</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="389"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="383"/>
         <source>Resets all options to their defaults; nothing is saved until OK</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="393"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="387"/>
         <source>Edit File…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="396"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="390"/>
         <source>Opens %1 in the text editor; the dialog is closed without saving</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="420"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="414"/>
         <source>Alternating row colors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="421"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="415"/>
         <source>AlternatingRowColors</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="422"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="416"/>
         <source>Show grid</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="423"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="417"/>
         <source>Grid lines in the details view (ShowGrid)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="424"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="418"/>
         <source>Show executable files in red</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="425"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="419"/>
         <source>ExecutableFilesRed</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="426"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="420"/>
         <source>File list:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="430"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="424"/>
         <source>Show all file extensions</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="431"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="425"/>
         <source>If off, the extensions listed under &quot;File Types&quot; are hidden; mkBatchRename always shows them (ShowFileExtensions)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="435"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="429"/>
         <source>Show hints in empty input fields</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="436"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="430"/>
         <source>Takes effect after a restart (ShowPlaceholderText)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="437"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="431"/>
         <source>Input fields:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="441"/>
-        <location filename="../shared/src/settingsmanager.cpp" line="447"/>
-        <source>System default</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="443"/>
-        <source>Empty = font of the desktop. Takes effect after a restart (FontNameOverride)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="446"/>
-        <source> pt</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="448"/>
-        <source>0 = size of the desktop font. Takes effect after a restart (FontSizeOverride)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="449"/>
-        <source>Font:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="450"/>
-        <source>Font size:</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="462"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="444"/>
         <source>Open the context menu when the right mouse button is released</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="463"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="445"/>
         <source>Off: the menu opens when the button is pressed (MenuOnMouseUp)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="464"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="446"/>
         <source>Context menu:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="466"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="448"/>
         <source>Show icons</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="467"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="449"/>
         <source>Takes full effect after a restart (ShowIconsInMenu)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="468"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="450"/>
         <source>Show keyboard shortcuts</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="469"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="451"/>
         <source>Takes effect after a restart (ShowShortcutsInMenu)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="485"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="467"/>
         <source>Extensions that are hidden when &quot;Show all file extensions&quot; is off, separated by commas (HideExts)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="487"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="469"/>
         <source>Hidden extensions:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="490"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="472"/>
         <source>Files whose content mkFileSearch searches, separated by commas (ContentSearchExts)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="491"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="473"/>
         <source>Content search:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="503"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="485"/>
         <source>.desktop ID (e.g. org.kde.dolphin.desktop), program name or path</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="506"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="488"/>
         <source>Shows a file in its folder. %1 (FileManager)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="508"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="490"/>
         <source>Renames the selected files. %1 (RenameTool)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="510"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="492"/>
         <source>Searches the current folder (Ctrl+Shift+F). %1 (SearchTool)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="511"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="493"/>
         <source>None</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="512"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="494"/>
         <source>Compares two files when copying runs into a conflict, empty = no compare button. %1 (MergeTool)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="514"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="496"/>
         <source>File manager:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="515"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="497"/>
         <source>Rename tool:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="516"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="498"/>
         <source>Search tool:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="517"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="499"/>
         <source>Compare tool:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="519"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="501"/>
         <source>Copy, move and delete with KDE (KIO)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="520"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="502"/>
         <source>KDE dialogs and progress in the Plasma notifications instead of mkTransactionHandler&apos;s own (UseKdeFileOperations)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="522"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="504"/>
         <source>File operations:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="534"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="516"/>
         <source>Window shrinks to fit the results</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="535"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="517"/>
         <source>AllowLauncherShrink</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="536"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="518"/>
         <source>Window:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="541"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="523"/>
         <source>Folders mkLauncher searches; double click to edit (UserFolders)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="543"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="525"/>
         <source>Add…</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="544"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="526"/>
         <source>Remove</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="560"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="542"/>
         <source>Search folders:</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../shared/src/settingsmanager.cpp" line="568"/>
+        <location filename="../shared/src/settingsmanager.cpp" line="550"/>
         <source>Add Search Folder</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1842,7 +1811,7 @@ Do you have sufficient rights?</source>
 <context>
     <name>main</name>
     <message>
-        <location filename="../mkFileSearch/src/main.cpp" line="23"/>
+        <location filename="../mkFileSearch/src/main.cpp" line="22"/>
         <source>Path to search</source>
         <translation></translation>
     </message>

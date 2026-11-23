@@ -5,7 +5,6 @@
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QFileDialog>
-#include <QFontComboBox>
 #include <QFormLayout>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -18,7 +17,6 @@
 #include <QPushButton>
 #include <QRegularExpression>
 #include <QScrollArea>
-#include <QSpinBox>
 #include <QStackedWidget>
 #include <QStandardPaths>
 #include <QUrl>
@@ -44,8 +42,6 @@ SettingsManager::SettingsManager(DefaultsOnly) {
 
     alternatingRowColors = DEFAULT_ALTERNATING_ROW_COLORS;
     executableFilesRed   = DEFAULT_EXECUTABLE_FILES_RED;
-    fontNameOverride     = DEFAULT_FONT_NAME_OVERRIDE;
-    fontSizeOverride     = DEFAULT_FONT_SIZE_OVERRIDE;
     menuOnMouseUp        = DEFAULT_MENU_ON_MOUSE_UP;
     showFileExtensions   = DEFAULT_SHOW_FILE_EXTENSIONS;
     showGrid             = DEFAULT_SHOW_GRID;
@@ -111,8 +107,6 @@ void SettingsManager::load() {
     // Interface
     alternatingRowColors = s.value("Interface/AlternatingRowColors", DEFAULT_ALTERNATING_ROW_COLORS).toBool();
     executableFilesRed   = s.value("Interface/ExecutableFilesRed", DEFAULT_EXECUTABLE_FILES_RED).toBool();
-    fontNameOverride     = s.value("Interface/FontNameOverride", DEFAULT_FONT_NAME_OVERRIDE).toString();
-    fontSizeOverride     = s.value("Interface/FontSizeOverride", DEFAULT_FONT_SIZE_OVERRIDE).toInt();
     menuOnMouseUp        = s.value("Interface/MenuOnMouseUp", DEFAULT_MENU_ON_MOUSE_UP).toBool();
     showFileExtensions   = s.value("Interface/ShowFileExtensions", DEFAULT_SHOW_FILE_EXTENSIONS).toBool();
     showGrid             = s.value("Interface/ShowGrid", DEFAULT_SHOW_GRID).toBool();
@@ -140,8 +134,6 @@ void SettingsManager::getDefaults() {
 
     DEFAULT_ALTERNATING_ROW_COLORS = true;
     DEFAULT_EXECUTABLE_FILES_RED = false;
-    DEFAULT_FONT_NAME_OVERRIDE = "";
-    DEFAULT_FONT_SIZE_OVERRIDE = 0;
     DEFAULT_MENU_ON_MOUSE_UP = false;
     DEFAULT_SHOW_FILE_EXTENSIONS = true;
     DEFAULT_SHOW_GRID = false;
@@ -185,10 +177,12 @@ void SettingsManager::saveSettings() {
     safeSetValue(s, "Handlers/SearchTool", searchTool);
 
     // Interface
+    // Obsolete: the programs use the font of the desktop
+    for (const char *obsoleteKey : {"Interface/FontNameOverride", "Interface/FontSizeOverride"}) {
+        if (s.contains(obsoleteKey)) s.remove(obsoleteKey);
+    }
     safeSetValue(s, "Interface/AlternatingRowColors", alternatingRowColors);
     safeSetValue(s, "Interface/ExecutableFilesRed", executableFilesRed);
-    safeSetValue(s, "Interface/FontNameOverride", fontNameOverride);
-    safeSetValue(s, "Interface/FontSizeOverride", fontSizeOverride);
     safeSetValue(s, "Interface/MenuOnMouseUp", menuOnMouseUp);
     safeSetValue(s, "Interface/ShowGrid", showGrid);
     safeSetValue(s, "Interface/ShowPlaceholderText", showPlaceholderText);
@@ -436,18 +430,6 @@ QWidget *SettingsDialog::createDisplayPage() {
     m_checkShowPlaceholderText->setToolTip(tr("Takes effect after a restart (ShowPlaceholderText)"));
     layout->addRow(tr("Input fields:"), m_checkShowPlaceholderText);
 
-    m_comboFontName = new QFontComboBox();
-    m_comboFontName->setEditable(true);
-    m_comboFontName->lineEdit()->setPlaceholderText(tr("System default"));
-    m_comboFontName->lineEdit()->setClearButtonEnabled(true);
-    m_comboFontName->setToolTip(tr("Empty = font of the desktop. Takes effect after a restart (FontNameOverride)"));
-    m_spinFontSize = new QSpinBox();
-    m_spinFontSize->setRange(0, 99);
-    m_spinFontSize->setSuffix(tr(" pt"));
-    m_spinFontSize->setSpecialValueText(tr("System default"));
-    m_spinFontSize->setToolTip(tr("0 = size of the desktop font. Takes effect after a restart (FontSizeOverride)"));
-    layout->addRow(tr("Font:"), m_comboFontName);
-    layout->addRow(tr("Font size:"), m_spinFontSize);
 
     return makeScrollable(panel);
 }
@@ -590,14 +572,6 @@ void SettingsDialog::loadFrom(const SettingsManager &settings) {
     m_checkExecutableFilesRed->setChecked(settings.executableFilesRed);
     m_checkShowFileExtensions->setChecked(settings.showFileExtensions);
     m_checkShowPlaceholderText->setChecked(settings.showPlaceholderText);
-    if (settings.fontNameOverride.isEmpty()) {
-        m_comboFontName->setCurrentIndex(-1);
-        m_comboFontName->setEditText(QString());
-    } else {
-        m_comboFontName->setCurrentFont(QFont(settings.fontNameOverride));
-        m_comboFontName->setEditText(settings.fontNameOverride);
-    }
-    m_spinFontSize->setValue((settings.fontSizeOverride > 0 && settings.fontSizeOverride < 100) ? settings.fontSizeOverride : 0);
 
     // Menus & Mouse
     m_checkMenuOnMouseUp->setChecked(settings.menuOnMouseUp);
@@ -631,8 +605,6 @@ void SettingsDialog::saveTo(SettingsManager &settings) const {
     settings.executableFilesRed   = m_checkExecutableFilesRed->isChecked();
     settings.showFileExtensions   = m_checkShowFileExtensions->isChecked();
     settings.showPlaceholderText  = m_checkShowPlaceholderText->isChecked();
-    settings.fontNameOverride     = m_comboFontName->currentText().trimmed();
-    settings.fontSizeOverride     = m_spinFontSize->value();
 
     // Menus & Mouse
     settings.menuOnMouseUp       = m_checkMenuOnMouseUp->isChecked();
