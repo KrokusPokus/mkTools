@@ -214,7 +214,7 @@ MainWindow::MainWindow(const QString &targetDirectory, const QString &focusPath,
 
     QShortcut *WindowShortcutN = new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Comma), this);
     WindowShortcutN->setContext(Qt::WindowShortcut);
-    connect(WindowShortcutN, &QShortcut::activated, this, &MainWindow::action_EditSettingsFile);
+    connect(WindowShortcutN, &QShortcut::activated, this, &MainWindow::action_SettingsDialog);
 
     // --------------------------------------------------------------------
     // Context menu Actions
@@ -1429,8 +1429,15 @@ void MainWindow::action_SortDescending() {
 }
 
 
-void MainWindow::action_EditSettingsFile() {
-    Helpers::openWithSystemDefault(QUrl::fromLocalFile(m_settings.getSettingsPath()));
+void MainWindow::action_SettingsDialog() {
+    if (!m_settings.showSettingsDialog(this)) {
+        return;
+    }
+    // m_settings was reloaded from the file: apply what can change at runtime (fonts, menus and hints need a restart)
+    m_tableView->setAlternatingRowColors(m_settings.alternatingRowColors);
+    m_tableView->setShowGrid(m_settings.showGrid);
+    m_abstractModel->setShowFileExtensions(m_bShowHiddenFiles || m_settings.showFileExtensions);
+    reloadDirectory();  // the shown names depend on the hidden extensions
 }
 
 void MainWindow::onTimedUpdateIcons() {

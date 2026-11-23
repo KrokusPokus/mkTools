@@ -1,18 +1,35 @@
 #ifndef SETTINGSMANAGER_H
 #define SETTINGSMANAGER_H
 
+#include <QDialog>
 #include <QSet>
 #include <QSettings>
 #include <QString>
 #include <QStringList>
 
+class QCheckBox;
+class QFontComboBox;
+class QLineEdit;
+class QListWidget;
+class QPlainTextEdit;
+class QSpinBox;
+class QStackedWidget;
+
 class SettingsManager {
 public:
 	SettingsManager();
 
+    // Manager without settings file, holds the defaults of all settings (for the settings dialog)
+    struct DefaultsOnly {};
+    explicit SettingsManager(DefaultsOnly);
+
+    // Shows the settings dialog with the values of the settings file. On OK the file is written and this
+    // instance is reloaded from it (runtime overrides of the program have to be applied again), returns true.
+    bool showSettingsDialog(QWidget *parent);
+
 	void load();
     void saveSettings();
-    QString getSettingsPath();
+    static QString getSettingsPath();
 
     QSet<QString> hideExts;           // extensions that are hidden if showFileExtensions is off
     QSet<QString> contentSearchExts;  // files whose content is searched by mkFileSearch
@@ -39,7 +56,11 @@ public:
     // mkTransactionHandler specific
     bool useKdeFileOperations;
 
+    friend class SettingsDialog;
+
 private:
+    void saveSearchFolders();
+
 	QSet<QString> parseExtensions(const QString &input);
     void safeSetValue(QSettings &settings, const QString &key, const QVariant &value);
     QString formatStringSet(const QSet<QString> &extensionSet);
@@ -74,6 +95,59 @@ private:
     QString DEFAULT_FONT_NAME_OVERRIDE;
     QString DEFAULT_SEARCH_FOLDERS;
     bool DEFAULT_USE_KDE_FILE_OPERATIONS;
+};
+
+// Settings dialog shared by all mkTools programs (Ctrl+Shift+Comma), covers all values of mkTools.conf
+class SettingsDialog : public QDialog {
+    Q_OBJECT
+
+public:
+    explicit SettingsDialog(QWidget *parent = nullptr);
+
+    void loadFrom(const SettingsManager &settings);
+    void saveTo(SettingsManager &settings) const;
+
+private:
+    void addPage(const QString &iconName, const QString &title, QWidget *page);
+    QWidget *createDisplayPage();
+    QWidget *createMenusPage();
+    QWidget *createFileTypesPage();
+    QWidget *createProgramsPage();
+    QWidget *createLauncherPage();
+    void restoreDefaults();
+    void addSearchFolder();
+
+    QListWidget *m_categoryList = nullptr;
+    QStackedWidget *m_pages = nullptr;
+
+    // Display
+    QCheckBox *m_checkAlternatingRowColors = nullptr;
+    QCheckBox *m_checkShowGrid = nullptr;
+    QCheckBox *m_checkExecutableFilesRed = nullptr;
+    QCheckBox *m_checkShowFileExtensions = nullptr;
+    QCheckBox *m_checkShowPlaceholderText = nullptr;
+    QFontComboBox *m_comboFontName = nullptr;
+    QSpinBox *m_spinFontSize = nullptr;
+
+    // Menus & Mouse
+    QCheckBox *m_checkMenuOnMouseUp = nullptr;
+    QCheckBox *m_checkShowIconsInMenu = nullptr;
+    QCheckBox *m_checkShowShortcutsInMenu = nullptr;
+
+    // File types
+    QPlainTextEdit *m_editHideExts = nullptr;
+    QPlainTextEdit *m_editContentSearchExts = nullptr;
+
+    // Programs
+    QLineEdit *m_editFileManager = nullptr;
+    QLineEdit *m_editRenameTool = nullptr;
+    QLineEdit *m_editSearchTool = nullptr;
+    QLineEdit *m_editMergeTool = nullptr;
+    QCheckBox *m_checkUseKdeFileOperations = nullptr;
+
+    // mkLauncher
+    QCheckBox *m_checkAllowLauncherShrink = nullptr;
+    QListWidget *m_listSearchFolders = nullptr;
 };
 
 #endif // SETTINGSMANAGER_H

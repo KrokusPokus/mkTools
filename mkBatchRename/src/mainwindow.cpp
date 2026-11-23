@@ -452,7 +452,7 @@ MainWindow::MainWindow(QString targetDirectory, QStringList externalPathList, QW
 
     QShortcut *WindowShortcutN = new QShortcut(QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_Comma), this);
     WindowShortcutN->setContext(Qt::WindowShortcut);
-    connect(WindowShortcutN, &QShortcut::activated, this, &MainWindow::action_EditSettingsFile);
+    connect(WindowShortcutN, &QShortcut::activated, this, &MainWindow::action_SettingsDialog);
 
     // --------------------------------------------------------------------
     // Context menu Actions
@@ -1575,8 +1575,16 @@ void MainWindow::action_SortDescending() {
     m_timerUpdateIcons->start(20);
 }
 
-void MainWindow::action_EditSettingsFile() {
-    Helpers::openWithSystemDefault(QUrl::fromLocalFile(m_settings.getSettingsPath()));
+void MainWindow::action_SettingsDialog() {
+    if (!m_settings.showSettingsDialog(this)) {
+        return;
+    }
+    // m_settings was reloaded from the file: apply what can change at runtime (fonts, menus and hints need a restart)
+    m_settings.showFileExtensions = true; // mkBatchRename always shows the file extension
+    m_tableView->setAlternatingRowColors(m_settings.alternatingRowColors);
+    m_tableView->setShowGrid(m_settings.showGrid);
+    m_listView->viewport()->update();
+    m_thumbnailView->viewport()->update();
 }
 
 void MainWindow::onTimedUpdateIcons() {

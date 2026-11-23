@@ -50,7 +50,7 @@ private:
     QString getActiveViewCurrentItemPath();
     QStringList getActiveViewPathList();
 
-    void action_EditSettingsFile();
+    void action_SettingsDialog();
     void action_ListViewBrowseToFile();
     void action_ListViewCopyFiles();
     void action_ListViewCopyPaths();
