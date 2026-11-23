@@ -35,10 +35,6 @@
         <translation>Ziel</translation>
     </message>
     <message>
-        <source>Newer!</source>
-        <translation type="vanished">Neuer!</translation>
-    </message>
-    <message>
         <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="119"/>
         <source>&amp;larr; destination is newer!</source>
         <translation>&amp;larr; Ziel ist neuer!</translation>
@@ -53,10 +49,6 @@
         <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="166"/>
         <source> all</source>
         <translation> (alle)</translation>
-    </message>
-    <message>
-        <source>Apply to all</source>
-        <translation type="obsolete">Auf alle anwenden</translation>
     </message>
     <message>
         <location filename="../mkTransactionHandler/src/conflictdialog.cpp" line="165"/>
@@ -207,14 +199,6 @@
         <location filename="../shared/src/customtablemodel.cpp" line="1746"/>
         <source>System Settings:</source>
         <translation>Systemeinstellungen:</translation>
-    </message>
-    <message>
-        <source>Optical Drive</source>
-        <translation type="vanished">Optisches Laufwerk</translation>
-    </message>
-    <message>
-        <source>Local Drive</source>
-        <translation type="vanished">Lokaler Datenträger</translation>
     </message>
 </context>
 <context>
@@ -451,17 +435,6 @@
         <source>Properties of %1</source>
         <translation>Eigenschaften von %1</translation>
     </message>
-    <message>
-        <source>&lt;strong&gt;%1 elements selected&lt;/strong&gt;</source>
-        <translation type="vanished">&lt;strong&gt;%1 Elemente ausgewählt&lt;/strong&gt;</translation>
-    </message>
-    <message numerus="yes">
-        <source>Properties of %n element</source>
-        <translation type="vanished">
-            <numerusform>Eigenschaften von %n Element</numerusform>
-            <numerusform>Eigenschaften von %n Elementen</numerusform>
-        </translation>
-    </message>
     <message numerus="yes">
         <location filename="../shared/src/filepropertiesdialog.cpp" line="79"/>
         <source>&lt;strong&gt;%n element selected&lt;/strong&gt;</source>
@@ -519,22 +492,6 @@
         <translation>Abbrechen</translation>
     </message>
     <message>
-        <source>Network Drive</source>
-        <translation type="vanished">Netzwerklaufwerk</translation>
-    </message>
-    <message>
-        <source>Optical Drive</source>
-        <translation type="vanished">Optisches Laufwerk</translation>
-    </message>
-    <message>
-        <source>Local Drive</source>
-        <translation type="vanished">Lokaler Datenträger</translation>
-    </message>
-    <message>
-        <source>File System:</source>
-        <translation type="vanished">Dateisystem:</translation>
-    </message>
-    <message>
         <location filename="../shared/src/filepropertiesdialog.cpp" line="205"/>
         <source>MimeType:</source>
         <translation></translation>
@@ -543,10 +500,6 @@
         <location filename="../shared/src/filepropertiesdialog.cpp" line="214"/>
         <source>Path:</source>
         <translation>Pfad:</translation>
-    </message>
-    <message>
-        <source>Used Space:</source>
-        <translation type="vanished">Belegter Platz:</translation>
     </message>
     <message>
         <location filename="../shared/src/filepropertiesdialog.cpp" line="221"/>
@@ -561,25 +514,9 @@
         <translation></translation>
     </message>
     <message>
-        <source>Free Space:</source>
-        <translation type="vanished">Freier Platz:</translation>
-    </message>
-    <message>
-        <source>Total Space:</source>
-        <translation type="vanished">Gesamtkapazität:</translation>
-    </message>
-    <message>
         <location filename="../shared/src/filepropertiesdialog.cpp" line="261"/>
         <source>Target:</source>
         <translation>Ziel:</translation>
-    </message>
-    <message>
-        <source>Arguments:</source>
-        <translation type="vanished">Argumente:</translation>
-    </message>
-    <message>
-        <source>WorkDir:</source>
-        <translation type="vanished">Arbeitsverzeichnis:</translation>
     </message>
     <message>
         <location filename="../shared/src/filepropertiesdialog.cpp" line="269"/>
@@ -600,18 +537,6 @@
         <location filename="../shared/src/filepropertiesdialog.cpp" line="314"/>
         <source>Accessed:</source>
         <translation>Letzter Zugriff:</translation>
-    </message>
-    <message>
-        <source>Attributes:</source>
-        <translation type="vanished">Attribute:</translation>
-    </message>
-    <message>
-        <source>Read-only</source>
-        <translation type="vanished">Schreibgeschützt</translation>
-    </message>
-    <message>
-        <source>Hidden</source>
-        <translation type="vanished">Versteckt</translation>
     </message>
     <message>
         <location filename="../shared/src/filepropertiesdialog.cpp" line="336"/>
@@ -682,10 +607,6 @@
         <translation></translation>
     </message>
     <message>
-        <source>Shortcut</source>
-        <translation type="vanished">Verknüpfung</translation>
-    </message>
-    <message>
         <location filename="../shared/src/filepropertiesdialog.cpp" line="634"/>
         <source>Folder</source>
         <translation>Ordner</translation>
@@ -704,11 +625,6 @@
         <location filename="../shared/src/filepropertiesdialog.cpp" line="663"/>
         <source>Error</source>
         <translation>Fehler</translation>
-    </message>
-    <message>
-        <source>Failed to apply file attributes.
-Do you have permission to modify this file?</source>
-        <translation type="vanished">Datei-Attribute konnten nicht gesetzt werden. Hast du die notwendigen Rechte, diese Datei zu modifizieren?</translation>
     </message>
     <message>
         <location filename="../shared/src/filepropertiesdialog.cpp" line="664"/>
@@ -790,10 +706,6 @@ Do you have sufficient rights?</source>
         <translation>Öffnen</translation>
     </message>
     <message>
-        <source>Edit</source>
-        <translation type="vanished">Bearbeiten</translation>
-    </message>
-    <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="471"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="289"/>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="268"/>
@@ -841,14 +753,6 @@ Do you have sufficient rights?</source>
         <translation>Umbenennen</translation>
     </message>
     <message>
-        <source>Which part</source>
-        <translation type="vanished">Welchen Teil</translation>
-    </message>
-    <message>
-        <source>Find pattern:</source>
-        <translation type="vanished">Suche Muster:</translation>
-    </message>
-    <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="213"/>
         <source>Replace with:</source>
         <translation>Ersetze mit:</translation>
@@ -872,46 +776,6 @@ Do you have sufficient rights?</source>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="233"/>
         <source>From:</source>
         <translation>Ab:</translation>
-    </message>
-    <message>
-        <source>to:</source>
-        <translation type="vanished">bis:</translation>
-    </message>
-    <message>
-        <source>No action</source>
-        <translation type="vanished">Keine Aktion</translation>
-    </message>
-    <message>
-        <source>Copy first</source>
-        <translation type="vanished">Kopiere erste</translation>
-    </message>
-    <message>
-        <source>Copy last</source>
-        <translation type="vanished">Kopiere letzte</translation>
-    </message>
-    <message>
-        <source>Move first</source>
-        <translation type="vanished">Verschiebe erste</translation>
-    </message>
-    <message>
-        <source>Move last</source>
-        <translation type="vanished">Verschiebe letzte</translation>
-    </message>
-    <message>
-        <source>Nowhere</source>
-        <translation type="vanished">Nirgends</translation>
-    </message>
-    <message>
-        <source>Front</source>
-        <translation type="vanished">Anfang</translation>
-    </message>
-    <message>
-        <source>End</source>
-        <translation type="vanished">Ende</translation>
-    </message>
-    <message>
-        <source>Position</source>
-        <translation type="vanished">Position:</translation>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="283"/>
@@ -953,10 +817,6 @@ Do you have sufficient rights?</source>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="328"/>
         <source>Number Manipulation</source>
         <translation>Zahlen-Manipulation</translation>
-    </message>
-    <message>
-        <source>Leading Zeroes:</source>
-        <translation type="vanished">Führende Nullen:</translation>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="340"/>
@@ -1034,10 +894,6 @@ Do you have sufficient rights?</source>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="333"/>
         <source>Name</source>
         <translation></translation>
-    </message>
-    <message>
-        <source>Excep.</source>
-        <translation type="vanished">Ausnahme</translation>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="534"/>
@@ -1130,10 +986,6 @@ Do you have sufficient rights?</source>
         <translation>Name+Erweiterung</translation>
     </message>
     <message>
-        <source>Match</source>
-        <translation type="obsolete">Finde</translation>
-    </message>
-    <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="204"/>
         <source>Replace</source>
         <translation>Ersetzen</translation>
@@ -1144,71 +996,15 @@ Do you have sufficient rights?</source>
         <translation>Groß/Klein</translation>
     </message>
     <message>
-        <source>With</source>
-        <translation type="vanished">mit</translation>
-    </message>
-    <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="224"/>
         <source>Remove</source>
         <translation>Entfernen</translation>
-    </message>
-    <message>
-        <source>First</source>
-        <translation type="vanished">Erste</translation>
-    </message>
-    <message>
-        <source>Last</source>
-        <translation type="vanished">Letzte</translation>
-    </message>
-    <message>
-        <source>From</source>
-        <translation type="vanished">Von</translation>
-    </message>
-    <message>
-        <source>to</source>
-        <translation type="vanished">nach</translation>
-    </message>
-    <message>
-        <source>Move/Copy</source>
-        <translation type="vanished">Verschieben/Kopieren</translation>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="282"/>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="304"/>
         <source>None</source>
         <translation>Keine Aktion</translation>
-    </message>
-    <message>
-        <source>Copy first n</source>
-        <translation type="vanished">Kopiere erste n</translation>
-    </message>
-    <message>
-        <source>Copy last n</source>
-        <translation type="vanished">Kopiere letzte n</translation>
-    </message>
-    <message>
-        <source>Move first n</source>
-        <translation type="vanished">Verschiebe erste n</translation>
-    </message>
-    <message>
-        <source>Move last n</source>
-        <translation type="vanished">Verschiebe letzte n</translation>
-    </message>
-    <message>
-        <source>To start</source>
-        <translation type="vanished">an den Anfang</translation>
-    </message>
-    <message>
-        <source>To end</source>
-        <translation type="vanished">ans Ende</translation>
-    </message>
-    <message>
-        <source>To pos.</source>
-        <translation type="vanished">an Position</translation>
-    </message>
-    <message>
-        <source>Sep.</source>
-        <translation type="vanished">Trenner</translation>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="255"/>
@@ -1220,14 +1016,6 @@ Do you have sufficient rights?</source>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="304"/>
         <source>Prefix</source>
         <translation>Vorne</translation>
-    </message>
-    <message>
-        <source>Insert</source>
-        <translation type="vanished">Mitte</translation>
-    </message>
-    <message>
-        <source>at pos.</source>
-        <translation type="vanished">an Position</translation>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="282"/>
@@ -1255,18 +1043,6 @@ Do you have sufficient rights?</source>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="278"/>
         <source>Add Folder Name</source>
         <translation>Hinzufügen: Ordnername</translation>
-    </message>
-    <message>
-        <source>Levels</source>
-        <translation type="vanished">Ebenen</translation>
-    </message>
-    <message>
-        <source>Number Padding</source>
-        <translation type="vanished">Auffüllen von Zahlen</translation>
-    </message>
-    <message>
-        <source>Add lead:</source>
-        <translation type="vanished">Auffüllen mit:</translation>
     </message>
     <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="336"/>
@@ -1366,14 +1142,6 @@ Do you have sufficient rights?</source>
         <translation>Sortieren nach</translation>
     </message>
     <message>
-        <source>No terminal emulator could be found or started.</source>
-        <translation type="vanished">Es konnte kein Terminal-Emulator gefunden oder gestartet werden.</translation>
-    </message>
-    <message>
-        <source>Send to</source>
-        <translation type="vanished">Senden an</translation>
-    </message>
-    <message>
         <location filename="../mkBatchRename/src/mainwindow.cpp" line="1162"/>
         <location filename="../mkFileSearch/src/mainwindow.cpp" line="1106"/>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="987"/>
@@ -1448,30 +1216,6 @@ Do you have sufficient rights?</source>
         <translation>Auffrischen</translation>
     </message>
     <message>
-        <source>Compress as TAR.GZ</source>
-        <translation type="vanished">Komprimieren als TAR.GZ</translation>
-    </message>
-    <message>
-        <source>Open with WinRAR</source>
-        <translation type="vanished">Öffne mit WinRAR</translation>
-    </message>
-    <message>
-        <source>Compress as ZIP</source>
-        <translation type="vanished">Komprimiere als ZIP</translation>
-    </message>
-    <message>
-        <source>Compress as CBZ</source>
-        <translation type="vanished">Komprimiere als CBZ</translation>
-    </message>
-    <message>
-        <source>Extract Here</source>
-        <translation type="vanished">Entpacke hier</translation>
-    </message>
-    <message>
-        <source>Extract to Subfolder</source>
-        <translation type="vanished">Entpacke in Unterordner</translation>
-    </message>
-    <message>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="356"/>
         <source>Up</source>
         <translation>Nach oben</translation>
@@ -1519,16 +1263,6 @@ Do you have sufficient rights?</source>
         <translation>Sie besitzen nicht die erforderlichen Rechte, um auf diesen Ordner zuzugreifen:&lt;br&gt;&lt;br&gt;%1</translation>
     </message>
     <message>
-        <source>You don&apos;t have the required permissions to access this folder:
-
-%1</source>
-        <translation type="vanished">Sie besitzen nicht die erforderlichen Rechte, um auf diesen Ordner zuzugreifen:\n%1</translation>
-    </message>
-    <message>
-        <source>This Computer</source>
-        <translation type="vanished">Dieser Computer</translation>
-    </message>
-    <message>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="905"/>
         <source>Navigate</source>
         <translation>Navigieren</translation>
@@ -1545,10 +1279,6 @@ Do you have sufficient rights?</source>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="759"/>
         <source>Other Application...</source>
         <translation>Andere Anwendung...</translation>
-    </message>
-    <message>
-        <source>Compress</source>
-        <translation type="vanished">Komprimieren</translation>
     </message>
     <message>
         <location filename="../mkFolderWidget/src/mainwindow.cpp" line="2275"/>
@@ -1569,30 +1299,6 @@ Do you have sufficient rights?</source>
         <location filename="../mkLauncher/src/mainwindow.cpp" line="98"/>
         <source>(action)</source>
         <translation>(Aktion)</translation>
-    </message>
-    <message>
-        <source>Copying...</source>
-        <translation type="vanished">Kopiere...</translation>
-    </message>
-    <message>
-        <source>Moving...</source>
-        <translation type="vanished">Verschiebe...</translation>
-    </message>
-    <message>
-        <source>Linking...</source>
-        <translation type="vanished">Verlinke...</translation>
-    </message>
-    <message>
-        <source>Deleting...</source>
-        <translation type="vanished">Lösche...</translation>
-    </message>
-    <message>
-        <source>Recycling...</source>
-        <translation type="vanished">Recycle...</translation>
-    </message>
-    <message>
-        <source>Unknown operation type...</source>
-        <translation type="vanished">Unbekannte Operation</translation>
     </message>
     <message>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="156"/>
@@ -1623,76 +1329,6 @@ Do you have sufficient rights?</source>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="216"/>
         <source>Mode:</source>
         <translation>Modus:</translation>
-    </message>
-    <message numerus="yes">
-        <source>Copying %n item(s). (%1)</source>
-        <translation type="vanished">
-            <numerusform>Kopiere %n Item. (%1)</numerusform>
-            <numerusform>Kopiere %n Items. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Moving %n item(s). (%1)</source>
-        <translation type="vanished">
-            <numerusform>Verschiebe %n Item. (%1)</numerusform>
-            <numerusform>Verschiebe %n Items. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Linking %n item(s). (%1)</source>
-        <translation type="vanished">
-            <numerusform>Verlinke %n Item. (%1)</numerusform>
-            <numerusform>Verlinke %n Items. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Deleting %n item(s). (%1)</source>
-        <translation type="vanished">
-            <numerusform>Lösche %n Item. (%1)</numerusform>
-            <numerusform>Lösche %n Items. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Recycling %n item(s). (%1)</source>
-        <translation type="vanished">
-            <numerusform>Recycle %n Item. (%1)</numerusform>
-            <numerusform>Recycle %n Items. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Copying %n item. (%1)</source>
-        <translation type="vanished">
-            <numerusform>Kopiere %n Item. (%1)</numerusform>
-            <numerusform>Kopiere %n Items. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Moving %n item. (%1)</source>
-        <translation type="vanished">
-            <numerusform>Verschiebe %n Item. (%1)</numerusform>
-            <numerusform>Verschiebe %n Items. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Linking %n item. (%1)</source>
-        <translation type="vanished">
-            <numerusform>Verlinke %n Item. (%1)</numerusform>
-            <numerusform>Verlinke %n Items. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Deleting %n item. (%1)</source>
-        <translation type="vanished">
-            <numerusform>Lösche %n Item. (%1)</numerusform>
-            <numerusform>Lösche %n Items. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Recycling %n item. (%1)</source>
-        <translation type="vanished">
-            <numerusform>Recycle %n Item. (%1)</numerusform>
-            <numerusform>Recycle %n Items. (%1)</numerusform>
-        </translation>
     </message>
     <message>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="108"/>
@@ -1731,41 +1367,6 @@ Do you have sufficient rights?</source>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="506"/>
         <source>Pause</source>
         <translation></translation>
-    </message>
-    <message numerus="yes">
-        <source>Copying %n file. (%1)</source>
-        <translation type="vanished">
-            <numerusform>Kopiere %n Datei. (%1)</numerusform>
-            <numerusform>Kopiere %n Dateien. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Moving %n file. (%1)</source>
-        <translation type="vanished">
-            <numerusform>Verschiebe %n Datei. (%1)</numerusform>
-            <numerusform>Verschiebe %n Dateien. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Linking %n file. (%1)</source>
-        <translation type="vanished">
-            <numerusform>Verlinke %n Datei. (%1)</numerusform>
-            <numerusform>Verlinke %n Dateien. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Deleting %n file. (%1)</source>
-        <translation type="vanished">
-            <numerusform>Lösche %n Datei. (%1)</numerusform>
-            <numerusform>Lösche %n Dateien. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Recycling %n file. (%1)</source>
-        <translation type="vanished">
-            <numerusform>Recycle %n Datei. (%1)</numerusform>
-            <numerusform>Recycle %n Dateien. (%1)</numerusform>
-        </translation>
     </message>
     <message numerus="yes">
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="268"/>
@@ -1906,26 +1507,6 @@ Do you have sufficient rights?</source>
             <numerusform>%n der transferierten Dateien hatten bereits bit-identische Versionen an ihrem Zielort.</numerusform>
         </translation>
     </message>
-    <message>
-        <source>Copying... (%1%)</source>
-        <translation type="vanished">Kopiere... (%1%)</translation>
-    </message>
-    <message>
-        <source>Moving... (%1%)</source>
-        <translation type="vanished">Verschiebe... (%1%)</translation>
-    </message>
-    <message>
-        <source>Linking... (%1%)</source>
-        <translation type="vanished">Verlinke... (%1%)</translation>
-    </message>
-    <message>
-        <source>Deleting... (%1%)</source>
-        <translation type="vanished">Lösche... (%1%)</translation>
-    </message>
-    <message>
-        <source>Recycling... (%1%)</source>
-        <translation type="vanished">Recycle... (%1%)</translation>
-    </message>
     <message numerus="yes">
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="444"/>
         <source>Finished with %n error.</source>
@@ -1944,10 +1525,6 @@ Do you have sufficient rights?</source>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="508"/>
         <source>Close</source>
         <translation>Schließen</translation>
-    </message>
-    <message>
-        <source>%1 of the transferred files already had bit-identical versions at their destination location.</source>
-        <translation type="vanished">%1 der transferierten Dateien hatten bereits bit-identische Ausführungen an ihrem Zielort.</translation>
     </message>
     <message numerus="yes">
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="502"/>

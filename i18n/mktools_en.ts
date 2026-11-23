@@ -1330,41 +1330,6 @@ Do you have sufficient rights?</source>
         <source>Mode:</source>
         <translation></translation>
     </message>
-    <message numerus="yes">
-        <source>Copying %n item(s). (%1)</source>
-        <translation type="vanished">
-            <numerusform>Copying %n item. (%1)</numerusform>
-            <numerusform>Copying %n items. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Moving %n item(s). (%1)</source>
-        <translation type="vanished">
-            <numerusform>Moving %n item. (%1)</numerusform>
-            <numerusform>Moving %n items. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Linking %n item(s). (%1)</source>
-        <translation type="vanished">
-            <numerusform>Linking %n item. (%1)</numerusform>
-            <numerusform>Linking %n items. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Deleting %n item(s). (%1)</source>
-        <translation type="vanished">
-            <numerusform>Deleting %n item. (%1)</numerusform>
-            <numerusform>Deleting %n items. (%1)</numerusform>
-        </translation>
-    </message>
-    <message numerus="yes">
-        <source>Recycling %n item(s). (%1)</source>
-        <translation type="vanished">
-            <numerusform>Recycling %n item. (%1)</numerusform>
-            <numerusform>Recycling %n items. (%1)</numerusform>
-        </translation>
-    </message>
     <message>
         <location filename="../mkTransactionHandler/src/mainwindow.cpp" line="108"/>
         <source>Copying</source>
