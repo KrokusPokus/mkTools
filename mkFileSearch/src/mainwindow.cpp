@@ -1828,7 +1828,7 @@ QImage MainWindow::generateThumbnailAsync(const QFileInfo &fileInfo) {
 
 void MainWindow::updateWidgetStyles() {
     m_LineEdit1->setStyleSheet(m_styleLineEditNormal);
-    m_LineEdit1->setStyleSheet(m_styleLineEditNormal);
+    m_LineEdit2->setStyleSheet(m_styleLineEditNormal);
 
     bool isDark = (QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark);
 
