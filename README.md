@@ -151,8 +151,8 @@ sudo xargs rm < build/install_manifest.txt   # uninstalls again
 For development, `./build.sh` builds into `build/` without installing, and `./build_lupdate.sh` updates the
 translation sources in `i18n/*.ts`.
 
-> **Note:** release builds use `-march=native`. The binaries are optimized for the CPU they were built on and may
-> not run on older CPUs.
+> **Note:** add `-DMK_NATIVE=ON` to optimize for your CPU (`-march=native`, `./build.sh` does this). The binaries
+> may then not run on other CPUs.
 
 ## License
 

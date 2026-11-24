@@ -14,11 +14,17 @@ if(result)
     set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
 endif()
 
-# -O3: Aggressive optimization
-# -march=native: Uses SSE/AVX of the current CPU
-# -flto: Link Time Optimization (removed here, since enabled by "set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)" above
-# -fomit-frame-pointer: Frees a register for data (instead of stack tracking)
-add_compile_options(-O3 -march=native -fomit-frame-pointer)
+# Optimization level and CPU flags are up to whoever builds: the build type (Release: -O3) or, when building the
+# package, CFLAGS/CXXFLAGS from makepkg.conf (build type None).
+# MK_NATIVE: -march=native, uses SSE/AVX of the current CPU. The binaries may then not run on other CPUs, so it is
+# off by default (build.sh turns it on for local builds).
+option(MK_NATIVE "Optimize for the CPU of the build machine (-march=native)" OFF)
+if(MK_NATIVE)
+    add_compile_options(-march=native)
+endif()
+
+# NDEBUG for every build type except Debug, including None (package builds)
+add_compile_definitions($<$<NOT:$<CONFIG:Debug>>:NDEBUG>)
 
 # --- 2. QT & STANDARD SETUP ---
 find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Concurrent LinguistTools Network DBus)
