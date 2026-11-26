@@ -226,11 +226,11 @@ QSet<QString> SettingsManager::parseExtensions(const QString &input) {
 	return set;
 }
 
-// Shared by all mkTools programs: ~/.config/mkProjects/mkTools.conf
+// Shared by all mkFileTools programs: ~/.config/mkProjects/mkFileTools.conf
 QString SettingsManager::getSettingsPath() {
     const QString configDir = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)).filePath("mkProjects");
     QDir().mkpath(configDir);
-    return QDir(configDir).filePath("mkTools.conf");
+    return QDir(configDir).filePath("mkFileTools.conf");
 }
 
 QStringList SettingsManager::importSearchFolders(const QString &input) {
@@ -290,11 +290,11 @@ namespace {
         return area;
     }
 
-    // ~/.local/state/mkProjects/mkTools_state.conf: the dialog is shared by all mkTools programs, so is its state
+    // ~/.local/state/mkProjects/mkFileTools_state.conf: the dialog is shared by all mkFileTools programs, so is its state
     QString dialogStatePath() {
         const QString stateDir = QDir(QStandardPaths::writableLocation(QStandardPaths::GenericStateLocation)).filePath("mkProjects");
         QDir().mkpath(stateDir);
-        return QDir(stateDir).filePath("mkTools_state.conf");
+        return QDir(stateDir).filePath("mkFileTools_state.conf");
     }
 
     QPlainTextEdit *createExtensionsEdit() {
@@ -340,7 +340,7 @@ namespace {
 } // namespace
 
 SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent) {
-    setWindowTitle(tr("mkTools Settings"));
+    setWindowTitle(tr("mkFileTools Settings"));
     resize(780, 560);
 
     QVBoxLayout *mainLayout = new QVBoxLayout(this);

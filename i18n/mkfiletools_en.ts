@@ -1544,7 +1544,7 @@ Do you have sufficient rights?</source>
     <name>SettingsDialog</name>
     <message>
         <location filename="../shared/src/settingsmanager.cpp" line="343"/>
-        <source>mkTools Settings</source>
+        <source>mkFileTools Settings</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

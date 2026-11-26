@@ -1,4 +1,4 @@
-# mkTools
+# mkFileTools
 
 A collection of Qt6 desktop tools, created out of various frustrations with existing Linux GUI apps:
 a file manager, an anything launcher, a file search, a batch renamer, and two KWin scripts.
@@ -140,8 +140,8 @@ sudo pacman -S --needed base-devel cmake qt6-base qt6-tools kio zlib
 ## Building and installing
 
 ```bash
-git clone https://github.com/KrokusPokus/mkTools.git
-cd mkTools
+git clone https://github.com/KrokusPokus/mkFileTools.git
+cd mkFileTools
 cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr
 cmake --build build --parallel
 sudo cmake --install build                   # installs system-wide

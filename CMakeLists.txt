@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(mkTools LANGUAGES CXX)
+project(mkFileTools LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -66,7 +66,7 @@ if(TARGET shared)
             mkLauncher
             mkTransactionHandler
         TS_FILES
-            i18n/mktools_de.ts
-            i18n/mktools_en.ts
+            i18n/mkfiletools_de.ts
+            i18n/mkfiletools_en.ts
     )
 endif()

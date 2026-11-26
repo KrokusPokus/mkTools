@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
     //-----------------------------------------------------------------------------------------
 
     QTranslator translator;
-    if (translator.load(QLocale::system(), "mktools", "_", ":/i18n")) {
+    if (translator.load(QLocale::system(), "mkfiletools", "_", ":/i18n")) {
         app.installTranslator(&translator);
     }
 

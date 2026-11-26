@@ -5,7 +5,7 @@ GenericName=File Operations
 GenericName[de]=Dateioperationen
 Exec=mkTransactionHandler
 Icon=org.kde.dolphin
-# Only started by the other mkTools; the entry gives the window its identity (app_id, icon, progress display)
+# Only started by the other mkFileTools; the entry gives the window its identity (app_id, icon, progress display)
 NoDisplay=true
 StartupNotify=false
 Terminal=false

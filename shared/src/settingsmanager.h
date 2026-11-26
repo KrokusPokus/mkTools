@@ -91,7 +91,7 @@ private:
     bool DEFAULT_USE_KDE_FILE_OPERATIONS;
 };
 
-// Settings dialog shared by all mkTools programs (Ctrl+Shift+Comma), covers all values of mkTools.conf
+// Settings dialog shared by all mkFileTools programs (Ctrl+Shift+Comma), covers all values of mkFileTools.conf
 class SettingsDialog : public QDialog {
     Q_OBJECT
 
