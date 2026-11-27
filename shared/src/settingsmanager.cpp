@@ -19,7 +19,7 @@
 #include <QScrollArea>
 #include <QStackedWidget>
 #include <QStandardPaths>
-#include <QUrl>
+#include <QStringList>
 #include <QVBoxLayout>
 
 #include <algorithm>
@@ -297,6 +297,38 @@ namespace {
         return QDir(stateDir).filePath("mkFileTools_state.conf");
     }
 
+    // Tooltip as plain text, wrapped here at about tipLineLength characters. Qt shows plain text tooltips exactly as
+    // given; rich text it wraps itself, but squeezes short texts to 20-40 characters and breaks list items apart.
+    // Every line of text is a paragraph. A line that starts like a list item ("Name: ...", "0 = ...") gets its
+    // continuation lines indented, so it stays visible where the next item begins. The wrapping is done on the
+    // translated text, so it applies to every language.
+    void setTip(QWidget *widget, const QString &text) {
+        constexpr qsizetype tipLineLength = 70;
+        constexpr qsizetype maxItemNameLength = 30;
+        static const QString indent = QStringLiteral("    ");
+
+        QStringList result;
+        for (const QString &paragraph : text.split(u'\n')) {
+            const qsizetype colon = paragraph.indexOf(QLatin1String(": "));
+            const qsizetype equals = paragraph.indexOf(QLatin1String(" = "));
+            const bool listItem = (colon > 0 && colon <= maxItemNameLength) || (equals > 0 && equals <= 12);
+
+            QString line;
+            for (const QString &word : paragraph.split(u' ', Qt::SkipEmptyParts)) {
+                if (!line.isEmpty() && line.size() + 1 + word.size() > tipLineLength) {
+                    result.append(line);
+                    line = listItem ? indent : QString();
+                }
+                if (!line.isEmpty() && line != indent) {
+                    line += u' ';
+                }
+                line += word;
+            }
+            result.append(line);
+        }
+        widget->setToolTip(result.join(u'\n'));
+    }
+
     QPlainTextEdit *createExtensionsEdit() {
         QPlainTextEdit *edit = new QPlainTextEdit();
         edit->setLineWrapMode(QPlainTextEdit::WidgetWidth);
@@ -380,18 +412,8 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent) {
     QDialogButtonBox *buttonBox = new QDialogButtonBox(
         QDialogButtonBox::Ok | QDialogButtonBox::Cancel | QDialogButtonBox::RestoreDefaults, this);
     QPushButton *btnRestoreDefaults = buttonBox->button(QDialogButtonBox::RestoreDefaults);
-    btnRestoreDefaults->setToolTip(tr("Resets all options to their defaults; nothing is saved until OK"));
+    setTip(btnRestoreDefaults, tr("Resets all options to their defaults. Nothing is saved until you click OK."));
     connect(btnRestoreDefaults, &QPushButton::clicked, this, &SettingsDialog::restoreDefaults);
-
-    // Editing the file by hand: the dialog closes without saving, so it does not overwrite the manual changes
-    QPushButton *btnEditFile = buttonBox->addButton(tr("Edit File…"), QDialogButtonBox::ActionRole);
-    btnEditFile->setIcon(QIcon::fromTheme(QStringLiteral("document-edit")));
-    const QString path = SettingsManager::getSettingsPath();
-    btnEditFile->setToolTip(tr("Opens %1 in the text editor; the dialog is closed without saving").arg(path));
-    connect(btnEditFile, &QPushButton::clicked, this, [this, path]() {
-        Helpers::openWithSystemDefault(QUrl::fromLocalFile(path));
-        reject();
-    });
 
     connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
@@ -412,22 +434,23 @@ QWidget *SettingsDialog::createDisplayPage() {
     QFormLayout *layout = createFormLayout(panel);
 
     m_checkAlternatingRowColors = new QCheckBox(tr("Alternating row colors"));
-    m_checkAlternatingRowColors->setToolTip(tr("AlternatingRowColors"));
     m_checkShowGrid = new QCheckBox(tr("Show grid"));
-    m_checkShowGrid->setToolTip(tr("Grid lines in the details view (ShowGrid)"));
+    setTip(m_checkShowGrid, tr("Lines between the rows and columns of the details view."));
     m_checkExecutableFilesRed = new QCheckBox(tr("Show executable files in red"));
-    m_checkExecutableFilesRed->setToolTip(tr("ExecutableFilesRed"));
+    setTip(m_checkExecutableFilesRed, tr("Names of files with execute permission are shown in red. Folders are not "
+                                         "marked."));
     layout->addRow(tr("File list:"), m_checkAlternatingRowColors);
     layout->addRow("", m_checkShowGrid);
     layout->addRow("", m_checkExecutableFilesRed);
 
     m_checkShowFileExtensions = new QCheckBox(tr("Show all file extensions"));
-    m_checkShowFileExtensions->setToolTip(tr("If off, the extensions listed under \"File Types\" are hidden; "
-                                             "mkBatchRename always shows them (ShowFileExtensions)"));
+    setTip(m_checkShowFileExtensions, tr("Off: the extensions listed under \"File Types\" → \"Hidden extensions\" "
+                                         "are not shown in the file lists.\n"
+                                         "mkBatchRename always shows all extensions."));
     layout->addRow("", m_checkShowFileExtensions);
 
     m_checkShowPlaceholderText = new QCheckBox(tr("Show hints in empty input fields"));
-    m_checkShowPlaceholderText->setToolTip(tr("Takes effect after a restart (ShowPlaceholderText)"));
+    setTip(m_checkShowPlaceholderText, tr("Takes effect after a restart."));
     layout->addRow(tr("Input fields:"), m_checkShowPlaceholderText);
 
 
@@ -442,13 +465,13 @@ QWidget *SettingsDialog::createMenusPage() {
     QFormLayout *layout = createFormLayout(panel);
 
     m_checkMenuOnMouseUp = new QCheckBox(tr("Open the context menu when the right mouse button is released"));
-    m_checkMenuOnMouseUp->setToolTip(tr("Off: the menu opens when the button is pressed (MenuOnMouseUp)"));
+    setTip(m_checkMenuOnMouseUp, tr("Off: the menu opens as soon as the button is pressed."));
     layout->addRow(tr("Context menu:"), m_checkMenuOnMouseUp);
 
     m_checkShowIconsInMenu = new QCheckBox(tr("Show icons"));
-    m_checkShowIconsInMenu->setToolTip(tr("Takes full effect after a restart (ShowIconsInMenu)"));
+    setTip(m_checkShowIconsInMenu, tr("Takes full effect after a restart."));
     m_checkShowShortcutsInMenu = new QCheckBox(tr("Show keyboard shortcuts"));
-    m_checkShowShortcutsInMenu->setToolTip(tr("Takes effect after a restart (ShowShortcutsInMenu)"));
+    setTip(m_checkShowShortcutsInMenu, tr("Takes effect after a restart."));
     layout->addRow("", m_checkShowIconsInMenu);
     layout->addRow("", m_checkShowShortcutsInMenu);
 
@@ -464,12 +487,14 @@ QWidget *SettingsDialog::createFileTypesPage() {
     layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);  // the lists use the width of the page
 
     m_editHideExts = createExtensionsEdit();
-    m_editHideExts->setToolTip(tr("Extensions that are hidden when \"Show all file extensions\" is off, "
-                                  "separated by commas (HideExts)"));
+    const QString separatorHint = tr("Separate the extensions with commas or spaces; a leading dot is optional.");
+    setTip(m_editHideExts, tr("Extensions that are not shown in the file lists when \"Show all file extensions\" "
+                              "(page \"Display\") is off.") + u'\n' + separatorHint);
     layout->addRow(tr("Hidden extensions:"), m_editHideExts);
 
     m_editContentSearchExts = createExtensionsEdit();
-    m_editContentSearchExts->setToolTip(tr("Files whose content mkFileSearch searches, separated by commas (ContentSearchExts)"));
+    setTip(m_editContentSearchExts, tr("mkFileSearch searches the content of files with these extensions only; "
+                                       "other files are only found by their name.") + u'\n' + separatorHint);
     layout->addRow(tr("Content search:"), m_editContentSearchExts);
 
     return makeScrollable(panel);
@@ -482,25 +507,37 @@ QWidget *SettingsDialog::createProgramsPage() {
     QWidget *panel = new QWidget();
     QFormLayout *layout = createFormLayout(panel);
     const SettingsManager defaults{SettingsManager::DefaultsOnly{}};
-    const QString handlerHint = tr(".desktop ID (e.g. org.kde.dolphin.desktop), program name or path");
+    // Programs given like this are started by Helpers::openFileListWithHandler()
+    const QString handlerHint = tr("Possible entries:\n"
+                                   ".desktop ID: e.g. org.kde.dolphin.desktop\n"
+                                   "Program name: e.g. dolphin\n"
+                                   "Path: e.g. /usr/bin/dolphin");
 
+    // Helpers::browseToFile() does not take program names or paths
     m_editFileManager = createHandlerEdit(defaults.fileManager);
-    m_editFileManager->setToolTip(tr("Shows a file in its folder. %1 (FileManager)").arg(handlerHint));
+    setTip(m_editFileManager, tr("Opens the folder of a file (\"Show in folder\").\n"
+                                 "Possible entries:\n"
+                                 "mkFolderWidget: selects the file in mkFolderWidget, if it is installed\n"
+                                 ".desktop ID: opens the folder with this program, e.g. org.kde.dolphin.desktop\n"
+                                 "Anything else: the system's default file manager"));
     m_editRenameTool = createHandlerEdit(defaults.renameTool);
-    m_editRenameTool->setToolTip(tr("Renames the selected files. %1 (RenameTool)").arg(handlerHint));
+    setTip(m_editRenameTool, tr("Only used when mkBatchRename is not installed: renaming (F2) in mkFolderWidget "
+                                "then opens this program with the current folder.") + u'\n' + handlerHint);
     m_editSearchTool = createHandlerEdit(defaults.searchTool);
-    m_editSearchTool->setToolTip(tr("Searches the current folder (Ctrl+Shift+F). %1 (SearchTool)").arg(handlerHint));
+    setTip(m_editSearchTool, tr("Opened with the current folder by Ctrl+Shift+F.") + u'\n' + handlerHint);
     m_editMergeTool = createHandlerEdit(tr("None"));
-    m_editMergeTool->setToolTip(tr("Compares two files when copying runs into a conflict, empty = no compare button. "
-                                   "%1 (MergeTool)").arg(handlerHint));
+    setTip(m_editMergeTool, tr("Compares two files when copying or moving runs into a file that already exists. "
+                               "Only used when \"Copy, move and delete with KDE (KIO)\" is off.\n"
+                               "Empty: no compare button.") + u'\n' + handlerHint);
     layout->addRow(tr("File manager:"), m_editFileManager);
     layout->addRow(tr("Rename tool:"), m_editRenameTool);
     layout->addRow(tr("Search tool:"), m_editSearchTool);
     layout->addRow(tr("Compare tool:"), m_editMergeTool);
 
     m_checkUseKdeFileOperations = new QCheckBox(tr("Copy, move and delete with KDE (KIO)"));
-    m_checkUseKdeFileOperations->setToolTip(tr("KDE dialogs and progress in the Plasma notifications instead of "
-                                               "mkTransactionHandler's own (UseKdeFileOperations)"));
+    setTip(m_checkUseKdeFileOperations, tr("On: KDE's dialogs, the progress is shown in the Plasma notifications.\n"
+                                           "Off: mkTransactionHandler's own progress window and conflict dialog, "
+                                           "which can open the compare tool."));
     layout->addRow(tr("File operations:"), m_checkUseKdeFileOperations);
 
     return makeScrollable(panel);
@@ -514,13 +551,17 @@ QWidget *SettingsDialog::createLauncherPage() {
     QFormLayout *layout = createFormLayout(panel);
 
     m_checkAllowLauncherShrink = new QCheckBox(tr("Window shrinks to fit the results"));
-    m_checkAllowLauncherShrink->setToolTip(tr("AllowLauncherShrink"));
+    setTip(m_checkAllowLauncherShrink, tr("Without results, the window shrinks to the input field and only grows "
+                                          "when something is found.\n"
+                                          "Off: the result list always stays visible."));
     layout->addRow(tr("Window:"), m_checkAllowLauncherShrink);
 
     m_listSearchFolders = new QListWidget();
     m_listSearchFolders->setMinimumWidth(380);
     m_listSearchFolders->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    m_listSearchFolders->setToolTip(tr("Folders mkLauncher searches; double click to edit (UserFolders)"));
+    setTip(m_listSearchFolders, tr("Besides the installed applications, mkLauncher searches the files in these "
+                                   "folders and all their subfolders.\n"
+                                   "Double click a folder to edit it."));
 
     QPushButton *btnAdd = new QPushButton(QIcon::fromTheme(QStringLiteral("list-add")), tr("Add…"));
     QPushButton *btnRemove = new QPushButton(QIcon::fromTheme(QStringLiteral("list-remove")), tr("Remove"));
