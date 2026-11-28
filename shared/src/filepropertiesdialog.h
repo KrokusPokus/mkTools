@@ -9,7 +9,6 @@
 #include <QLineEdit>
 #include <QFormLayout>
 #include <QPushButton>
-#include <QtConcurrent>
 #include <QVBoxLayout>
 
 struct ProgressResult {

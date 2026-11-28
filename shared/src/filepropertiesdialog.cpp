@@ -9,6 +9,8 @@
 #include <QMimeDatabase>
 #include <QMimeType>
 #include <QStack>
+#include <QTimer>
+#include <QtConcurrent/QtConcurrentRun>
 
 #include <unistd.h> // Needed for getuid()
 

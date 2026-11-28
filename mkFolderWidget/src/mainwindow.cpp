@@ -7,7 +7,7 @@
 #include <QActionGroup>
 #include <QApplication>
 #include <QClipboard>
-#include <QtConcurrent>
+#include <QtConcurrent/QtConcurrentRun>
 #include <QDateTime>
 #include <QDBusConnection>
 #include <QDesktopServices>

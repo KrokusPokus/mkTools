@@ -8,7 +8,7 @@
 #include <QApplication>
 #include <QCheckBox>
 #include <QClipboard>
-#include <QtConcurrent>
+#include <QtConcurrent/QtConcurrentRun>
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QDirIterator>
