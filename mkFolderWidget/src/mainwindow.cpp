@@ -1170,6 +1170,19 @@ void MainWindow::action_ListViewRunInTerminal() {
     Helpers::executeInTerminal(pathList.first(), this);
 }
 
+void MainWindow::action_ListViewBrowseToLinkTarget() {
+    const QStringList pathList = getActiveViewPathList();
+    if (pathList.size() != 1) return;
+
+    const QFileInfo linkInfo(pathList.first());
+    if (!linkInfo.isSymbolicLink()) return;
+
+    const QFileInfo targetInfo(linkInfo.symLinkTarget());
+    if (!targetInfo.exists()) return;   // dangling link
+
+    browseFolder(targetInfo.absolutePath(), targetInfo.absoluteFilePath());
+}
+
 void MainWindow::action_ListViewEditFiles() {
     QStringList pathList = getActiveViewPathList();
     if (pathList.isEmpty()) return;
@@ -2108,6 +2121,10 @@ bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
                 }
                 else if (keyEvent->key() == Qt::Key_I) {
                     action_ListViewFileProperties();
+                    return true;
+                }
+                else if (keyEvent->key() == Qt::Key_L) {
+                    action_ListViewBrowseToLinkTarget();
                     return true;
                 }
                 else if (keyEvent->key() == Qt::Key_N) {

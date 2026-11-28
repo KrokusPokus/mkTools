@@ -54,6 +54,7 @@ private:
     void action_ListViewCopyPaths();
     void action_ListViewCutFiles();
     void action_ListViewDeleteFiles(bool bRecycleOnly);
+    void action_ListViewBrowseToLinkTarget();
     void action_ListViewEditFiles();
     void action_ListViewFileProperties();
     void action_ListViewOpenFiles();
