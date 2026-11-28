@@ -1174,11 +1174,17 @@ void MainWindow::action_ListViewBrowseToLinkTarget() {
     const QStringList pathList = getActiveViewPathList();
     if (pathList.size() != 1) return;
 
-    const QFileInfo linkInfo(pathList.first());
-    if (!linkInfo.isSymbolicLink()) return;
+    const QFileInfo fileInfo(pathList.first());
+    QString targetPath;
+    if (fileInfo.isSymbolicLink()) {
+        targetPath = fileInfo.symLinkTarget();
+    } else if (Helpers::openMethod(fileInfo) == Helpers::OpenMethod::DesktopEntry) {
+        targetPath = Helpers::desktopEntryTarget(Helpers::getDesktopEntry(fileInfo));
+    }
+    if (targetPath.isEmpty()) return;
 
-    const QFileInfo targetInfo(linkInfo.symLinkTarget());
-    if (!targetInfo.exists()) return;   // dangling link
+    const QFileInfo targetInfo(targetPath);
+    if (!targetInfo.exists()) return;   // dangling link or missing program
 
     browseFolder(targetInfo.absolutePath(), targetInfo.absoluteFilePath());
 }

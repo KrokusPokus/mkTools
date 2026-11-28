@@ -536,42 +536,80 @@ namespace Helpers {
         return invocations;
     }
 
+    // True if the entry is handled via its URL (Type=Link or an URL key) instead of its Exec line.
+    static bool isDesktopLinkEntry(const DesktopEntry &info) {
+        return info.type.compare(QLatin1String("Link"), Qt::CaseInsensitive) == 0 || !info.url.isEmpty();
+    }
+
+    // Resolves the URL of a Type=Link entry. URLs with a scheme (http, https, ftp, file, etc.) are taken as they are,
+    // otherwise the value is a path: ~/ and $VARS are expanded, relative paths refer to the folder of the .desktop file.
+    // Returns an invalid URL if the entry has no URL.
+    static QUrl resolveDesktopLinkUrl(const DesktopEntry &info) {
+        const QString rawUrl = info.url.trimmed();
+        if (rawUrl.isEmpty()) return {};
+
+        QUrl url(rawUrl);
+        if (!url.scheme().isEmpty() && url.isValid()) return url;
+
+        QString urlStr = Helpers::expandPath(rawUrl);
+        if (QFileInfo(urlStr).isRelative()) {
+            urlStr = QFileInfo(info.path).absoluteDir().absoluteFilePath(urlStr);
+        }
+
+        // Convert local paths explicitly into file URLs
+        url = QUrl::fromLocalFile(urlStr);
+        if (!url.isValid()) {
+            url = QUrl::fromUserInput(urlStr);
+        }
+        return url;
+    }
+
+    // Resolves the program of an Exec line to an absolute path: expands ~ and $VARS, searches $PATH for bare names.
+    // Returns an empty string if a bare name is not found in $PATH.
+    static QString resolveExecProgram(const QString &program) {
+        const QString expanded = Helpers::expandPath(program);
+        if (QFileInfo(expanded).isAbsolute()) return expanded;
+        return QStandardPaths::findExecutable(expanded);
+    }
+
+    // Returns the local path a desktop entry points to: for Type=Link the local file or folder of its URL, otherwise
+    // the program its Exec line starts (a leading "env NAME=value ..." wrapper is skipped). Returns an empty string
+    // if there is no such local path (e.g. web links, program not found).
+    QString desktopEntryTarget(const DesktopEntry &entry) {
+        if (!entry.isValid) return {};
+
+        if (isDesktopLinkEntry(entry)) {
+            const QUrl url = resolveDesktopLinkUrl(entry);
+            return url.isLocalFile() ? QDir::cleanPath(url.toLocalFile()) : QString();
+        }
+
+        if (entry.exec.isEmpty()) return {};
+        const QList<QStringList> invocations = expandDesktopExec(entry, {});
+        if (invocations.isEmpty()) return {};
+
+        QStringList args = invocations.first();
+        if (!args.isEmpty() && QFileInfo(args.first()).fileName() == QLatin1String("env")) {
+            args.removeFirst();
+            while (!args.isEmpty() && args.first().contains('=')) args.removeFirst();
+        }
+
+        return args.isEmpty() ? QString() : resolveExecProgram(args.first());
+    }
+
     void launchDesktopFile(const DesktopEntry &info, const QStringList &fileList) {
         if (!info.isValid) return;
 
         // ==========================================
         // 1. Handling of Type=Link or linked URLs
         // ==========================================
-        if (info.type.compare(QLatin1String("Link"), Qt::CaseInsensitive) == 0 || !info.url.isEmpty()) {
-            QString rawUrl = info.url.trimmed();
-            if (rawUrl.isEmpty()) return;
+        if (isDesktopLinkEntry(info)) {
+            if (info.url.trimmed().isEmpty()) return;
 
-            // 1. Test right away whether it already is a valid network URL with a scheme (http, https, ftp, etc.)
-            QUrl url(rawUrl);
-            if (!url.scheme().isEmpty() && url.isValid()) {
-                QDesktopServices::openUrl(url);
-                return;
-            }
-
-            // 2. Only if there is no scheme, resolve paths (~/, $HOME, relative paths)
-            QString urlStr = Helpers::expandPath(rawUrl);
-
-            QFileInfo fileInfo(urlStr);
-            if (fileInfo.isRelative()) {
-                QDir desktopFileDir = QFileInfo(info.path).absoluteDir();
-                urlStr = desktopFileDir.absoluteFilePath(urlStr);
-            }
-
-            // Convert local paths explicitly into file URLs
-            url = QUrl::fromLocalFile(urlStr);
-            if (!url.isValid()) {
-                url = QUrl::fromUserInput(urlStr);
-            }
-
+            const QUrl url = resolveDesktopLinkUrl(info);
             if (url.isValid()) {
                 QDesktopServices::openUrl(url);
             } else {
-                qWarning() << "launchDesktopFile(): Ungültige URL:" << urlStr;
+                qWarning() << "launchDesktopFile(): Ungültige URL:" << info.url;
             }
             return;
         }
@@ -583,16 +621,11 @@ namespace Helpers {
 
         for (QStringList args : expandDesktopExec(info, fileList)) {
             if (args.isEmpty()) continue;
-            const QStringList invocation = args;
-            QString program = args.takeFirst();
-
-            program = Helpers::expandPath(program);
-            if (!QFileInfo(program).isAbsolute()) {
-                program = QStandardPaths::findExecutable(program);
-                if (program.isEmpty()) {
-                    qWarning() << "launchDesktopFile(): Programm nicht gefunden:" << invocation.first();
-                    continue;
-                }
+            const QString rawProgram = args.takeFirst();
+            QString program = resolveExecProgram(rawProgram);
+            if (program.isEmpty()) {
+                qWarning() << "launchDesktopFile(): Programm nicht gefunden:" << rawProgram;
+                continue;
             }
 
             // ==========================================
